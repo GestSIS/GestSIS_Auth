@@ -17,6 +17,7 @@ class CreateRefreshTokensTable extends Migration
             $table->bigIncrements('id');
 
             $table->string('token');
+            $table->dateTime('expire');
 
             $table->unsignedBigInteger('user_id')->nullable();
             $table->foreign('user_id')->references('id')->on('users');

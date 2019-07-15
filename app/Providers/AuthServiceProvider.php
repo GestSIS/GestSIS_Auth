@@ -6,6 +6,7 @@ use App\Auth\JwtTokenGuard;
 use App\Auth\TokenToUserProvider;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -29,6 +30,7 @@ class AuthServiceProvider extends ServiceProvider
 
         Auth::extend('jwt_token', function ($app, $name, array $config) {
             // automatically build the DI, put it as reference
+            Log::debug("TEST");
             $userProvider = app(TokenToUserProvider::class);
             $request = app('request');
             return new JwtTokenGuard($userProvider, $request, $config);

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Auth\TokenTools;
+use App\RefreshToken;
 use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -10,7 +12,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
-use \Firebase\JWT\JWT;
+use Illuminate\Support\Facades\Log;
 
 class ApiLoginController extends Controller
 {
@@ -24,6 +26,7 @@ class ApiLoginController extends Controller
      */
     public function login(Request $request)
     {
+        Log::debug("login");
         $validation = $this->validator($request->all());
 
         if ($validation->fails()) {
@@ -83,33 +86,25 @@ class ApiLoginController extends Controller
      */
     protected function sendLoginResponse(Request $request, $user)
     {
-        //TODO Update secret key
+        $accessToken = TokenTools::createAccessToken($user);
 
-        $secret_key = "YOUR_SECRET_KEY";
-        $issuer_claim = "THE_ISSUER"; // this can be the servername
-        $audience_claim = "THE_AUDIENCE";
-        $issuedat_claim = time(); // issued at
-        $notbefore_claim = $issuedat_claim + 10; //not before in seconds
-        $expire_claim = $issuedat_claim + 600; // expire time in seconds
-        $token = array(
-            "iss" => $issuer_claim,
-            "aud" => $audience_claim,
-            "iat" => $issuedat_claim,
-            "nbf" => $notbefore_claim,
-            "exp" => $expire_claim,
-            "data" => array(
-                "id" => $user->id,
-                "firstname" => $user->firstname,
-                "lastname" => $user->lastname,
-                "email" => $user->email
-            ));
+        //TODO get active refreshToken
+        $refreshToken = $user->getActiveRefreshToken();
+        if ($refreshToken === null) {
+            $token = TokenTools::createRefreshToken();
+            $refreshToken = new RefreshToken();
+            $refreshToken->token = $token->token;
+            $refreshToken->expire = $token->expire;
+            $user->refreshTokens()->save($refreshToken);
+        }
 
-        $jwt = JWT::encode($token, $secret_key);
+        //TODO Store refresh token in database
+
         return response()->json(
             array(
-                "message" => "Successful login.",
-                "jwt" => $jwt,
-                "expireAt" => $expire_claim
+                "message" => "Successful login",
+                "accessToken" => $accessToken,
+                "refreshToken" => $refreshToken->token
             )
         );
     }

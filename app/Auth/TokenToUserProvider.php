@@ -1,6 +1,5 @@
 <?php namespace App\Auth;
 
-use App\AccessToken;
 use App\User;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\UserProvider;
@@ -8,7 +7,6 @@ use Illuminate\Support\Str;
 
 class TokenToUserProvider implements UserProvider
 {
-    private $token;
     private $user;
 
     public function __construct(User $user)

@@ -3,53 +3,53 @@
 
 namespace App\Auth;
 
+use Exception;
+use Firebase\JWT\ExpiredException;
 use Illuminate\Auth\GuardHelpers;
 use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Contracts\Auth\UserProvider;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use \Firebase\JWT\JWT;
+
 
 class JwtTokenGuard implements Guard
 {
     use GuardHelpers;
-    private $inputKey = '';
-    private $storageKey = '';
     private $request;
 
     public function __construct(UserProvider $provider, Request $request, $configuration)
     {
+        Log::debug("Construct validator");
         $this->provider = $provider;
         $this->request = $request;
-        // key to check in request
-//        $this->inputKey = isset($configuration['input_key']) ? $configuration['input_key'] : 'access_token';
-
-        // key to check in database
-//        $this->storageKey = isset($configuration['storage_key']) ? $configuration['storage_key'] : 'access_token';
     }
 
     public function user()
     {
+        Log::debug("User");
         if (!is_null($this->user)) {
             return $this->user;
         }
         $user = null;
 
-        // retrieve via token
+        // retrieve token
         $token = $this->getTokenForRequest();
 
         if (!empty($token)) {
-            //TODO Valider le token
-
-            $secret_key = "YOUR_SECRET_KEY";
-            $decoded = JWT::decode($token, $secret_key, array('HS256'));
-//
-//            Log::debug((array)$decoded);
-//            dd((array)$decoded);
+            try {
+                $decoded = TokenTools::validateToken($token);
+            } catch (ExpiredException $e) {
+                dd("EXPIRED");
+                return response()->json(["error" => "Token expired"]);
+            } catch (Exception $e) {
+                dd($e);
+                return response()->json(["error" => "Invalid token"]);
+            }
 
             // the token was found, how do you want to pass?
             $user = $this->provider->retrieveById($decoded->data->id);
         }
+        Log::debug("Return user");
         return $this->user = $user;
     }
 
@@ -73,6 +73,7 @@ class JwtTokenGuard implements Guard
      */
     public function validate(array $credentials = [])
     {
+        Log::debug("Validate");
         if (empty($credentials[$this->inputKey])) {
             return false;
         }
