@@ -4,7 +4,6 @@
 namespace App\Auth;
 
 use Exception;
-use Firebase\JWT\ExpiredException;
 use Illuminate\Auth\GuardHelpers;
 use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Contracts\Auth\UserProvider;
@@ -26,7 +25,6 @@ class JwtTokenGuard implements Guard
 
     public function user()
     {
-        Log::debug("User");
         if (!is_null($this->user)) {
             return $this->user;
         }
@@ -38,18 +36,14 @@ class JwtTokenGuard implements Guard
         if (!empty($token)) {
             try {
                 $decoded = TokenTools::validateToken($token);
-            } catch (ExpiredException $e) {
-                dd("EXPIRED");
-                return response()->json(["error" => "Token expired"]);
             } catch (Exception $e) {
-                dd($e);
-                return response()->json(["error" => "Invalid token"]);
+                return;
             }
 
             // the token was found, how do you want to pass?
             $user = $this->provider->retrieveById($decoded->data->id);
         }
-        Log::debug("Return user");
+
         return $this->user = $user;
     }
 
@@ -73,7 +67,6 @@ class JwtTokenGuard implements Guard
      */
     public function validate(array $credentials = [])
     {
-        Log::debug("Validate");
         if (empty($credentials[$this->inputKey])) {
             return false;
         }

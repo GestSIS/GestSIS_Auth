@@ -26,11 +26,10 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $this->registerPolicies();
+//        $this->registerPolicies();
 
         Auth::extend('jwt_token', function ($app, $name, array $config) {
             // automatically build the DI, put it as reference
-            Log::debug("TEST");
             $userProvider = app(TokenToUserProvider::class);
             $request = app('request');
             return new JwtTokenGuard($userProvider, $request, $config);

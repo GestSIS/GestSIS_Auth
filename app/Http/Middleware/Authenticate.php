@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Auth\Middleware\Authenticate as Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Response;
 
@@ -13,17 +14,21 @@ class Authenticate extends Middleware
 
     public function handle($request, Closure $next, ...$guards)
     {
-        $res = $this->authenticate($request, $guards);
-        if(!$request->user()){
-            dd($res);
-            Log::debug("HANDLE");
+        if ($request->bearerToken() === null) {
+            Log::error("Missing token");
 
-            Log::debug($request);
-            if ($request->ajax() || $request->wantsJson()) {
-                return response('Unauthorized.', 401);
-            } else {
+            $response = [
+                'error' => 'Missing token'
+            ];
+            return Response::json($response);
+        }
+
+        foreach ($guards as $guard) {
+            if (!Auth::guard($guard)->check()) {
+                Log::error("Invalid login");
+
                 $response = [
-                    'error' => 'Token expired'
+                    'error' => 'Invalid token'
                 ];
                 return Response::json($response);
             }
@@ -42,6 +47,9 @@ class Authenticate extends Middleware
     {
         if (!$request->expectsJson()) {
             return route('login');
+        } else {
+            return response()->json(["error" => "Error while authenticate"]);
         }
     }
+
 }
