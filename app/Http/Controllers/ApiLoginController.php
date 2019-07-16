@@ -10,9 +10,9 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\Log;
 
 class ApiLoginController extends Controller
 {
@@ -30,14 +30,14 @@ class ApiLoginController extends Controller
         $validation = $this->validator($request->all());
 
         if ($validation->fails()) {
-            return response()->json(['error' => $validation->errors()]);
+            return response()->json(['error' => $validation->errors()], 401);
         }
 
         if ($this->attemptLogin($request)) {
             return $this->sendLoginResponse($request, Auth::user());
         }
 
-        return response()->json(['error' => 'invalid credentials']);
+        return response()->json(['error' => 'invalid credentials'], 401);
     }
 
     /**
@@ -104,7 +104,8 @@ class ApiLoginController extends Controller
             array(
                 "message" => "Successful login",
                 "accessToken" => $accessToken,
-                "refreshToken" => $refreshToken->token
+                "refreshToken" => $refreshToken->token,
+                "user" => Auth::user()
             )
         );
     }

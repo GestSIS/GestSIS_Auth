@@ -11,8 +11,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
-class ApiRegisterController extends Controller
+class ApiRefreshTokenController extends Controller
 {
 
     /**
@@ -20,10 +21,11 @@ class ApiRegisterController extends Controller
      *
      * @param Request $request
      * @return Response
+     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
      */
-    public function register(Request $request)
+    public function refresh(Request $request)
     {
-        Log::debug("Call register");
+        Log::debug("Call refresh token");
 
         $validation = $this->validator($request->all());
 
@@ -31,21 +33,19 @@ class ApiRegisterController extends Controller
             return response()->json(['error' => $validation->errors()], 401);
         }
 
-        $user = $this->create($request->all());
-        $accessToken = TokenTools::createAccessToken($user);
+        $refreshToken = RefreshToken::where('expire', '>', Carbon::now())->where('token', '=', $request->get('token'))->with('user')->first();
+        if(!$refreshToken){
+            return response()->json(['error' => 'Refresh token expired'], 401);
+        }
 
-        $token = TokenTools::createRefreshToken();
-        $refreshToken = new RefreshToken();
-        $refreshToken->token = $token->token;
-        $refreshToken->expire = $token->expire;
-        $user->refreshTokens()->save($refreshToken);
+        $accessToken = TokenTools::createAccessToken($refreshToken->user);
 
         return response()->json(
             array(
                 "message" => "Successful login",
                 "accessToken" => $accessToken,
                 "refreshToken" => $refreshToken->token,
-                "user" => Auth::user()
+                "user" => $refreshToken->user
             )
         );
     }
@@ -59,24 +59,7 @@ class ApiRegisterController extends Controller
     protected function validator(array $data)
     {
         return Validator::make($data, [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
-    }
-
-    /**
-     * Create a new user instance after a valid registration.
-     *
-     * @param array $data
-     * @return User
-     */
-    protected function create(array $data)
-    {
-        return User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
+            'token' => ['required', 'string'],
         ]);
     }
 }

@@ -20,7 +20,7 @@ class Authenticate extends Middleware
             $response = [
                 'error' => 'Missing token'
             ];
-            return Response::json($response);
+            return Response::json($response, 401);
         }
 
         foreach ($guards as $guard) {
@@ -30,7 +30,7 @@ class Authenticate extends Middleware
                 $response = [
                     'error' => 'Invalid token'
                 ];
-                return Response::json($response);
+                return Response::json($response, 401);
             }
         }
 

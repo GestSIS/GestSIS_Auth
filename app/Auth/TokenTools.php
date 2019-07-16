@@ -7,12 +7,12 @@ use Carbon\Carbon;
 use Firebase\JWT\JWT;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Support\Facades\Log;
-use Stdclass;
 use Illuminate\Support\Facades\Storage;
+use Stdclass;
 
 class TokenTools
 {
-    private const ACCESS_TOKEN_DURATION_IN_HOURS = 24;
+    private const ACCESS_TOKEN_DURATION_IN_HOURS = 8;
     private const REFRESH_TOKEN_DURATION_IN_DAYS = 30;
 
     private const ISSUER = "GestSIS_Auth";
@@ -33,7 +33,7 @@ class TokenTools
         $privateKey = Storage::disk('keys')->get(self::PRIVATE_KEY_FILE);
 
         $issuedat_claim = time(); // issued at
-        $notbefore_claim = $issuedat_claim + 0; //not before in seconds
+        $notbefore_claim = $issuedat_claim - 10; //not before in seconds
         $expire_claim = $issuedat_claim + self::ACCESS_TOKEN_DURATION_IN_HOURS * 3600; // expire time in seconds
 
         $token = array(
