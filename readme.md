@@ -60,4 +60,4 @@ Vous devriez ainsi obtenir quelque chose comme :
 
 ### Copier le fichier `TokenTools`
 
-Copier le fichier `TokenTools` dans un dossier Auth. Ce fichier utilise le drivers `keys` pour chargé la clé publique.
+Copier le fichier `app\Auth\TokenTools.php` dans un nouveau dossier `app\Auth` dans votre projet. Ce fichier utilise le drivers `keys` pour chargé la clé publique.
