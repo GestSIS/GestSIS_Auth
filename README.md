@@ -1,25 +1,50 @@
 # GestSIS_Auth
 
-## Getting started
+Serveur d'authentification pour la nouvelle API GestSIS
 
-Create two files in the folder `storage\keys`:
+## Installation
+
+Installation des dépendances :
+
+```sh
+composer install
+cp .env.example .env
+```
+
+Modifier le fichier `.env` afin de configurer la base de données. Attention, la création de la base de données n'est pas réalisée par ce script. La base de données pour ce serveur (GestSIS_Auth) ne doit pas
+être la même que celle du serveur API (GestSIS_API).
+
+Puis :
+```sh
+php artisan migrate --step
+php artisan db:seed
+```
+
+### Génération des clés
+
+Créer 2 fichiers dans le dossier `storage\keys`:
 
 -   auth-private.key
 -   auth-public.key
 
-Those files are your public and private rsa256 keys for jwt.
+Ces fichiers sont vos clés publique et privée RSA 256 pour jwt.
 
-You can easily generate those from this website:
+Celles-ci peuvent être facilement générées sur le site suivant.
 
 -   [http://travistidwell.com/jsencrypt/demo/](http://travistidwell.com/jsencrypt/demo/)
 
-## To run
+### Démarrage du serveur de développement
 
 ```sh
 php artisan serve -port=8001
 ```
 
-## How to integrate this auth system into your new api
+### Développement dans une machine virtuelle
+Si le serveur de développement est lancé dans une machine virtuelle, mais que l'accès se fait depuis l'hôte, il est nécessaire d'ajouter `--host=XXX` à la commande ci-dessus.
+
+## Intégration du système d'authentification dans une nouvelle API
+
+Il n'est pas nécessaire de suivre les indications de cette section pour démarrer GestSIS_Auth.
 
 ### Prérequis
 
