@@ -1,6 +1,9 @@
 <?php
 
 use Illuminate\Http\Request;
+use App\Http\Controllers\ApiLoginController;
+use App\Http\Controllers\ApiRegisterController;
+use App\Http\Controllers\ApiRefreshTokenController;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,15 +16,13 @@ use Illuminate\Http\Request;
 |
 */
 
-
 Route::group(['prefix' => 'v1'], function () {
 
-    Route::post('login', 'ApiLoginController@login');
-    Route::post('register', 'ApiRegisterController@register');
-    Route::post('refresh-token', 'ApiRefreshTokenController@refresh');
+    Route::post('login', [ApiLoginController::class, 'login']);
+    Route::post('register', [ApiRegisterController::class, 'register']);
+    Route::post('refresh-token', [ApiRefreshTokenController::class, 'refresh']);
 
     Route::middleware('auth:token')->get('/test', function (Request $request) {
         return "TEST";
     });
-
 });
