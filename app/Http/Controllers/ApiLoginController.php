@@ -91,11 +91,17 @@ class ApiLoginController extends Controller
             ->join('permission_roles', 'permissions.id', '=', 'permission_roles.permission_id')
             ->join('roles', 'roles.id', '=', 'permission_roles.role_id')
             ->join('user_roles', 'roles.id', '=', 'user_roles.role_id')
+            ->join('sis', 'sis.id', '=', 'roles.sis_id')
             ->where('user_roles.user_id', '=', $user->id)
-            ->select('permissions.api_key', 'roles.sis_id')
+            ->select('permissions.api_key as perm_key', 'sis.api_key as sis_key')
             ->get();
+
+        $groupedPermissions = array();
+        foreach ($permissions as $element) {
+            $groupedPermissions[$element->sis_key][] = $element->perm_key;
+        }
         
-        $accessToken = TokenTools::createAccessToken($user, $permissions);
+        $accessToken = TokenTools::createAccessToken($user, $groupedPermissions);
 
         // Get active refreshToken
         $refreshToken = $user->getActiveRefreshToken();
