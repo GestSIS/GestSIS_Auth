@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class ApiRegisterController extends Controller
 {
@@ -23,6 +24,7 @@ class ApiRegisterController extends Controller
      */
     public function register(Request $request)
     {
+        // TODO: Décider de quoi logger
         Log::debug("Call register");
 
         $validation = $this->validator($request->all());
@@ -31,8 +33,20 @@ class ApiRegisterController extends Controller
             return response()->json(['error' => $validation->errors()], 401);
         }
 
+        // TODO: Controller que l'email n'est pas déjà existant pour un sapeur
+
+        // TODO: Ajout controle que l'email est existante dans un SIS ou qu'en cas de token, qu'il soit valide
+
         $user = $this->create($request->all());
-        $accessToken = TokenTools::createAccessToken($user);
+        $permissions = DB::table('permissions')
+            ->join('permission_roles', 'permissions.id', '=', 'permission_roles.permission_id')
+            ->join('roles', 'roles.id', '=', 'permission_roles.role_id')
+            ->join('user_roles', 'roles.id', '=', 'user_roles.role_id')
+            ->where('user_roles.user_id', '=', $user->id)
+            ->select('permissions.api_key', 'roles.sis_id')
+            ->get();
+
+        $accessToken = TokenTools::createAccessToken($user, $permissions);
 
         $token = TokenTools::createRefreshToken();
         $refreshToken = new RefreshToken();

@@ -29,7 +29,7 @@ class TokenTools
      * @return string
      * @throws FileNotFoundException
      */
-    public static function createAccessToken($user)
+    public static function createAccessToken($user, $permissions)
     {
         Log::debug("CREATE TOKEN");
 
@@ -45,12 +45,13 @@ class TokenTools
             "iat" => $issuedat_claim,
             "nbf" => $notbefore_claim,
             "exp" => $expire_claim,
-            "data" => array(
+            "data" => [
                 "id" => $user->id,
                 "firstname" => $user->firstname,
                 "lastname" => $user->lastname,
-                "email" => $user->email
-            )
+                "email" => $user->email,
+                "permissions" => $permissions
+            ]
         );
 
         return JWT::encode($token, $privateKey, 'RS256');

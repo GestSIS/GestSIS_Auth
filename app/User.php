@@ -5,6 +5,8 @@ namespace App;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Carbon\Carbon;
+use App\Role;
+use App\UserRole;
 
 class User extends Authenticatable
 {
@@ -45,5 +47,10 @@ class User extends Authenticatable
     public function getActiveRefreshToken()
     {
         return $this->refreshTokens()->where('expire', '>', Carbon::now())->first();
+    }
+
+    public function userRoles()
+    {
+        return $this->hasManyThrough(Role::class, UserRole::class);
     }
 }

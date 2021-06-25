@@ -4,14 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Auth\TokenTools;
 use App\RefreshToken;
-use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ApiRefreshTokenController extends Controller
 {
@@ -38,7 +36,15 @@ class ApiRefreshTokenController extends Controller
             return response()->json(['error' => 'Refresh token expired'], 401);
         }
 
-        $accessToken = TokenTools::createAccessToken($refreshToken->user);
+        $permissions = DB::table('permissions')
+            ->join('permission_roles', 'permissions.id', '=', 'permission_roles.permission_id')
+            ->join('roles', 'roles.id', '=', 'permission_roles.role_id')
+            ->join('user_roles', 'roles.id', '=', 'user_roles.role_id')
+            ->where('user_roles.user_id', '=', $user->id)
+            ->select('permissions.api_key', 'roles.sis_id')
+            ->get();
+
+        $accessToken = TokenTools::createAccessToken($refreshToken->user, $permissions);
 
         return response()->json(
             array(

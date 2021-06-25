@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\DB;
 
 class ApiLoginController extends Controller
 {
@@ -86,19 +87,26 @@ class ApiLoginController extends Controller
      */
     protected function sendLoginResponse(Request $request, $user)
     {
-        $accessToken = TokenTools::createAccessToken($user);
+        $permissions = DB::table('permissions')
+            ->join('permission_roles', 'permissions.id', '=', 'permission_roles.permission_id')
+            ->join('roles', 'roles.id', '=', 'permission_roles.role_id')
+            ->join('user_roles', 'roles.id', '=', 'user_roles.role_id')
+            ->where('user_roles.user_id', '=', $user->id)
+            ->select('permissions.api_key', 'roles.sis_id')
+            ->get();
+        
+        $accessToken = TokenTools::createAccessToken($user, $permissions);
 
-        //TODO get active refreshToken
+        // Get active refreshToken
         $refreshToken = $user->getActiveRefreshToken();
         if ($refreshToken === null) {
             $token = TokenTools::createRefreshToken();
+            // Store refresh token in database
             $refreshToken = new RefreshToken();
             $refreshToken->token = $token->token;
             $refreshToken->expire = $token->expire;
             $user->refreshTokens()->save($refreshToken);
         }
-
-        //TODO Store refresh token in database
 
         return response()->json(
             array(
