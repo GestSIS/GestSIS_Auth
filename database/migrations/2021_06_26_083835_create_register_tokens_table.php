@@ -18,7 +18,7 @@ class CreateRegisterTokensTable extends Migration
             $table->timestamps();
             
             $table->string('token')->unique();
-            $table->string('description');
+            $table->string('description')->default("");
             $table->date('validite');
         });
     }

@@ -17,6 +17,7 @@ class SisSeeder extends Seeder
         $elements = array(
             // Permissions de base
             array('id' => 1, 'nom' => 'SIS Haute-Sorne', 'abreviation' => 'SIS-HS', 'api_key' => 'hs'),
+            array('id' => 2, 'nom' => 'SIS Test', 'abreviation' => 'SIS-Test', 'api_key' => 'test'),
         );
 
         foreach ($elements as $element) {

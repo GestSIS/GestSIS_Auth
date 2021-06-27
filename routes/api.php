@@ -8,6 +8,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\RegisterTokenController;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,6 +30,9 @@ Route::group(['prefix' => 'v1'], function () {
     // Route::middleware('auth:token')->get('/test', function (Request $request) {
     //     return "TEST";
     // });
+
+    // TODO: Add middleware for security
+    Route::post('register-token', [RegisterTokenController::class, 'newToken']);
 
     Route::group(['middleware' => 'jwtToken'], function () {
         Route::get('user-info/{id}', [UserController::class, 'info']);

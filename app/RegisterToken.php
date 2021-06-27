@@ -12,6 +12,6 @@ class RegisterToken extends Model
 
     public function roles()
     {
-        return $this->hasManyThrough(Role::class, RegisterTokenRole::class);
+        return $this->belongsToMany(Role::class, 'register_token_roles');
     }
 }

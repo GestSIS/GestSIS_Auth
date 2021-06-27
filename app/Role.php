@@ -15,6 +15,16 @@ class Role extends Model
     
     public function users()
     {
-        return $this->hasManyThrough(User::class, UserRole::class);
+        return $this->belongsToMany(User::class, 'user_roles');
+    }
+    
+    public function registerTokens()
+    {
+        return $this->belongsToMany(RegisterToken::class, 'register_token_roles');
+    }
+
+    public function sis()
+    {
+        return $this->belongsTo(Sis::class);
     }
 }

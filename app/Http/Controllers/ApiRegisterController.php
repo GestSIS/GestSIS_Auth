@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Auth\TokenTools;
 use App\RefreshToken;
+use App\RegisterToken;
+use App\RegisterTokenRole;
 use App\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
@@ -34,21 +37,37 @@ class ApiRegisterController extends Controller
             return response()->json(['error' => $validation->errors()], 401);
         }
 
-        // Controle que l'email est existant au sein d'un SIS
-        $email = $request->get('email');
-        $token = TokenTools::createAccessToken(new User(), ['_' => ['admin']]);
-        
-        // TODO: Changer endpoint en valeur non hardcodé
-        $response = Http::withHeaders([
-            'Sis-Id' => '_',
-            'Authorization' => 'Bearer ' . $token
-        ])->acceptJson()->timeout(2)->get('http://api:8000/api/v2/email-validate', ['email' => $email]);
-        
         // TODO: Check situation de token
-        if (!$response->successful() || !$response['data']) {
-            return response()->json(["error" => "Email invalide"], 401);
-        }
+        $registerToken = $request->get('token');
+        $rolesId = [];
+        if ($registerToken != null && $registerToken != '') {
+            $registerToken = RegisterToken::where('token', '=', $registerToken)
+                ->where('validite', '>=', Carbon::now())->first();
 
+            // Validate register token validité
+            if (is_null($registerToken)) {
+                return response()->json(["error" => "Token invalide"], 401);
+            }
+            $roles = array_values((array)DB::table('register_token_roles')
+            ->where('register_token_id', '=', $registerToken->id)
+            ->get('role_id'));
+            $rolesId = array_map(function($r) { return $r->role_id; }, $roles[0]);
+
+        } else {
+            // Controle que l'email est existant au sein d'un SIS
+            $email = $request->get('email');
+            
+            // TODO: Changer endpoint en valeur non hardcodé
+            $response = Http::withHeaders([
+                'Sis-Id' => '_',
+                'Authorization' => 'Bearer ' . TokenTools::createAccessToken(new User(), ['_' => ['admin']])
+            ])->acceptJson()->timeout(2)->get('http://api:8000/api/v2/email-validate', ['email' => $email]);
+            
+            if (!$response->successful() || !$response['data']) {
+                return response()->json(["error" => "Email invalide"], 401);
+            }
+        }
+        
         $user = $this->create($request->all());
         $permissions = DB::table('permissions')
             ->join('permission_roles', 'permissions.id', '=', 'permission_roles.permission_id')
@@ -57,6 +76,7 @@ class ApiRegisterController extends Controller
             ->join('sis', 'sis.id', '=', 'roles.sis_id')
             ->where('user_roles.user_id', '=', $user->id)
             ->select('permissions.api_key as perm_key', 'sis.api_key as sis_key')
+            ->distinct()
             ->get();
 
         $groupedPermissions = array();
@@ -72,7 +92,14 @@ class ApiRegisterController extends Controller
         $refreshToken->expire = $token->expire;
         $user->refreshTokens()->save($refreshToken);
 
-        // TODO: Ajouter un rôle par défault
+        // Ajouter des rôles
+        $user->roles()->attach($rolesId);
+        $user->save();
+
+        // Suppression du token
+        if (!is_null($registerToken)) {
+            $registerToken->delete();
+        }
         
         return response()->json(
             array(
@@ -96,6 +123,7 @@ class ApiRegisterController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'token' => ['string', 'min:8', 'nullable'],
         ]);
     }
 

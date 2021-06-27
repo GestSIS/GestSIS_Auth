@@ -41,7 +41,7 @@ class User extends Authenticatable
 
     public function refreshTokens()
     {
-        return $this->hasMany('App\RefreshToken');
+        return $this->hasMany(RefreshToken::class);
     }
 
     public function getActiveRefreshToken()
@@ -49,8 +49,8 @@ class User extends Authenticatable
         return $this->refreshTokens()->where('expire', '>', Carbon::now())->first();
     }
 
-    public function userRoles()
+    public function roles()
     {
-        return $this->hasManyThrough(Role::class, UserRole::class);
+        return $this->belongsToMany(Role::class, 'user_roles');
     }
 }
