@@ -69,15 +69,27 @@ class ApiRegisterController extends Controller
         }
         
         $user = $this->create($request->all());
+
+        $token = TokenTools::createRefreshToken();
+        $refreshToken = new RefreshToken();
+        $refreshToken->token = $token->token;
+        $refreshToken->expire = $token->expire;
+        $user->refreshTokens()->save($refreshToken);
+
+        // Ajoute des rôles
+        $user->roles()->attach($rolesId);
+        $user->save();
+
+        // Load permissions
         $permissions = DB::table('permissions')
-            ->join('permission_roles', 'permissions.id', '=', 'permission_roles.permission_id')
-            ->join('roles', 'roles.id', '=', 'permission_roles.role_id')
-            ->join('user_roles', 'roles.id', '=', 'user_roles.role_id')
-            ->join('sis', 'sis.id', '=', 'roles.sis_id')
-            ->where('user_roles.user_id', '=', $user->id)
-            ->select('permissions.api_key as perm_key', 'sis.api_key as sis_key')
-            ->distinct()
-            ->get();
+        ->join('permission_roles', 'permissions.id', '=', 'permission_roles.permission_id')
+        ->join('roles', 'roles.id', '=', 'permission_roles.role_id')
+        ->join('user_roles', 'roles.id', '=', 'user_roles.role_id')
+        ->join('sis', 'sis.id', '=', 'roles.sis_id')
+        ->where('user_roles.user_id', '=', $user->id)
+        ->select('permissions.api_key as perm_key', 'sis.api_key as sis_key')
+        ->distinct()
+        ->get();
 
         $groupedPermissions = array();
         foreach ($permissions as $element) {
@@ -86,21 +98,11 @@ class ApiRegisterController extends Controller
         
         $accessToken = TokenTools::createAccessToken($user, $groupedPermissions);
 
-        $token = TokenTools::createRefreshToken();
-        $refreshToken = new RefreshToken();
-        $refreshToken->token = $token->token;
-        $refreshToken->expire = $token->expire;
-        $user->refreshTokens()->save($refreshToken);
-
-        // Ajouter des rôles
-        $user->roles()->attach($rolesId);
-        $user->save();
-
         // Suppression du token
         if (!is_null($registerToken)) {
             $registerToken->delete();
         }
-        
+
         return response()->json(
             array(
                 "message" => "Successful login",
