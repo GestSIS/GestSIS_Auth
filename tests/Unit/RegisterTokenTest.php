@@ -2,8 +2,11 @@
 
 namespace Tests\Unit;
 
+use App\Auth\TokenTools;
+use App\User;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 
 class RegisterTokenTest extends TestCase
 {
@@ -14,14 +17,19 @@ class RegisterTokenTest extends TestCase
      */
     public function testCreateRegisterTokenWithValidPermissions()
     {
-        $bearerToken = null;
+        $user = new User();
+        $bearerToken = TokenTools::createAccessToken($user, ['test' => ['utilisateur.tout', 'utilisateur.config']]);
         $params = [
             'roles' => [
-                1, 2, 
+                3
             ]
         ];
 
-        //TODO: test
-        // $response = $this->json('POST', "api/v1/register-token/create", $params);
+        $response = $this->withHeaders([
+            'Sis-Id' => 'test',
+            'Authorization' => 'Bearer ' . $bearerToken,
+        ])->post("api/v1/register-token/", $params);
+        
+        $response->assertStatus(200);
     }
 }
