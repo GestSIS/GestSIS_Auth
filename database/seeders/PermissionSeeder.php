@@ -31,13 +31,16 @@ class PermissionSeeder extends Seeder
 
             // Config
             array('id' => 12, 'nom' => 'Config pour sapeur', 'description' => 'Configuration pour module sapeur', 'api_key' => 'sapeur.config'),
-            array('id' => 13, 'nom' => 'Config pour exercice', 'description' => 'Configuration pour module exercice', 'api_key' => 'exercice.config'),
-            array('id' => 14, 'nom' => 'Config pour comptabilite', 'description' => 'Configuration pour module intervention', 'api_key' => 'comptabilite.config'),
-            array('id' => 15, 'nom' => 'Config pour contrôle medical', 'description' => 'Configuration pour module contrôles médicaux', 'api_key' => 'controle_medical.config'),
-            array('id' => 16, 'nom' => 'Config pour utilisateur', 'description' => 'Configuration des différents rôles', 'api_key' => 'utilisateur.config'),
+            array('id' => 13, 'nom' => 'Config pour organisation', 'description' => 'Configuration pour groupes', 'api_key' => 'organisation.config'),
+            array('id' => 14, 'nom' => 'Config pour exercice', 'description' => 'Configuration pour module exercice', 'api_key' => 'exercice.config'),
+            array('id' => 15, 'nom' => 'Config pour intervention', 'description' => 'Configuration pour module intervention', 'api_key' => 'intervention.config'),
+            array('id' => 16, 'nom' => 'Config pour comptabilite', 'description' => 'Configuration pour module contrôles médicaux', 'api_key' => 'comptabilite.config'),
+            array('id' => 17, 'nom' => 'Config pour contrôle medical', 'description' => 'Configuration pour module contrôles médicaux', 'api_key' => 'controle_medical.config'),
+            array('id' => 18, 'nom' => 'Config pour utilisateur', 'description' => 'Configuration des différents rôles', 'api_key' => 'utilisateur.config'),
+            array('id' => 19, 'nom' => 'Config générale', 'description' => 'Configuration des informations du SIS', 'api_key' => 'sis.config'),
             
             // Admin
-            array('id' => 17, 'nom' => 'Admin', 'description' => 'Paramètres admin du système ', 'api_key' => 'admin.tout'),
+            array('id' => 20, 'nom' => 'Admin', 'description' => 'Paramètres admin du système ', 'api_key' => 'admin.tout'),
         );
 
         foreach ($elements as $element) {

@@ -18,9 +18,24 @@ class Role extends Model
         return $this->belongsToMany(User::class, 'user_roles');
     }
     
+    public function userRoles()
+    {
+        return $this->hasMany(UserRole::class);
+    }
+    
     public function registerTokens()
     {
         return $this->belongsToMany(RegisterToken::class, 'register_token_roles');
+    }
+    
+    public function permissionRoles()
+    {
+        return $this->hasMany(PermissionRole::class);
+    }
+
+    public function permissions()
+    {
+        return $this->belongsToMany(Permission::class, 'permission_roles');
     }
 
     public function sis()

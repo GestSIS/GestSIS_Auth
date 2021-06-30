@@ -44,6 +44,11 @@ class User extends Authenticatable
         return $this->hasMany(RefreshToken::class);
     }
 
+    public function userRoles()
+    {
+        return $this->hasMany(UserRole::class);
+    }
+
     public function getActiveRefreshToken()
     {
         return $this->refreshTokens()->where('expire', '>', Carbon::now())->first();

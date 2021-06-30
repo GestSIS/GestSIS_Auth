@@ -9,6 +9,7 @@ use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RegisterTokenController;
+use App\Http\Controllers\SisController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,22 +28,20 @@ Route::group(['prefix' => 'v1'], function () {
     Route::post('register', [ApiRegisterController::class, 'register']);
     Route::post('refresh-token', [ApiRefreshTokenController::class, 'refresh']);
 
-    // Route::middleware('auth:token')->get('/test', function (Request $request) {
-    //     return "TEST";
-    // });
-
-    // TODO: Add middleware for security
-    Route::post('register-token', [RegisterTokenController::class, 'newToken']);
-
-    Route::group(['middleware' => 'jwtToken'], function () {
-        Route::get('user-info/{id}', [UserController::class, 'info']);
-
-        Route::get('roles/{sis_id}/', [RoleController::class, 'parSis']);
-        Route::get('user/{user_id}/roles/{sis_id}', [UserRoleController::class, 'parSis']);
-
-        Route::get('permissions/', [PermissionController::class, 'all']);
-        Route::get('users/{sis_id}', [UserController::class, 'parSis']); 
+    Route::get('sis', [SisController::class, 'index']);
+    
+    Route::group(['middleware' => 'jwtTokenRole'], function () {
+        Route::get('permissions/', [PermissionController::class, 'index']);
     });
-
-    // TODO: Ajout partie admin pour la gestion des permissions, SIS, ...
+    
+    Route::group(['middleware' => 'jwtTokenRole:utilisateur.config'], function () {
+        Route::resource('roles', 'RoleController')->only(['index', 'store', 'update', 'destroy']);
+    });
+    
+    Route::group(['middleware' => 'jwtTokenRole:utilisateur.tout'], function () {
+        Route::resource('roles', 'RoleController')->only(['index']);
+        Route::post('register-token', [RegisterTokenController::class, 'newToken']);
+        Route::resource('roles/{role_id}/users', 'UserRoleController')->only(['index', 'store', 'destroy']);
+        Route::get('users', [UserController::class, 'parSis']); // With roles
+    });
 });
