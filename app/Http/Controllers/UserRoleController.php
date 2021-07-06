@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Role;
 use App\Sis;
+use App\User;
 use App\UserRole;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class UserRoleController extends Controller
 {
@@ -25,6 +27,59 @@ class UserRoleController extends Controller
         }
 
         return Role::with(["userRoles"])->where("roles.sis_id", '=', $sis->id)->get();
+    }
+    
+    /**
+     * Update all the roles for a given user and provided SIS
+     *
+     * @param Request $request
+     * @param int $sisId
+     * @return Response
+     * @throws Exception
+     */
+    public function updateRoles(Request $request, int $userId)
+    {
+        // Checks pour sisId
+        $sisKey = $request->header('Sis-Id', Null);
+        $sis = Sis::first('api_key',$sisKey)->first();
+        if(is_null($sis)) {
+            return response()->json(["error" => "Invalid sis key"], 401);
+        }
+
+        $roles = array_values((array) DB::table('user_roles')->join('roles', 'roles.id', '=', 'user_roles.role_id')
+            ->where("user_roles.user_id", '=', $userId)
+            ->where("roles.sis_id", '=', $sis->id)
+            ->get('user_roles.role_id'));
+        
+        // return response()->json(["error" => $roles[0]], 401);
+        // roles
+        $roles = array_map(function($r) {
+            return $r->role_id;
+        }, $roles[0]);
+        
+        $data = $request->validate([
+            'roles.*' => 'nullable|integer|min:1|distinct|exists:roles,id',
+        ]);
+        $providedRoles = array();
+        if (array_key_exists('roles', $data)) {
+            $providedRoles = array_map(function($id) {
+                return intval($id);
+            }, array_values($data['roles']));
+        }
+
+        // Rôles à supprimer
+        $rolesToRemove = array_diff($roles, $providedRoles);
+        UserRole::where('user_id', '=', $userId)->whereIn('role_id', $rolesToRemove)->delete();
+
+        // Rôles à ajouter
+        $rolesToAdd = array_diff($providedRoles, $roles);
+        $data = array_map(function($roleId) use($userId) {
+            return array('role_id' => $roleId, 'user_id' => $userId);
+        }, $rolesToAdd);
+        UserRole::insert($data);
+        
+        // $roles
+        return response()->json(["data" => $providedRoles]);
     }
 
     /**
