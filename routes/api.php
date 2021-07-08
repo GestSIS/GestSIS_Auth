@@ -31,7 +31,7 @@ Route::group(['prefix' => 'v1'], function () {
     
     Route::group(['middleware' => 'jwtTokenRole'], function () {
         Route::get('permissions/', [PermissionController::class, 'index']);
-        // TODO: Ajouter route `enregistrer-token`
+        // TODO: Ajouter route `enregistrer-token` ou `use-token`
     });
     
     Route::group(['middleware' => 'jwtTokenRole:utilisateur.config'], function () {

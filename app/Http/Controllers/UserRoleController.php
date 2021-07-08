@@ -79,7 +79,10 @@ class UserRoleController extends Controller
         UserRole::insert($data);
         
         // $roles
-        return response()->json(["data" => $providedRoles]);
+        $ids = array_values((array) Role::where('roles.sis_id', '=', $sis->id)->get('id'));
+        $roleIds = array_map(function($r) { return $r->id; }, $ids[0]);
+        $user = UserRole::where('user_id', $userId)->whereIn('user_roles.role_id', $roleIds)->get();
+        return response()->json(["data" => $user]);
     }
 
     /**
