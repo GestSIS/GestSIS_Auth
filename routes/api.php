@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ApiLoginController;
 use App\Http\Controllers\ApiRegisterController;
 use App\Http\Controllers\ApiRefreshTokenController;
+use App\Http\Controllers\ApiConfirmerEmailController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserRoleController;
@@ -26,6 +27,7 @@ Route::group(['prefix' => 'v1'], function () {
     Route::post('login', [ApiLoginController::class, 'login']);
     Route::post('register', [ApiRegisterController::class, 'register']);
     Route::post('refresh-token', [ApiRefreshTokenController::class, 'refresh']);
+    Route::post('confirmer-email', [ApiConfirmerEmailController::class, 'confirmerEmail']);
 
     Route::get('sis', [SisController::class, 'index']);
     

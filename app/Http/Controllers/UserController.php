@@ -25,10 +25,16 @@ class UserController extends Controller
             return response()->json(["error" => "Invalid sis key"], 401);
         }
         
+        // Load users with roles
         $ids = array_values((array)DB::table('user_roles')
             ->join('roles', 'roles.id', '=', 'user_roles.role_id')
             ->where('roles.sis_id', '=', $sis->id)
-            ->select(['user_roles.user_id'])
+            ->select(['user_roles.user_id as user_id'])
+            ->union(
+                DB::table('sapeurs')
+                    ->where('sapeurs.sis_id', '=', $sis->id)
+                    ->select(['sapeurs.user_id as user_id'])
+            )
             ->distinct()
             ->get());
         $userIds = array_map(function($r) { return $r->user_id; }, $ids[0]);
@@ -38,6 +44,8 @@ class UserController extends Controller
         
         $users = User::whereIn('users.id', $userIds)->with(['userRoles' => function($query) use($roleIds){
             $query->whereIn('user_roles.role_id', $roleIds);
+        }, 'sapeur' => function($query) use($sis){
+            $query->where('sapeurs.sis_id', $sis->id);
         }])->get();
         return response()->json(["data" => $users]);
     }

@@ -51,7 +51,6 @@ class UserRoleController extends Controller
             ->where("roles.sis_id", '=', $sis->id)
             ->get('user_roles.role_id'));
         
-        // return response()->json(["error" => $roles[0]], 401);
         // roles
         $roles = array_map(function($r) {
             return $r->role_id;

@@ -7,6 +7,7 @@ use Illuminate\Notifications\Notifiable;
 use Carbon\Carbon;
 use App\Role;
 use App\UserRole;
+use Illuminate\Support\Facades\DB;
 
 class User extends Authenticatable
 {
@@ -18,7 +19,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'password',
+        'name', 'email', 'password', 'validate_email_token'
     ];
 
     /**
@@ -27,7 +28,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $hidden = [
-        'password', 'remember_token',
+        'password', 'remember_token', 'validate_email_token'
     ];
 
     /**
@@ -38,6 +39,26 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    public static function getPermissions($userId)
+    {
+        // Load permissions
+        $permissions = DB::table('permissions')
+        ->join('permission_roles', 'permissions.id', '=', 'permission_roles.permission_id')
+        ->join('roles', 'roles.id', '=', 'permission_roles.role_id')
+        ->join('user_roles', 'roles.id', '=', 'user_roles.role_id')
+        ->join('sis', 'sis.id', '=', 'roles.sis_id')
+        ->where('user_roles.user_id', '=', $userId)
+        ->select('permissions.api_key as perm_key', 'sis.api_key as sis_key')
+        ->distinct()
+        ->get();
+
+        $groupedPermissions = array();
+        foreach ($permissions as $element) {
+            $groupedPermissions[$element->sis_key][] = $element->perm_key;
+        }
+        return $groupedPermissions;
+    }
 
     public function refreshTokens()
     {
@@ -57,5 +78,10 @@ class User extends Authenticatable
     public function roles()
     {
         return $this->belongsToMany(Role::class, 'user_roles');
+    }
+
+    public function sapeur()
+    {
+        return $this->hasMany(Sapeur::class);
     }
 }
