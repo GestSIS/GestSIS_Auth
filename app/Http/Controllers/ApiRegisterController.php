@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Auth\TokenTools;
+use App\Mail\ConfirmationEmail;
 use App\RefreshToken;
 use App\RegisterToken;
 use App\RegisterTokenRole;
@@ -16,6 +17,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 
 class ApiRegisterController extends Controller
 {
@@ -37,7 +39,7 @@ class ApiRegisterController extends Controller
             return response()->json(['error' => $validation->errors()], 401);
         }
 
-        // TODO: Check situation de token
+        // Check présence de token
         $registerToken = $request->get('token');
         $rolesId = [];
         if ($registerToken != null && $registerToken != '') {
@@ -49,54 +51,43 @@ class ApiRegisterController extends Controller
                 return response()->json(["error" => "Token invalide"], 401);
             }
             $roles = array_values((array)DB::table('register_token_roles')
-            ->where('register_token_id', '=', $registerToken->id)
-            ->get('role_id'));
+                                            ->where('register_token_id', '=', $registerToken->id)
+                                            ->get('role_id'));
             $rolesId = array_map(function($r) { return $r->role_id; }, $roles[0]);
 
         } else {
             // Controle que l'email est existant au sein d'un SIS
             $email = $request->get('email');
-            
+
             // TODO: Changer endpoint en valeur non hardcodé
             $response = Http::withHeaders([
                 'Sis-Id' => '_',
                 'Authorization' => 'Bearer ' . TokenTools::createAccessToken(new User(), ['_' => ['admin']])
-            ])->acceptJson()->timeout(2)->get('http://api:8000/api/v2/email-validate', ['email' => $email]);
-            
+            ])->acceptJson()->timeout(3)->get('http://api:8000/api/v2/email-validate', ['email' => $email]);//->throw()->json();
+
             if (!$response->successful() || !$response['data']) {
                 return response()->json(["error" => "Email invalide"], 401);
             }
         }
         
-        $user = $this->create($request->all());
-
+        $user = $this->create($request->all());            
+        
         $token = TokenTools::createRefreshToken();
         $refreshToken = new RefreshToken();
         $refreshToken->token = $token->token;
         $refreshToken->expire = $token->expire;
         $user->refreshTokens()->save($refreshToken);
-
+        
+        // Envoie du lien de confirmation par email
+        Mail::to($user)->send(new ConfirmationEmail($user));
+        
         // Ajoute des rôles
         $user->roles()->attach($rolesId);
         $user->save();
 
         // Load permissions
-        $permissions = DB::table('permissions')
-        ->join('permission_roles', 'permissions.id', '=', 'permission_roles.permission_id')
-        ->join('roles', 'roles.id', '=', 'permission_roles.role_id')
-        ->join('user_roles', 'roles.id', '=', 'user_roles.role_id')
-        ->join('sis', 'sis.id', '=', 'roles.sis_id')
-        ->where('user_roles.user_id', '=', $user->id)
-        ->select('permissions.api_key as perm_key', 'sis.api_key as sis_key')
-        ->distinct()
-        ->get();
-
-        $groupedPermissions = array();
-        foreach ($permissions as $element) {
-            $groupedPermissions[$element->sis_key][] = $element->perm_key;
-        }
-        
-        $accessToken = TokenTools::createAccessToken($user, $groupedPermissions);
+        $permissions = User::getPermissions($user->id);
+        $accessToken = TokenTools::createAccessToken($user, $permissions);
 
         // Suppression du token
         if (!is_null($registerToken)) {
@@ -108,7 +99,7 @@ class ApiRegisterController extends Controller
                 "message" => "Successful login",
                 "accessToken" => $accessToken,
                 "refreshToken" => $refreshToken->token,
-                "user" => Auth::user()
+                "user" => $user
             )
         );
     }
@@ -137,9 +128,11 @@ class ApiRegisterController extends Controller
      */
     protected function create(array $data)
     {
+        $token = TokenTools::createConfirmationToken();
         return User::create([
             'name' => $data['name'],
             'email' => $data['email'],
+            'validate_email_token' => $token->token,
             'password' => Hash::make($data['password']),
         ]);
     }

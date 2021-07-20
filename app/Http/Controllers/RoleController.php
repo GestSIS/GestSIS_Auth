@@ -60,7 +60,7 @@ class RoleController extends Controller
         $role->save();
         $role->permissions()->attach($data['permissions']);
 
-        return response()->json(['data' => $role]);
+        return response()->json(['data' => Role::where('id', '=', $role->id)->with('permissionRoles')->first()]);
     }
 
     /**
@@ -98,8 +98,8 @@ class RoleController extends Controller
         $role = Role::where('id', '=', $roleId)->first();
         $role->update($data);
         $role->permissions()->sync($data['permissions']);
-
-        return response()->json(['data' => Role::where('id', '=', $roleId)->with('permissions')->first()]);
+        
+        return response()->json(['data' => Role::where('id', '=', $roleId)->with('permissionRoles')->first()]);
     }
 
     /**

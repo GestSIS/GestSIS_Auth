@@ -26,6 +26,7 @@ class UserSeeder extends Seeder
 
         $elements = array(
             array('user_id' => 1, 'role_id' => 1),
+            array('user_id' => 1, 'role_id' => 3),
         );
 
         foreach ($elements as $element) {

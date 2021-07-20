@@ -15,8 +15,10 @@ class TokenTools
 {
     private const ACCESS_TOKEN_DURATION_IN_HOURS = 8;
     private const REFRESH_TOKEN_DURATION_IN_DAYS = 30;
+    private const CONFIRMATION_TOKEN_DURATION_IN_DAYS = 30;
 
     private const REFRESH_TOKEN_LENGTH = 16;
+    private const VALIDATION_TOKEN_LENGTH = 32;
 
     private const ISSUER = "GestSIS_Auth";
     private const AUDIENCE = "GestSIS_API";
@@ -31,7 +33,7 @@ class TokenTools
      */
     public static function createAccessToken($user, $permissions)
     {
-        Log::debug("CREATE TOKEN");
+        Log::debug("CREATE ACCESS TOKEN");
 
         $privateKey = Storage::disk('keys')->get(self::PRIVATE_KEY_FILE);
 
@@ -72,6 +74,23 @@ class TokenTools
         $refreshToken->token = bin2hex($token);
         $refreshToken->expire = Carbon::now()->addDays(self::REFRESH_TOKEN_DURATION_IN_DAYS);
         return $refreshToken;
+    }
+
+    /**
+     * @return Stdclass $token
+     */
+    public static function createConfirmationToken()
+    {
+        Log::debug("CREATE CONFIRMATION TOKEN");
+
+        //Generate a random string.
+        $token = Str::random(self::VALIDATION_TOKEN_LENGTH);
+
+        //Convert the binary data into hexadecimal representation.
+        $confirmToken = new Stdclass();
+        $confirmToken->token = bin2hex($token);
+        $confirmToken->expire = Carbon::now()->addDays(self::CONFIRMATION_TOKEN_DURATION_IN_DAYS);
+        return $confirmToken;
     }
 
     /**

@@ -1,6 +1,16 @@
 <?php
 
 return [
+    // Nécessaire dans le cas ou le serveur mail possède un autre nom de domaine pour certificat SSL
+    // https://laracasts.com/discuss/channels/laravel/stream-socket-enable-crypto-error-laravel
+    'stream' => [
+        'ssl' => [
+            'verify_peer' => false,
+            'verify_peer_name' => false,
+            //TODO: a vérifier pour la mise en production
+            'allow_self_signed' => true,
+        ],
+    ],
 
     /*
     |--------------------------------------------------------------------------

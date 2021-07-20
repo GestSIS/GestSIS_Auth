@@ -60,4 +60,19 @@ Dévelopement process :
 7. Modification register pour prendre en compte un potentiel token
 8. Ajout route pour ajouter un token
 
-9. TODO: Interface graphque, détailler les différentes étapes1
+9. TODO: Interface graphique, détailler les différentes étapes
+
+Register, 2 cas possible :
+- Avec un token
+    Donne accès directement à certains droits -> OK
+- Sans token
+    Aucun droit disponible -> OK
+    Possible de créer un compte que pour un email existant
+
+Lié avec un compte sapeur qu'une fois l'adresse email de vérifié -> OK
+- Idem pour les droits, idéalement oui.
+
+Lors de la validation de l'email, lié avec les emails identiques afin de lier aux sapeurs -> OK
+
+A faire :
+1. Tester ce qui est en place.
