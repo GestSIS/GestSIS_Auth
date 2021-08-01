@@ -75,4 +75,6 @@ Lié avec un compte sapeur qu'une fois l'adresse email de vérifié -> OK
 Lors de la validation de l'email, lié avec les emails identiques afin de lier aux sapeurs -> OK
 
 A faire :
-1. Tester ce qui est en place.
+1. Reset mdp
+2. Changer email
+3. Utiliser token pour compte actif
