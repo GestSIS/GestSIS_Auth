@@ -78,3 +78,4 @@ A faire :
 1. Reset mdp
 2. Changer email
 3. Utiliser token pour compte actif
+4. Tester ce qui est en place.
