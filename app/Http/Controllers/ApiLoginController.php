@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\DB;
 
 class ApiLoginController extends Controller
 {
@@ -107,7 +106,7 @@ class ApiLoginController extends Controller
                 "message" => "Successful login",
                 "accessToken" => $accessToken,
                 "refreshToken" => $refreshToken->token,
-                "user" => Auth::user()
+                "user" => User::first('id', $user->id)
             )
         );
     }
