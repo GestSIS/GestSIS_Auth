@@ -46,15 +46,11 @@ class UserRoleController extends Controller
             return response()->json(["error" => "Invalid sis key"], 401);
         }
 
-        $roles = array_values((array) DB::table('user_roles')->join('roles', 'roles.id', '=', 'user_roles.role_id')
+        $roles = DB::table('user_roles')->join('roles', 'roles.id', '=', 'user_roles.role_id')
             ->where("user_roles.user_id", '=', $userId)
             ->where("roles.sis_id", '=', $sis->id)
-            ->get('user_roles.role_id'));
-
-        // roles
-        $roles = array_map(function ($r) {
-            return $r->role_id;
-        }, $roles[0]);
+            ->pluck('user_roles.role_id')
+            ->toArray();
 
         $data = $request->validate([
             'roles.*' => 'nullable|integer|min:1|distinct|exists:roles,id',
@@ -78,10 +74,7 @@ class UserRoleController extends Controller
         UserRole::insert($data);
 
         // $roles
-        $ids = array_values((array) Role::where('roles.sis_id', '=', $sis->id)->get('id'));
-        $roleIds = array_map(function ($r) {
-            return $r->id;
-        }, $ids[0]);
+        $roleIds = Role::where('roles.sis_id', '=', $sis->id)->pluck('id')->toArray();
         $user = UserRole::where('user_id', $userId)->whereIn('user_roles.role_id', $roleIds)->get();
         return response()->json(["data" => $user]);
     }

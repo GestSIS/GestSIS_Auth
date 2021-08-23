@@ -26,7 +26,7 @@ class UserController extends Controller
         }
 
         // Load users with roles
-        $ids = array_values((array)DB::table('user_roles')
+        $userIds = DB::table('user_roles')
             ->join('roles', 'roles.id', '=', 'user_roles.role_id')
             ->where('roles.sis_id', '=', $sis->id)
             ->select(['user_roles.user_id as user_id'])
@@ -36,15 +36,10 @@ class UserController extends Controller
                     ->select(['sapeurs.user_id as user_id'])
             )
             ->distinct()
-            ->get());
-        $userIds = array_map(function ($r) {
-            return $r->user_id;
-        }, $ids[0]);
+            ->pluck('user_id')
+            ->toArray();
 
-        $ids = array_values((array) Role::where('roles.sis_id', '=', $sis->id)->get('id'));
-        $roleIds = array_map(function ($r) {
-            return $r->id;
-        }, $ids[0]);
+        $roleIds = Role::where('roles.sis_id', '=', $sis->id)->pluck('id')->toArray();
 
         $users = User::whereIn('users.id', $userIds)->with(['userRoles' => function ($query) use ($roleIds) {
             $query->whereIn('user_roles.role_id', $roleIds);
