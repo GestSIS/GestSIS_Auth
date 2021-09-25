@@ -50,11 +50,9 @@ class ApiRegisterController extends Controller
             if (is_null($registerToken)) {
                 return response()->json(["error" => "Token invalide"], 401);
             }
-            $roles = array_values((array)DB::table('register_token_roles')
-                                            ->where('register_token_id', '=', $registerToken->id)
-                                            ->get('role_id'));
-            $rolesId = array_map(function($r) { return $r->role_id; }, $roles[0]);
-
+            $rolesId = DB::table('register_token_roles')
+                ->where('register_token_id', '=', $registerToken->id)
+                ->pluck('role_id')->toArray();
         } else {
             // Controle que l'email est existant au sein d'un SIS
             $email = $request->get('email');
@@ -63,24 +61,24 @@ class ApiRegisterController extends Controller
             $response = Http::withHeaders([
                 'Sis-Id' => '_',
                 'Authorization' => 'Bearer ' . TokenTools::createAccessToken(new User(), ['_' => ['admin']])
-            ])->acceptJson()->timeout(3)->get('http://api:8000/api/v2/email-validate', ['email' => $email]);//->throw()->json();
+            ])->acceptJson()->timeout(3)->get('http://api:8000/api/v2/email-validate', ['email' => $email]); //->throw()->json();
 
             if (!$response->successful() || !$response['data']) {
                 return response()->json(["error" => "Email invalide"], 401);
             }
         }
-        
-        $user = $this->create($request->all());            
-        
+
+        $user = $this->create($request->all());
+
         $token = TokenTools::createRefreshToken();
         $refreshToken = new RefreshToken();
         $refreshToken->token = $token->token;
         $refreshToken->expire = $token->expire;
         $user->refreshTokens()->save($refreshToken);
-        
+
         // Envoie du lien de confirmation par email
         Mail::to($user)->send(new ConfirmationEmail($user));
-        
+
         // Ajoute des rôles
         $user->roles()->attach($rolesId);
         $user->save();

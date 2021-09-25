@@ -20,13 +20,13 @@ class UserController extends Controller
     {
         // Checks pour sisId
         $sisKey = $request->header('Sis-Id', Null);
-        $sis = Sis::first('api_key',$sisKey)->first();
-        if(is_null($sis)) {
+        $sis = Sis::where('api_key', $sisKey)->first();
+        if (is_null($sis)) {
             return response()->json(["error" => "Invalid sis key"], 401);
         }
-        
+
         // Load users with roles
-        $ids = array_values((array)DB::table('user_roles')
+        $userIds = DB::table('user_roles')
             ->join('roles', 'roles.id', '=', 'user_roles.role_id')
             ->where('roles.sis_id', '=', $sis->id)
             ->select(['user_roles.user_id as user_id'])
@@ -36,15 +36,14 @@ class UserController extends Controller
                     ->select(['sapeurs.user_id as user_id'])
             )
             ->distinct()
-            ->get());
-        $userIds = array_map(function($r) { return $r->user_id; }, $ids[0]);
-        
-        $ids = array_values((array) Role::where('roles.sis_id', '=', $sis->id)->get('id'));
-        $roleIds = array_map(function($r) { return $r->id; }, $ids[0]);
-        
-        $users = User::whereIn('users.id', $userIds)->with(['userRoles' => function($query) use($roleIds){
+            ->pluck('user_id')
+            ->toArray();
+
+        $roleIds = Role::where('roles.sis_id', '=', $sis->id)->pluck('id')->toArray();
+
+        $users = User::whereIn('users.id', $userIds)->with(['userRoles' => function ($query) use ($roleIds) {
             $query->whereIn('user_roles.role_id', $roleIds);
-        }, 'sapeur' => function($query) use($sis){
+        }, 'sapeur' => function ($query) use ($sis) {
             $query->where('sapeurs.sis_id', $sis->id);
         }])->get();
         return response()->json(["data" => $users]);

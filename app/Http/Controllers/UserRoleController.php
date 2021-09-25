@@ -21,14 +21,14 @@ class UserRoleController extends Controller
     {
         // Checks pour sisId
         $sisKey = $request->header('Sis-Id', Null);
-        $sis = Sis::first('api_key',$sisKey)->first();
-        if(is_null($sis)) {
+        $sis = Sis::where('api_key', $sisKey)->first();
+        if (is_null($sis)) {
             return response()->json(["error" => "Invalid sis key"], 401);
         }
 
         return Role::with(["userRoles"])->where("roles.sis_id", '=', $sis->id)->get();
     }
-    
+
     /**
      * Update all the roles for a given user and provided SIS
      *
@@ -41,27 +41,23 @@ class UserRoleController extends Controller
     {
         // Checks pour sisId
         $sisKey = $request->header('Sis-Id', Null);
-        $sis = Sis::first('api_key',$sisKey)->first();
-        if(is_null($sis)) {
+        $sis = Sis::where('api_key', $sisKey)->first();
+        if (is_null($sis)) {
             return response()->json(["error" => "Invalid sis key"], 401);
         }
 
-        $roles = array_values((array) DB::table('user_roles')->join('roles', 'roles.id', '=', 'user_roles.role_id')
+        $roles = DB::table('user_roles')->join('roles', 'roles.id', '=', 'user_roles.role_id')
             ->where("user_roles.user_id", '=', $userId)
             ->where("roles.sis_id", '=', $sis->id)
-            ->get('user_roles.role_id'));
-        
-        // roles
-        $roles = array_map(function($r) {
-            return $r->role_id;
-        }, $roles[0]);
-        
+            ->pluck('user_roles.role_id')
+            ->toArray();
+
         $data = $request->validate([
             'roles.*' => 'nullable|integer|min:1|distinct|exists:roles,id',
         ]);
         $providedRoles = array();
         if (array_key_exists('roles', $data)) {
-            $providedRoles = array_map(function($id) {
+            $providedRoles = array_map(function ($id) {
                 return intval($id);
             }, array_values($data['roles']));
         }
@@ -72,14 +68,13 @@ class UserRoleController extends Controller
 
         // Rôles à ajouter
         $rolesToAdd = array_diff($providedRoles, $roles);
-        $data = array_map(function($roleId) use($userId) {
+        $data = array_map(function ($roleId) use ($userId) {
             return array('role_id' => $roleId, 'user_id' => $userId);
         }, $rolesToAdd);
         UserRole::insert($data);
-        
+
         // $roles
-        $ids = array_values((array) Role::where('roles.sis_id', '=', $sis->id)->get('id'));
-        $roleIds = array_map(function($r) { return $r->id; }, $ids[0]);
+        $roleIds = Role::where('roles.sis_id', '=', $sis->id)->pluck('id')->toArray();
         $user = UserRole::where('user_id', $userId)->whereIn('user_roles.role_id', $roleIds)->get();
         return response()->json(["data" => $user]);
     }
@@ -96,11 +91,11 @@ class UserRoleController extends Controller
     {
         // Checks pour sisId
         $sisKey = $request->header('Sis-Id', Null);
-        $sis = Sis::first('api_key',$sisKey)->first();
-        if(is_null($sis)) {
+        $sis = Sis::where('api_key', $sisKey)->first();
+        if (is_null($sis)) {
             return response()->json(["error" => "Invalid sis key"], 401);
         }
-        
+
         $data = $request->validate([
             'user_id' => 'required|string|min:1|exists:users,id',
         ]);
@@ -130,8 +125,8 @@ class UserRoleController extends Controller
     {
         // Checks pour sisId
         $sisKey = $request->header('Sis-Id', Null);
-        $sis = Sis::first('api_key',$sisKey)->first();
-        if(is_null($sis)) {
+        $sis = Sis::where('api_key', $sisKey)->first();
+        if (is_null($sis)) {
             return response()->json(["error" => "Invalid sis key"], 401);
         }
 

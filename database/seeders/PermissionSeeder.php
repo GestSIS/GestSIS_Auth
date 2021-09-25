@@ -38,7 +38,7 @@ class PermissionSeeder extends Seeder
             array('id' => 17, 'nom' => 'Config pour contrôle medical', 'description' => 'Configuration pour module contrôles médicaux', 'api_key' => 'controle_medical.config'),
             array('id' => 18, 'nom' => 'Config pour utilisateur', 'description' => 'Configuration des différents rôles', 'api_key' => 'utilisateur.config'),
             array('id' => 19, 'nom' => 'Config générale', 'description' => 'Configuration des informations du SIS', 'api_key' => 'sis.config'),
-            
+
             // Admin
             array('id' => 20, 'nom' => 'Admin', 'description' => 'Paramètres admin du système ', 'api_key' => 'admin.tout'),
         );

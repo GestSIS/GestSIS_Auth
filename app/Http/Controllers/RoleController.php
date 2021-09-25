@@ -17,9 +17,9 @@ class RoleController extends Controller
     public function index(Request $request)
     {
         // Checks pour sisId
-        $sisKey = $request->header('Sis-Id', Null);
-        $sis = Sis::first('api_key', $sisKey)->first();
-        if (is_null($sis)) {
+        $sisKey = $request->header('Sis-Id', null);
+        $sis = Sis::where('api_key', $sisKey)->first();
+        if (is_null($sisKey) || is_null($sis)) {
             return response()->json(["error" => "Invalid sis key"], 401);
         }
 
@@ -36,9 +36,9 @@ class RoleController extends Controller
     public function store(Request $request)
     {
         // Checks pour sisId
-        $sisKey = $request->header('Sis-Id', Null);
-        $sis = Sis::first('api_key', $sisKey)->first();
-        if (is_null($sis)) {
+        $sisKey = $request->header('Sis-Id', null);
+        $sis = Sis::where('api_key', $sisKey)->first();
+        if (is_null($sisKey) || is_null($sis)) {
             return response()->json(["error" => "Invalid sis key"], 401);
         }
 
@@ -74,8 +74,8 @@ class RoleController extends Controller
     {
         // Checks pour sisId
         $sisKey = $request->header('Sis-Id', Null);
-        $sis = Sis::first('api_key', $sisKey)->first();
-        if (is_null($sis)) {
+        $sis = Sis::where('api_key', $sisKey)->first();
+        if (is_null($sisKey) || is_null($sis)) {
             return response()->json(["error" => "Invalid sis key"], 401);
         }
 
@@ -112,8 +112,8 @@ class RoleController extends Controller
     {
         // Checks pour sisId
         $sisKey = $request->header('Sis-Id', Null);
-        $sis = Sis::first('api_key', $sisKey)->first();
-        if (is_null($sis)) {
+        $sis = Sis::where('api_key', $sisKey)->first();
+        if (is_null($sisKey) || is_null($sis)) {
             return response()->json(["error" => "Invalid sis key"], 401);
         }
 

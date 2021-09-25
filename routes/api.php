@@ -30,16 +30,17 @@ Route::group(['prefix' => 'v1'], function () {
     Route::post('confirmer-email', [ApiConfirmerEmailController::class, 'confirmerEmail']);
 
     Route::get('sis', [SisController::class, 'index']);
-    
+
     Route::group(['middleware' => 'jwtTokenRole'], function () {
         Route::get('permissions/', [PermissionController::class, 'index']);
+        Route::post('use-token/', [RegisterTokenController::class, 'consume']);
         // TODO: Ajouter route `enregistrer-token` ou `use-token`
     });
-    
+
     Route::group(['middleware' => 'jwtTokenRole:utilisateur.config'], function () {
         Route::resource('roles', 'RoleController')->only(['index', 'store', 'update', 'destroy']);
     });
-    
+
     Route::group(['middleware' => 'jwtTokenRole:utilisateur.tout'], function () {
         Route::resource('roles', 'RoleController')->only(['index']);
         Route::post('register-token', [RegisterTokenController::class, 'newToken']);
