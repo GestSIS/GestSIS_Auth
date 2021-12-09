@@ -16,7 +16,7 @@ class CreateRegisterTokensTable extends Migration
         Schema::create('register_tokens', function (Blueprint $table) {
             $table->id();
             $table->timestamps();
-            
+
             $table->string('token')->unique();
             $table->string('description')->default("");
             $table->date('validite');

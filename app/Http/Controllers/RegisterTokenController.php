@@ -68,7 +68,7 @@ class RegisterTokenController extends Controller
             return response()->json(["error" => "Token invalide"], 401);
         }
 
-        //TODO: Load user from database by using user_id from jwt token
+        // Load user from database by using user_id from jwt token
         $authToken = $request->bearerToken();
         try {
             $jwt = TokenTools::validateToken($authToken);

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Sis;
 
 class SisController extends Controller
@@ -18,5 +17,4 @@ class SisController extends Controller
 
         return response()->json(['data' => $sis]);
     }
-
 }
