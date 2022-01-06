@@ -22,14 +22,14 @@ class JwtTokenValidatorRole
             return $next($request);
         }
 
-        try{
+        try {
             $token = TokenTools::validateToken($request->bearerToken());
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(["error" => "Accès refusé"], 401);
         }
 
         $sisKey = $request->header('Sis-Id', Null);
-        if (is_null($sisKey)) {
+        if (is_null($sisKey) && !(is_null($role) || $role == '')) {
             return response()->json(["error" => "Sis non sélectionné"], 401);
         }
 
@@ -39,9 +39,9 @@ class JwtTokenValidatorRole
             if (!array_key_exists($sisKey, $perms)) {
                 return response()->json(["error" => "Aucun droit pour ce sis"], 401);
             }
-            
+
             if (!in_array($role, $perms[$sisKey])) {
-                return response()->json(["error" => "Rôle ".$role." manquant"], 401);
+                return response()->json(["error" => "Rôle " . $role . " manquant"], 401);
             }
         }
         return $next($request);

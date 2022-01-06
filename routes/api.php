@@ -30,10 +30,11 @@ Route::group(['prefix' => 'v1'], function () {
     Route::post('confirmer-email', [ApiConfirmerEmailController::class, 'confirmerEmail']);
 
     Route::get('sis', [SisController::class, 'index']);
-    Route::post('use-token/', [RegisterTokenController::class, 'consume']);
 
     Route::group(['middleware' => 'jwtTokenRole'], function () {
         Route::get('permissions/', [PermissionController::class, 'index']);
+        //TODO: Consume token sans sélection d'un SIS
+        Route::post('use-token/', [RegisterTokenController::class, 'consume']);
     });
 
     Route::group(['middleware' => 'jwtTokenRole:utilisateur.config'], function () {
