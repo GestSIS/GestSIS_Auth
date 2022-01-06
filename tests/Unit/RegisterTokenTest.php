@@ -29,7 +29,7 @@ class RegisterTokenTest extends TestCase
             'Sis-Id' => 'test',
             'Authorization' => 'Bearer ' . $bearerToken,
         ])->post("api/v1/register-token/", $params);
-        
+
         $response->assertStatus(200);
     }
 }
