@@ -61,7 +61,7 @@ class ApiRegisterController extends Controller
             $response = Http::withHeaders([
                 'Sis-Id' => '_',
                 'Authorization' => 'Bearer ' . TokenTools::createAccessToken(new User(), ['_' => ['admin']])
-            ])->acceptJson()->timeout(3)->get('http://api:8000/api/v2/email-validate', ['email' => $email]); //->throw()->json();
+            ])->acceptJson()->timeout(3)->get('http://apis.gestsis.ch/api/v2/email-validate', ['email' => $email]); //->throw()->json();
 
             if (!$response->successful() || !$response['data']) {
                 return response()->json(["error" => "Email invalide"], 401);

@@ -34,17 +34,17 @@ class ApiConfirmerEmailController extends Controller
     {
         // TODO: Décider de quoi logger
         Log::debug("Call confirmation de l'email");
-        
+
         $validation = $this->validator($request->all());
-        
+
         if ($validation->fails()) {
             return response()->json(['error' => $validation->errors()], 401);
         }
-        
+
         // Chargement de l'utilisateur
         $token = $request->get('token');
         $user = User::where('validate_email_token', '=', $token)->first();
-        
+
         if (is_null($user)) {
             return response()->json(['error' => 'Jeton de confirmation invalide ou déjà utilisé.'], 401);
         }
@@ -57,7 +57,7 @@ class ApiConfirmerEmailController extends Controller
         $response = Http::withHeaders([
             'Sis-Id' => '_',
             'Authorization' => 'Bearer ' . TokenTools::createAccessToken(new User(), ['_' => ['admin']])
-        ])->acceptJson()->timeout(3)->get('http://api:8000/api/v2/email-validate', ['email' => $user->email]);//->throw()->json();
+        ])->acceptJson()->timeout(3)->get('https://apis.gestsis.ch/api/v2/email-validate', ['email' => $user->email]); //->throw()->json();
 
         if ($response->successful() && $response['data']) {
             // Chargement de la liste des SIS
