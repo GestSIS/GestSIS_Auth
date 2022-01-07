@@ -57,11 +57,10 @@ class ApiRegisterController extends Controller
             // Controle que l'email est existant au sein d'un SIS
             $email = $request->get('email');
 
-            // TODO: Changer endpoint en valeur non hardcodé
             $response = Http::withHeaders([
                 'Sis-Id' => '_',
                 'Authorization' => 'Bearer ' . TokenTools::createAccessToken(new User(), ['_' => ['admin']])
-            ])->acceptJson()->timeout(3)->get('http://apis.gestsis.ch/api/v2/email-validate', ['email' => $email]); //->throw()->json();
+            ])->acceptJson()->timeout(3)->get(env('APP_GESTSIS_API_URL', '') . '/api/v2/email-validate', ['email' => $email]); //->throw()->json();
 
             if (!$response->successful() || !$response['data']) {
                 return response()->json(["error" => "Email invalide"], 401);
