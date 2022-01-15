@@ -91,6 +91,7 @@ class ApiLoginController extends Controller
         $accessToken = TokenTools::createAccessToken($user, $permissions);
 
         // Get active refreshToken
+        // TODO:
         $refreshToken = $user->getActiveRefreshToken();
         if ($refreshToken === null) {
             $token = TokenTools::createRefreshToken();

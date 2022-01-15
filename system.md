@@ -11,6 +11,7 @@
 - Comment faire afin que seul les personnes requisent puissent créer un compte ?
     Lors de la demande de création d'un compte, l'utilisateur saisie son email.
     Si un SIS contient cet email alors il est autorisé à créer son compte -> requière une validation de l'email.
+    Autrement il est refusé
 - Utiliser un captcha pour éviter le spamming
 
 - Quand est-il pour les comptes spéciaux de l'ECA ?
@@ -22,7 +23,7 @@
     Changer email du sapeur afin que son compte soit toujours lié ?
     Garder une trace du sapeur lié ?
 
-- Que faire quand un caisser n'est pas membre du SIS mais utilise GestSIS ?
+- Que faire quand un caissier n'est pas membre du SIS mais utilise GestSIS ?
     Possibilité de générer un code permettant de récupérer des droits et créer un compte ?
     Register avec un lien spécial contenant le token
     Prévoir une interface ou l'utilisateur peut avoir accès aux informations de son compte
@@ -59,8 +60,7 @@ Dévelopement process :
 6. Modification du schéma pour token
 7. Modification register pour prendre en compte un potentiel token
 8. Ajout route pour ajouter un token
-
-9. TODO: Interface graphique, détailler les différentes étapes
+9. Interface graphique, détailler les différentes étapes
 
 Register, 2 cas possible :
 - Avec un token
@@ -79,3 +79,4 @@ A faire :
 2. Changer email
 3. Utiliser token pour compte actif
 4. Tester ce qui est en place.
+5. Changer mdp
