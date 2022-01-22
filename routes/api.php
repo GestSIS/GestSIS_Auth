@@ -10,6 +10,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\RegisterTokenController;
 use App\Http\Controllers\SisController;
+use App\Http\Controllers\ApiMotDePasseController;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,6 +29,7 @@ Route::group(['prefix' => 'v1'], function () {
     Route::post('register', [ApiRegisterController::class, 'register']);
     Route::post('refresh-token', [ApiRefreshTokenController::class, 'refresh']);
     Route::post('confirmer-email', [ApiConfirmerEmailController::class, 'confirmerEmail']);
+    Route::post('change-password', [ApiMotDePasseController::class, 'changer']);
 
     Route::get('sis', [SisController::class, 'index']);
 

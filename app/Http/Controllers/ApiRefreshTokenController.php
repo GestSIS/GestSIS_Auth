@@ -10,7 +10,6 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 
 class ApiRefreshTokenController extends Controller
 {
@@ -33,7 +32,7 @@ class ApiRefreshTokenController extends Controller
         }
 
         $refreshToken = RefreshToken::where('expire', '>', Carbon::now())->where('token', '=', $request->get('token'))->with('user')->first();
-        if(!$refreshToken){
+        if (!$refreshToken) {
             return response()->json(['error' => 'Refresh token expired'], 401);
         }
 

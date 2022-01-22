@@ -11,11 +11,11 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
-class ApiLoginController extends Controller
+class ApiMotDePasseController extends Controller
 {
     /**
      * Handle a login request to the application.
@@ -25,34 +25,22 @@ class ApiLoginController extends Controller
      *
      * @throws ValidationException
      */
-    public function login(Request $request)
+    public function changer(Request $request)
     {
-        Log::debug("login");
-        $validation = $this->validator($request->all());
-
-        if ($validation->fails()) {
-            return response()->json(['error' => $validation->errors()], 401);
-        }
-
-        if ($this->attemptLogin($request)) {
-            return $this->sendLoginResponse($request, Auth::user());
-        }
-
-        return response()->json(['error' => 'invalid credentials'], 401);
-    }
-
-    /**
-     * Get a validator for an incoming registration request.
-     *
-     * @param array $data
-     * @return \Illuminate\Contracts\Validation\Validator
-     */
-    protected function validator(array $data)
-    {
-        return Validator::make($data, [
+        Log::debug("Changer mdp");
+        $data = $request->validate([
             $this->username() => 'required|string',
             'password' => 'required|string',
+            'new_password' => 'required|string|min:8',
         ]);
+
+        if ($this->attemptLogin($request)) {
+            $user = Auth::user();
+            User::find($user->id)->update(['password' => Hash::make($data['new_password'])]);
+            return response()->json(['message' => 'Modification effectuée avec succès'], 500);
+        }
+
+        return response()->json(['error' => 'Identifiants invalides'], 401);
     }
 
     /**
