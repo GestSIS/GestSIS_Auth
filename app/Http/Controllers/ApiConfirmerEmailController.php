@@ -51,6 +51,7 @@ class ApiConfirmerEmailController extends Controller
 
         // Validation du compte
         $user->validate_email_token = null;
+        $user->email_verified_at = Carbon::now();
         $user->save();
 
         // Ajout des liaisons avec sapeur
