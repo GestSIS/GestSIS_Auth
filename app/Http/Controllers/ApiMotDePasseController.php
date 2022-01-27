@@ -37,7 +37,7 @@ class ApiMotDePasseController extends Controller
         if ($this->attemptLogin($request)) {
             $user = Auth::user();
             User::find($user->id)->update(['password' => Hash::make($data['new_password'])]);
-            return response()->json(['message' => 'Modification effectuée avec succès'], 200);
+            return response()->json(['message' => 'Modification effectuée avec succès']);
         }
 
         return response()->json(['error' => 'Identifiants invalides'], 401);
