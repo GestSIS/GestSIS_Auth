@@ -41,6 +41,9 @@ class PermissionSeeder extends Seeder
 
             // Admin
             array('id' => 20, 'nom' => 'Admin', 'description' => 'Paramètres admin du système ', 'api_key' => 'admin.tout'),
+
+            // Rajouté
+            array('id' => 21, 'nom' => 'Exercice lecture', 'description' => 'Affichage des exercices ', 'api_key' => 'exercice.lecture'),
         );
 
         foreach ($elements as $element) {
