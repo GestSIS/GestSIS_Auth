@@ -31,7 +31,10 @@ class PermissionSeeder extends Seeder
 
             // Config
             array('id' => 12, 'nom' => 'Config pour sapeur', 'description' => 'Configuration pour module sapeur', 'api_key' => 'sapeur.config'),
-            array('id' => 13, 'nom' => 'Config pour organisation', 'description' => 'Configuration pour groupes', 'api_key' => 'organisation.config'),
+
+            // Supprimé
+            // array('id' => 13, 'nom' => 'Config pour organisation', 'description' => 'Configuration pour groupes', 'api_key' => 'organisation.config'),
+
             array('id' => 14, 'nom' => 'Config pour exercice', 'description' => 'Configuration pour module exercice', 'api_key' => 'exercice.config'),
             array('id' => 15, 'nom' => 'Config pour intervention', 'description' => 'Configuration pour module intervention', 'api_key' => 'intervention.config'),
             array('id' => 16, 'nom' => 'Config pour comptabilite', 'description' => 'Configuration pour module contrôles médicaux', 'api_key' => 'comptabilite.config'),
@@ -44,6 +47,8 @@ class PermissionSeeder extends Seeder
 
             // Rajouté
             array('id' => 21, 'nom' => 'Exercice lecture', 'description' => 'Affichage des exercices ', 'api_key' => 'exercice.lecture'),
+            array('id' => 22, 'nom' => 'Effectif', 'description' => 'Affichage de l\'effectif ', 'api_key' => 'effectif.all'),
+            array('id' => 23, 'nom' => 'Intervention lecture', 'description' => 'Affichage des interventions ', 'api_key' => 'intervention.lecture'),
         );
 
         foreach ($elements as $element) {

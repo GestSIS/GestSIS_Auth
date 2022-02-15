@@ -14,5 +14,4 @@ class RefreshToken extends Model
     {
         return $this->belongsTo('App\User');
     }
-
 }
