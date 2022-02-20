@@ -5,6 +5,7 @@ namespace App\Auth;
 
 use Carbon\Carbon;
 use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -103,6 +104,6 @@ class TokenTools
         Log::debug("VALIDATE TOKEN");
         $publicKey = Storage::disk('keys')->get(self::PUBLIC_KEY_FILE);
 
-        return JWT::decode($token, $publicKey, array('RS256'));
+        return JWT::decode($token, new Key($publicKey, 'RS256'));
     }
 }
