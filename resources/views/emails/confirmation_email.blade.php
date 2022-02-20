@@ -1,9 +1,9 @@
 Bienvenu dans GestSIS,
 
 Merci de confirmer votre email en cliquant sur le lien suivant : 
-- {{ env('APP_GESTSIS_APP_URL','') }}/#/confirmation?token={{ $user->validate_email_token }}
+- {{ config('gestsis.app_url','') }}/#/confirmation?token={{ $user->validate_email_token }}
 
-Si vous n'avez pas demander la création d'un compte, merci de le signaler en répondant à cet email.
+Si vous n'avez pas demandé la création d'un compte, merci de le signaler en répondant à cet email.
 Cordialement,
 
 L'équipe GestSIS
