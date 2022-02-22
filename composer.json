@@ -10,7 +10,6 @@
     "require": {
         "php": "^8.0",
         "firebase/php-jwt": "^6.0",
-        "fruitcake/laravel-cors": "^2.0.1",
         "guzzlehttp/guzzle": "^7.0.1",
         "laravel/framework": "^9.0",
         "laravel/tinker": "^2.0",
