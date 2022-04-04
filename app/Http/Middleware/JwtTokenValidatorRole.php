@@ -41,7 +41,7 @@ class JwtTokenValidatorRole
             }
 
             if (!in_array($role, $perms[$sisKey])) {
-                return response()->json(["error" => "Rôle " . $role . " manquant"], 401);
+                return response()->json(["error" => "Rôle " . join(", ", $role) . " manquant"], 401);
             }
         }
         return $next($request);
