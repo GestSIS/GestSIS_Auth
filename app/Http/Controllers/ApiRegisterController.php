@@ -8,6 +8,7 @@ use App\RefreshToken;
 use App\RegisterToken;
 use App\User;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
@@ -71,10 +72,16 @@ class ApiRegisterController extends Controller
         $refreshToken = new RefreshToken();
         $refreshToken->token = $token->token;
         $refreshToken->expire = $token->expire;
-        $user->refreshTokens()->save($refreshToken);
 
         // Envoie du lien de confirmation par email
-        Mail::to($user)->send(new ConfirmationEmail($user));
+        try {
+            Mail::to($user)->send(new ConfirmationEmail($user));
+        } catch (Exception $e) {
+            $user->delete();
+            return response()->json(["error" => "Une erreur à eu lieu lors de l'envoie de l'email de confirmation"]);
+        }
+
+        $user->refreshTokens()->save($refreshToken);
 
         // Ajoute des rôles
         $user->roles()->attach($rolesId);
