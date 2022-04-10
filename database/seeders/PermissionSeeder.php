@@ -49,6 +49,9 @@ class PermissionSeeder extends Seeder
             array('id' => 21, 'nom' => 'Exercice lecture', 'description' => 'Affichage des exercices ', 'api_key' => 'exercice.lecture'),
             array('id' => 22, 'nom' => 'Effectif', 'description' => 'Affichage de l\'effectif ', 'api_key' => 'effectif.all'),
             array('id' => 23, 'nom' => 'Intervention lecture', 'description' => 'Affichage des interventions ', 'api_key' => 'intervention.lecture'),
+
+            // Bon choix ?
+            // array('id' => 24, 'nom' => 'Intervention création', 'description' => 'Création des interventions sans visualisation ', 'api_key' => 'intervention.creation'),
         );
 
         foreach ($elements as $element) {

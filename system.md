@@ -79,4 +79,11 @@ A faire :
 2. Changer email
 3. Utiliser token pour compte actif
 4. Tester ce qui est en place.
-5. Changer mdp
+
+Comptes spéciaux mobile, characteristiques
+- Je ne veux pas qu'il soit possible de changer le mdp facilement depuis GestSIS App
+- Je ne veux pas qu'ils puissent accéder à GestSIS App et puissent visualiser l'ensemble des interventions
+
+Que faire, solution simple :
+- Comptes tablettes en @gestsis.ch
+- Empêcher le changement de mdp de ces comptes et la connexion via la plateforme gestsis app

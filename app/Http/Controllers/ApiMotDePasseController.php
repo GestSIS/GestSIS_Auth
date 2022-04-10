@@ -34,6 +34,11 @@ class ApiMotDePasseController extends Controller
             'new_password' => 'required|string|min:8',
         ]);
 
+        $endString = "@gestsis.ch";
+        if (substr(strtolower($data[$this->username()]), -strlen($endString)) === $endString) {
+            return response()->json(['error' => 'Modification de mot de passe refusée'], 401);
+        }
+
         if ($this->attemptLogin($request)) {
             $user = Auth::user();
             User::find($user->id)->update(['password' => Hash::make($data['new_password'])]);
@@ -68,6 +73,8 @@ class ApiMotDePasseController extends Controller
     }
 
     /**
+     * 
+     * if ($data[])
      * Send the response after the user was authenticated.
      *
      * @param Request $request
