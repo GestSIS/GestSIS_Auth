@@ -44,20 +44,39 @@ class User extends Authenticatable
     {
         // Load permissions
         $permissions = DB::table('permissions')
-        ->join('permission_roles', 'permissions.id', '=', 'permission_roles.permission_id')
-        ->join('roles', 'roles.id', '=', 'permission_roles.role_id')
-        ->join('user_roles', 'roles.id', '=', 'user_roles.role_id')
-        ->join('sis', 'sis.id', '=', 'roles.sis_id')
-        ->where('user_roles.user_id', '=', $userId)
-        ->select('permissions.api_key as perm_key', 'sis.api_key as sis_key')
-        ->distinct()
-        ->get();
+            ->join('permission_roles', 'permissions.id', '=', 'permission_roles.permission_id')
+            ->join('roles', 'roles.id', '=', 'permission_roles.role_id')
+            ->join('user_roles', 'roles.id', '=', 'user_roles.role_id')
+            ->join('sis', 'sis.id', '=', 'roles.sis_id')
+            ->where('user_roles.user_id', '=', $userId)
+            ->select('permissions.api_key as perm_key', 'sis.api_key as sis_key')
+            ->distinct()
+            ->get();
 
         $groupedPermissions = array();
         foreach ($permissions as $element) {
             $groupedPermissions[$element->sis_key][] = $element->perm_key;
         }
         return $groupedPermissions;
+    }
+
+    public static function getMobile($userId)
+    {
+        $mobiles = DB::table('roles')
+            ->join('user_roles', 'roles.id', '=', 'user_roles.role_id')
+            ->join('sis', 'sis.id', '=', 'roles.sis_id')
+            ->where('user_roles.user_id', '=', $userId)
+            ->select('sis.api_key as sis_key', 'sis.mobile as mobile')
+            ->distinct()
+            ->get();
+
+        $groupedMobile = array();
+        foreach ($mobiles as $element) {
+            if ($element->mobile) {
+                $groupedMobile[$element->sis_key][] = $element->mobile;
+            }
+        }
+        return $groupedMobile;
     }
 
     public function refreshTokens()

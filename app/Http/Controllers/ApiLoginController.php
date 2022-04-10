@@ -88,7 +88,8 @@ class ApiLoginController extends Controller
     protected function sendLoginResponse(Request $request, $user)
     {
         $permissions = User::getPermissions($user->id);
-        $accessToken = TokenTools::createAccessToken($user, $permissions);
+        $mobiles = User::getMobile($user->id);
+        $accessToken = TokenTools::createAccessToken($user, $permissions, $mobiles);
 
         // Get active refreshToken
         // TODO:
