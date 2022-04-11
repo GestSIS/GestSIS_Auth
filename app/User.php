@@ -76,7 +76,7 @@ class User extends Authenticatable
                 $groupedMobile[$element->sis_key][] = $element->mobile;
             }
         }
-        return $groupedMobile;
+        return array_keys($groupedMobile);
     }
 
     public function refreshTokens()
