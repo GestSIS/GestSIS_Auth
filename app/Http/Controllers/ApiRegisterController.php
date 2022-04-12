@@ -58,7 +58,7 @@ class ApiRegisterController extends Controller
 
             $response = Http::withHeaders([
                 'Sis-Id' => '_',
-                'Authorization' => 'Bearer ' . TokenTools::createAccessToken(new User(), ['_' => ['admin']])
+                'Authorization' => 'Bearer ' . TokenTools::createAccessToken(new User(), ['_' => ['admin']], [])
             ])->acceptJson()->timeout(3)->get(config('gestsis.api_url', '') . '/api/v2/email-validate', ['email' => $email]); //->throw()->json();
 
             if (!$response->successful() || !$response['data']) {
@@ -89,7 +89,8 @@ class ApiRegisterController extends Controller
 
         // Load permissions
         $permissions = User::getPermissions($user->id);
-        $accessToken = TokenTools::createAccessToken($user, $permissions);
+        $mobiles = User::getMobile($user->id);
+        $accessToken = TokenTools::createAccessToken($user, $permissions, $mobiles);
 
         // Suppression du token
         if (!is_null($registerToken)) {

@@ -96,7 +96,8 @@ class RegisterTokenController extends Controller
 
         // Load permissions
         $permissions = User::getPermissions($user->id);
-        $accessToken = TokenTools::createAccessToken($user, $permissions);
+        $mobiles = User::getMobile($user->id);
+        $accessToken = TokenTools::createAccessToken($user, $permissions, $mobiles);
 
         // Suppression du token
         if (!is_null($registerToken)) {

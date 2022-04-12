@@ -18,7 +18,7 @@ class RegisterTokenTest extends TestCase
     public function testCreateRegisterTokenWithValidPermissions()
     {
         $user = new User();
-        $bearerToken = TokenTools::createAccessToken($user, ['test' => ['utilisateur.tout']]);
+        $bearerToken = TokenTools::createAccessToken($user, ['test' => ['utilisateur.tout']], []);
         $params = [
             'roles' => [
                 3

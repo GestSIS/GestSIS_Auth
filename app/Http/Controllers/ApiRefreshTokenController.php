@@ -37,7 +37,8 @@ class ApiRefreshTokenController extends Controller
         }
 
         $permissions = User::getPermissions($refreshToken->user_id);
-        $accessToken = TokenTools::createAccessToken($refreshToken->user, $permissions);
+        $mobiles = User::getMobile($user->id);
+        $accessToken = TokenTools::createAccessToken($refreshToken->user, $permissions, mobiles);
 
         return response()->json(
             array(
