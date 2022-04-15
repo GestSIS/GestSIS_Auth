@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class ApiRegisterController extends Controller
 {
@@ -78,7 +79,7 @@ class ApiRegisterController extends Controller
             Mail::to($user)->send(new ConfirmationEmail($user));
         } catch (Exception $e) {
             $user->delete();
-            return response()->json(["error" => "Une erreur à eu lieu lors de l'envoie de l'email de confirmation"]);
+            return response()->json(["error" => "Une erreur à eu lieu lors de l'envoie de l'email de confirmation"], 401);
         }
 
         $user->refreshTokens()->save($refreshToken);

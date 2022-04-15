@@ -4,7 +4,6 @@ namespace App\Mail;
 
 use App\User;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
@@ -32,7 +31,7 @@ class ConfirmationEmail extends Mailable
     public function build()
     {
         return $this->from('test@gestsis.ch', 'GestSIS')
-                    ->subject("Inscription à GestSIS")
-                    ->text('emails.confirmation_email');
+            ->subject("Inscription à GestSIS")
+            ->text('emails.confirmation_email');
     }
 }
