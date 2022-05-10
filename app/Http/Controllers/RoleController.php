@@ -44,11 +44,10 @@ class RoleController extends Controller
 
         $data = $request->validate([
             'nom' => 'required|string|min:1',
-            'description' => 'string|nullable',
+            'description' => 'string|required',
             'sis_id' => 'required|integer|exists:sis,id',
             'permissions.*' => 'integer',
         ]);
-
 
         if ($data['sis_id'] != $sis->id) {
             return response()->json(["error" => "Invalid sis id"], 401);
@@ -82,7 +81,7 @@ class RoleController extends Controller
         $data = $request->validate([
             'id' => 'required|integer|min:1|exists:roles,id',
             'nom' => 'required|string',
-            'description' => 'string|nullable',
+            'description' => 'string|required',
             'sis_id' => 'required|integer|exists:sis,id',
             'permissions.*' => 'integer',
         ]);
