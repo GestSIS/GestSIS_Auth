@@ -34,7 +34,7 @@ class TokenTools
      */
     public static function createAccessToken($user, $permissions, $mobiles)
     {
-        Log::debug("CREATE ACCESS TOKEN");
+        Log::debug("CREATE ACCESS TOKEN " . $user->name);
 
         $privateKey = Storage::disk('keys')->get(self::PRIVATE_KEY_FILE);
 

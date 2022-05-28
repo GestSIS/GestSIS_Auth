@@ -47,7 +47,7 @@ class PermissionSeeder extends Seeder
 
             // Rajouté
             array('id' => 21, 'nom' => 'Exercice lecture', 'description' => 'Affichage des exercices ', 'api_key' => 'exercice.lecture'),
-            array('id' => 22, 'nom' => 'Effectif', 'description' => 'Affichage de l\'effectif ', 'api_key' => 'effectif.all'),
+            array('id' => 22, 'nom' => 'Effectif', 'description' => 'Affichage de l\'effectif ', 'api_key' => 'effectif.tout'),
             array('id' => 23, 'nom' => 'Intervention lecture', 'description' => 'Affichage des interventions ', 'api_key' => 'intervention.lecture'),
 
             // Bon choix ?
