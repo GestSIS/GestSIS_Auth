@@ -92,7 +92,9 @@ class ApiLoginController extends Controller
         $accessToken = TokenTools::createAccessToken($user, $permissions, $mobiles);
 
         // Get active refreshToken
-        // TODO:
+        // TODO: We should create a single use refreshToken
+        //       Usable only once, to prevent any one to steal an old token and authenticate using it.
+        //       When used, should be deactivated and a new one should be generated
         $refreshToken = $user->getActiveRefreshToken();
         if ($refreshToken === null) {
             $token = TokenTools::createRefreshToken();
@@ -101,6 +103,11 @@ class ApiLoginController extends Controller
             $refreshToken->token = $token->token;
             $refreshToken->expire = $token->expire;
             $user->refreshTokens()->save($refreshToken);
+        } else {
+            // Expand refreshToken duration
+            $token = TokenTools::createRefreshToken();
+            $refreshToken->expire = $token->expire;
+            $refreshToken->save();
         }
 
         return response()->json(
