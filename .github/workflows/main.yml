@@ -33,13 +33,13 @@ jobs:
           SSH_FOLDER: ${{ secrets.STAGING_SSH_FOLDER }}
 
       - name: Checkout the source
-        run: ssh staging 'cd $SSH_FOLDER && git pull'
+        run: ssh staging "cd $SSH_FOLDER && git pull"
 
       - name: Install dependencies
-        run: ssh staging 'cd $SSH_FOLDER && composer install --optimize-autoloader --no-dev'
+        run: ssh staging "cd $SSH_FOLDER && composer install --optimize-autoloader --no-dev"
 
       - name: Optimize build
-        run: ssh staging 'cd $SSH_FOLDER && php artisan optimize'
+        run: ssh staging "cd $SSH_FOLDER && php artisan optimize"
 
       - name: Run migrations
-        run: ssh staging 'cd $SSH_FOLDER && php artisan migrate --force --no-interaction --env=production'
+        run: ssh staging "cd $SSH_FOLDER && php artisan migrate --force --no-interaction --env=production"
