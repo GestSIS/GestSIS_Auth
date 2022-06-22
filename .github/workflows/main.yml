@@ -32,6 +32,9 @@ jobs:
           SSH_HOST: ${{ secrets.STAGING_SSH_HOST }}
           SSH_FOLDER: ${{ secrets.STAGING_SSH_FOLDER }}
 
+      - name: Test
+        run: ssh staging "cd $SSH_FOLDER && ls"
+
       - name: Checkout the source
         run: ssh staging "cd $SSH_FOLDER && git pull"
 
