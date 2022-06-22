@@ -31,9 +31,6 @@ jobs:
           SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
           SSH_HOST: ${{ secrets.STAGING_SSH_HOST }}
 
-      - name: Test
-        run: ssh staging "echo $SSH_FOLDER && ls"
-
       - name: Checkout the source
         run: ssh staging "cd auth.gestsis.ch && git pull"
 
