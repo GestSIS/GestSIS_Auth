@@ -1,3 +1,5 @@
+[![CI](https://github.com/Ph0tonic/GestSIS_Auth/actions/workflows/main.yml/badge.svg?branch=master)](https://github.com/Ph0tonic/GestSIS_Auth/actions/workflows/main.yml)
+
 # GestSIS_Auth
 
 Serveur d'authentification pour la nouvelle API GestSIS
