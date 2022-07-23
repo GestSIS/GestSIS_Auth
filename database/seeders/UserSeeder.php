@@ -17,7 +17,7 @@ class UserSeeder extends Seeder
     public function run()
     {
         $elements = array(
-            array('id' => 1, 'name' => 'admin', 'email' => 'test@gmail.com', 'email_verified_at' => Carbon::yesterday(), 'password' => Hash::make('apptest')),
+            array('id' => 1, 'name' => 'admin', 'admin' => true, 'email' => 'test@gmail.com', 'email_verified_at' => Carbon::yesterday(), 'password' => Hash::make('apptest')),
         );
 
         foreach ($elements as $element) {
