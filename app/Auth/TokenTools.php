@@ -50,6 +50,7 @@ class TokenTools
             "exp" => $expire_claim,
             "data" => [
                 "id" => $user->id,
+                "admin" => $user->admin,
                 "pseudo" => $user->name,
                 "email" => $user->email,
                 "permissions" => $permissions,
