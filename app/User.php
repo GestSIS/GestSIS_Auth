@@ -45,7 +45,6 @@ class User extends Authenticatable
         $user = User::find($userId);
         if ($user && $user->admin) {
             $sisListe = Sis::all();
-
             $groupedPermissions = array();
             foreach ($sisListe as $element) {
                 $groupedPermissions[$element->api_key][] = "admin";
