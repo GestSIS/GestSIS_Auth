@@ -32,7 +32,7 @@ class TokenTools
      * @return string
      * @throws FileNotFoundException
      */
-    public static function createAccessToken($user, $permissions, $mobiles)
+    public static function createAccessToken($user, $permissions, $mobiles, $sapeurs)
     {
         Log::debug("CREATE ACCESS TOKEN " . $user->name);
 
@@ -55,6 +55,7 @@ class TokenTools
                 "email" => $user->email,
                 "permissions" => $permissions,
                 "mobiles" => $mobiles,
+                "sapeurs" => $sapeurs,
             ]
         );
 

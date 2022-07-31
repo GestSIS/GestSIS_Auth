@@ -57,7 +57,7 @@ class ApiConfirmerEmailController extends Controller
         // Ajout des liaisons avec sapeur
         $response = Http::withHeaders([
             'Sis-Id' => '_',
-            'Authorization' => 'Bearer ' . TokenTools::createAccessToken(new User(), ['_' => ['admin']], [])
+            'Authorization' => 'Bearer ' . TokenTools::createAccessToken(new User(), ['_' => ['admin']], [], [])
         ])->acceptJson()->timeout(3)->get(config('gestsis.api_url', '') . '/api/v2/email-validate', ['email' => $user->email]); //->throw()->json();
 
         if ($response->successful() && $response['data']) {
@@ -74,7 +74,8 @@ class ApiConfirmerEmailController extends Controller
 
         $permissions = User::getPermissions($user->id);
         $mobiles = User::getMobile($user->id);
-        $accessToken = TokenTools::createAccessToken($user, $permissions, $mobiles);
+        $sapeurs = User::getSapeurs($user->id);
+        $accessToken = TokenTools::createAccessToken($user, $permissions, $mobiles, $sapeurs);
 
         return response()->json(
             array(

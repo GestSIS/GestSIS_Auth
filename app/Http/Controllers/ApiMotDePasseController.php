@@ -84,7 +84,8 @@ class ApiMotDePasseController extends Controller
     {
         $permissions = User::getPermissions($user->id);
         $mobiles = User::getMobile($user->id);
-        $accessToken = TokenTools::createAccessToken($user, $permissions, $mobiles);
+        $sapeurs = User::getSapeurs($user->id);
+        $accessToken = TokenTools::createAccessToken($user, $permissions, $mobiles, $sapeurs);
 
         // Get active refreshToken
         // TODO:

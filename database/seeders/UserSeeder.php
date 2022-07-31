@@ -32,5 +32,14 @@ class UserSeeder extends Seeder
         foreach ($elements as $element) {
             DB::table('user_roles')->insert($element);
         }
+
+        $elements = array(
+            array('user_id' => 1, 'sapeur_id' => 1, 'sis_id' => 1),
+            array('user_id' => 1, 'sapeur_id' => 1, 'sis_id' => 2),
+        );
+
+        foreach ($elements as $element) {
+            DB::table('sapeurs')->insert($element);
+        }
     }
 }

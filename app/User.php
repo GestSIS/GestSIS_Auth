@@ -71,6 +71,22 @@ class User extends Authenticatable
         }
     }
 
+    public static function getSapeurs($userId)
+    {
+        $sapeurs = DB::table('sapeurs')
+            ->join('sis', 'sis.id', '=', 'sapeurs.sis_id')
+            ->where('sapeurs.user_id', '=', $userId)
+            ->select('sis.api_key as sis_key', 'sapeurs.sapeur_id as sapeur_id')
+            ->distinct()
+            ->get();
+
+        $indexedSapeurs = array();
+        foreach ($sapeurs as $element) {
+            $indexedSapeurs[$element->sis_key] = $element->sapeur_id;
+        }
+        return $indexedSapeurs;
+    }
+
     public static function getMobile($userId)
     {
         $mobiles = DB::table('roles')
