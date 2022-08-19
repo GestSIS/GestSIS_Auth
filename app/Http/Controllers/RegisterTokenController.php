@@ -37,9 +37,11 @@ class RegisterTokenController extends Controller
         $roles = Role::whereIn('id', $rolesId)->with('sis')->get();
 
         // Controle que les rôles à ajouter peuvent l'être par l'utilisateur
-        foreach ($roles as $element) {
-            if (!array_key_exists($element->sis->api_key, $permissions) || !in_array('utilisateur.tout', $permissions[$element->sis->api_key])) {
-                return response()->json(["error" => "Permissions insuffisantes for " . $element->sis->api_key], 401);
+        if ($jwt->data->admin !== true) {
+            foreach ($roles as $element) {
+                if (!array_key_exists($element->sis->api_key, $permissions) || !in_array('utilisateur.tout', $permissions[$element->sis->api_key])) {
+                    return response()->json(["error" => "Permissions insuffisantes for " . $element->sis->api_key], 401);
+                }
             }
         }
 
