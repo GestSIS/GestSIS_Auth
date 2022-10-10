@@ -104,7 +104,7 @@ class ApiMotDePasseController extends Controller
 
         // Controller la validité
         if (is_null($resetPasswordToken)) {
-            return response()->json(['error' => ['message' => 'Jeton invalide']], 401);
+            return response()->json(['error' => ['message' => 'Jeton invalide ou déjà utilisé']], 401);
         }
         if (Carbon::parse($resetPasswordToken->validite)->lt(Carbon::now())) {
             return response()->json(['error' => ['message' => 'Jeton expiré']], 401);
