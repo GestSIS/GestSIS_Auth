@@ -95,8 +95,9 @@ class ApiMotDePasseController extends Controller
             return response()->json(['message' => 'Jeton de réinitialisation manquant ou mot de passe invalide']);
         }
 
-        $jeton = $validation['token'];
-        $password = $validation['password'];
+        $validated = $validation->validated();
+        $jeton = $validated['token'];
+        $password = $validated['password'];
 
         // Chargement du jeton depuis la DB
         $resetPasswordToken = ResetPasswordToken::where('jeton', '=', $jeton)->first();
