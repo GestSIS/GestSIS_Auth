@@ -13,7 +13,7 @@ class CreatePasswordResetTable extends Migration
      */
     public function up()
     {
-        Schema::create('password_reset_tokens', function (Blueprint $table) {
+        Schema::create('reset_password_tokens', function (Blueprint $table) {
             $table->string('token');
             $table->timestamp('validite');
 
@@ -29,6 +29,6 @@ class CreatePasswordResetTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('reset_password_tokens');
     }
 }
