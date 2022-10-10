@@ -44,7 +44,7 @@ class ApiMotDePasseController extends Controller
         ]);
 
         if ($validation->fails()) {
-            return response()->json(['message' => self::RESET_MDP_CONFIRMATION_RESPONSE]);
+            return response()->json(['error' => ['message' => 'email manquant']], 401);
         }
 
         // Chargement de l'utilisateur
