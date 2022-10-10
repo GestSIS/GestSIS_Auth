@@ -14,6 +14,8 @@ class CreateResetPasswordTokenTable extends Migration
     public function up()
     {
         Schema::create('reset_password_tokens', function (Blueprint $table) {
+            $table->timestamps();
+
             $table->string('token');
             $table->timestamp('validite');
 
