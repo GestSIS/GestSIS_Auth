@@ -92,7 +92,7 @@ class ApiMotDePasseController extends Controller
         ]);
 
         if ($validation->fails()) {
-            return response()->json(['message' => 'Jeton de réinitialisation manquant ou mot de passe invalide']);
+            return response()->json(['error' => ['message' => 'Jeton de réinitialisation manquant ou mot de passe invalide']], 401);
         }
 
         $validated = $validation->validated();
