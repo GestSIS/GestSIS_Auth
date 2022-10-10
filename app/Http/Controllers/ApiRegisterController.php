@@ -17,7 +17,6 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
-use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class ApiRegisterController extends Controller
 {

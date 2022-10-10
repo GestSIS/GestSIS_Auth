@@ -14,12 +14,14 @@ use Stdclass;
 
 class TokenTools
 {
+    private const RESET_TOKEN_DURATION_IN_HOURS = 1;
     private const ACCESS_TOKEN_DURATION_IN_HOURS = 8;
     private const REFRESH_TOKEN_DURATION_IN_DAYS = 30;
     private const CONFIRMATION_TOKEN_DURATION_IN_DAYS = 30;
 
     private const REFRESH_TOKEN_LENGTH = 16;
     private const VALIDATION_TOKEN_LENGTH = 32;
+    private const RESET_TOKEN_LENGTH = 32;
 
     private const ISSUER = "GestSIS_Auth";
     private const AUDIENCE = "GestSIS_API";
@@ -94,6 +96,23 @@ class TokenTools
         $confirmToken->token = bin2hex($token);
         $confirmToken->expire = Carbon::now()->addDays(self::CONFIRMATION_TOKEN_DURATION_IN_DAYS);
         return $confirmToken;
+    }
+
+    /**
+     * @return Stdclass $token
+     */
+    public static function createResetToken()
+    {
+        Log::debug("CREATE Reset TOKEN");
+
+        //Generate a random string.
+        $token = Str::random(self::RESET_TOKEN_LENGTH);
+
+        //Convert the binary data into hexadecimal representation.
+        $resetToken = new Stdclass();
+        $resetToken->token = bin2hex($token);
+        $resetToken->expire = Carbon::now()->addDays(self::RESET_TOKEN_DURATION_IN_HOURS);
+        return $resetToken;
     }
 
     /**

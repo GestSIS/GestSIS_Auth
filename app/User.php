@@ -129,4 +129,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Sapeur::class);
     }
+
+    public function resetPasswordTokens()
+    {
+        return $this->hasMany(ResetPasswordToken::class, 'user_id');
+    }
 }

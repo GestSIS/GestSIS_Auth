@@ -3,23 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Auth\TokenTools;
-use App\Mail\ConfirmationEmail;
-use App\RefreshToken;
-use App\RegisterToken;
-use App\RegisterTokenRole;
 use App\Sapeur;
 use App\Sis;
 use App\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Mail;
 
 class ApiConfirmerEmailController extends Controller
 {

@@ -29,6 +29,8 @@ Route::group(['prefix' => 'v1'], function () {
     Route::post('register', [ApiRegisterController::class, 'register']);
     Route::post('refresh-token', [ApiRefreshTokenController::class, 'refresh']);
     Route::post('confirmer-email', [ApiConfirmerEmailController::class, 'confirmerEmail']);
+    Route::post('forgotten-password', [ApiMotDePasseController::class, 'request']);
+    Route::post('reset-password', [ApiMotDePasseController::class, 'reset']);
     Route::post('change-password', [ApiMotDePasseController::class, 'changer']);
 
     Route::get('sis', [SisController::class, 'index']);
