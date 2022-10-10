@@ -100,7 +100,7 @@ class ApiMotDePasseController extends Controller
         $password = $validated['password'];
 
         // Chargement du jeton depuis la DB
-        $resetPasswordToken = ResetPasswordToken::where('jeton', '=', $jeton)->first();
+        $resetPasswordToken = ResetPasswordToken::where('token', '=', $jeton)->first();
 
         // Controller la validité
         if (is_null($resetPasswordToken)) {
