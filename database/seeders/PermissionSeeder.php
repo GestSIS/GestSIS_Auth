@@ -43,15 +43,20 @@ class PermissionSeeder extends Seeder
             array('id' => 19, 'tri' => 70, 'nom' => 'Config générale', 'description' => 'Configuration des informations du SIS', 'api_key' => 'sis.config'),
 
             // Admin
-            array('id' => 20, 'tri' => 100, 'nom' => 'Admin', 'description' => 'Paramètres admin du système ', 'api_key' => 'admin.tout'),
+            array('id' => 20, 'tri' => 100, 'nom' => 'Admin', 'description' => 'Paramètres admin du système', 'api_key' => 'admin.tout'),
 
             // Rajouté
-            array('id' => 21, 'tri' => 10, 'nom' => 'Exercice lecture', 'description' => 'Affichage des exercices ', 'api_key' => 'exercice.lecture'),
-            array('id' => 22, 'tri' => -10, 'nom' => 'Effectif', 'description' => 'Affichage de l\'effectif ', 'api_key' => 'effectif.tout'),
-            array('id' => 23, 'tri' => 20, 'nom' => 'Intervention lecture', 'description' => 'Affichage des interventions ', 'api_key' => 'intervention.lecture'),
+            array('id' => 21, 'tri' => 10, 'nom' => 'Exercice lecture', 'description' => 'Affichage des exercices', 'api_key' => 'exercice.lecture'),
+            array('id' => 22, 'tri' => -10, 'nom' => 'Effectif', 'description' => 'Affichage de l\'effectif', 'api_key' => 'effectif.tout'),
+            array('id' => 23, 'tri' => 20, 'nom' => 'Intervention lecture', 'description' => 'Affichage des interventions', 'api_key' => 'intervention.lecture'),
 
             // Bon choix ?
-            // array('id' => 24, 'nom' => 'Intervention création', 'description' => 'Création des interventions sans visualisation ', 'api_key' => 'intervention.creation'),
+            // array('id' => 24, 'nom' => 'Intervention création', 'description' => 'Création des interventions sans visualisation', 'api_key' => 'intervention.creation'),
+
+            array('id' => 24, 'tri' => 45, 'nom' => 'Mat. perso lecture', 'description' => 'Affichage du matériel personnel', 'api_key' => 'mat_perso.lecture'),
+            array('id' => 25, 'tri' => 46, 'nom' => 'Mat. perso modification', 'description' => 'Modification du matériel personnel', 'api_key' => 'mat_perso.modification'),
+            array('id' => 26, 'tri' => 47, 'nom' => 'Mat. perso config', 'description' => 'Configuration du matériel personnel', 'api_key' => 'mat_perso.config'),
+
         );
 
         foreach ($elements as $element) {
