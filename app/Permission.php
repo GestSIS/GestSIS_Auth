@@ -12,4 +12,6 @@ class Permission extends Model
     protected $fillable = [
         'nom', 'description', 'api_key'
     ];
+
+    protected $casts = ['sis_id' => 'integer'];
 }
