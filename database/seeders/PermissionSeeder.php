@@ -57,6 +57,9 @@ class PermissionSeeder extends Seeder
             array('id' => 25, 'tri' => 46, 'nom' => 'Mat. perso modification', 'description' => 'Modification du matériel personnel', 'api_key' => 'mat_perso.modification'),
             array('id' => 26, 'tri' => 47, 'nom' => 'Mat. perso config', 'description' => 'Configuration du matériel personnel', 'api_key' => 'mat_perso.config'),
 
+            array('id' => 27, 'tri' => 35, 'nom' => 'SMS envoie', 'description' => 'Envoie de SMS', 'api_key' => 'sms.envoie'),
+            array('id' => 28, 'tri' => 36, 'nom' => 'SMS config', 'description' => 'Configuration du des SMS', 'api_key' => 'sms.config'),
+
         );
 
         foreach ($elements as $element) {
