@@ -53,6 +53,7 @@ class TokenTools
             "data" => [
                 "id" => $user->id,
                 "admin" => $user->admin,
+                "validated" => $user->email_verified_at !== null,
                 "pseudo" => $user->name,
                 "email" => $user->email,
                 "permissions" => $permissions,
