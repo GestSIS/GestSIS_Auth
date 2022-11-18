@@ -11,6 +11,8 @@ use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\RegisterTokenController;
 use App\Http\Controllers\SisController;
 use App\Http\Controllers\ApiMotDePasseController;
+use App\Http\Controllers\ApiResendConfirmationController;
+use App\Http\Controllers\RoleController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,21 +36,24 @@ Route::group(['prefix' => 'v1'], function () {
     Route::post('change-password', [ApiMotDePasseController::class, 'changer']);
 
     Route::get('sis', [SisController::class, 'index']);
+    Route::group(['middleware' => 'jwtTokenAdmin'], function () {
+        Route::resource('sis', SisController::class)->only(['update']);
+    });
 
     Route::group(['middleware' => 'jwtTokenRole'], function () {
         Route::get('permissions/', [PermissionController::class, 'index']);
-        //TODO: Consume token sans sélection d'un SIS
+        Route::post('resend-confirmation/', [ApiResendConfirmationController::class, 'resend']);
         Route::post('use-token/', [RegisterTokenController::class, 'consume']);
     });
 
     Route::group(['middleware' => 'jwtTokenRole:utilisateur.config'], function () {
-        Route::resource('roles', 'RoleController')->only(['index', 'store', 'update', 'destroy']);
+        Route::resource('roles', RoleController::class)->only(['index', 'store', 'update', 'destroy']);
     });
 
     Route::group(['middleware' => 'jwtTokenRole:utilisateur.tout'], function () {
-        Route::resource('roles', 'RoleController')->only(['index']);
+        Route::resource('roles', RoleController::class)->only(['index']);
         Route::post('register-token', [RegisterTokenController::class, 'newToken']);
-        Route::resource('roles/{role_id}/users', 'UserRoleController')->only(['index', 'store', 'destroy']);
+        Route::resource('roles/{role_id}/users', UserRoleController::class)->only(['index', 'store', 'destroy']);
         Route::post('users/{user_id}/roles', [UserRoleController::class, 'updateRoles']); // Allow to update all the role of a user for a given SIS
         Route::get('users', [UserController::class, 'parSis']); // With roles
     });

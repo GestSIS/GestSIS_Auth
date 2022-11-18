@@ -61,6 +61,7 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'jwtTokenRole' => \App\Http\Middleware\JwtTokenValidatorRole::class,
+        'jwtTokenAdmin' => \App\Http\Middleware\JwtTokenValidatorAdmin::class,
     ];
 
     /**
