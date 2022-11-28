@@ -59,7 +59,9 @@ class DBCustomSeed extends Command
             // array('id' => 17, 'tri' => 51, 'nom' => 'Config pour contrôle medical', 'description' => 'Configuration pour module contrôles médicaux', 'api_key' => 'controle_medical.config'),
             // array('id' => 18, 'tri' => 61, 'nom' => 'Config pour utilisateur', 'description' => 'Configuration des différents rôles', 'api_key' => 'utilisateur.config'),
             // array('id' => 19, 'tri' => 70, 'nom' => 'Config générale', 'description' => 'Configuration des informations du SIS', 'api_key' => 'sis.config'),
+
             // array('id' => 20, 'tri' => 100, 'nom' => 'Admin', 'description' => 'Paramètres admin du système ', 'api_key' => 'admin.tout'),
+
             // array('id' => 21, 'tri' => 10, 'nom' => 'Exercice lecture', 'description' => 'Affichage des exercices ', 'api_key' => 'exercice.lecture'),
             // array('id' => 22, 'tri' => -10, 'nom' => 'Effectif', 'description' => 'Affichage de l\'effectif ', 'api_key' => 'effectif.tout'),
             // array('id' => 23, 'tri' => 20, 'nom' => 'Intervention lecture', 'description' => 'Affichage des interventions ', 'api_key' => 'intervention.lecture'),
@@ -68,9 +70,9 @@ class DBCustomSeed extends Command
             // array('id' => 26, 'tri' => 47, 'nom' => 'Mat. perso config', 'description' => 'Configuration du matériel personnel', 'api_key' => 'mat_perso.config'),
             // array('id' => 27, 'tri' => 35, 'nom' => 'SMS envoie', 'description' => 'Envoie de SMS', 'api_key' => 'sms.envoie'),
             // array('id' => 28, 'tri' => 36, 'nom' => 'SMS config', 'description' => 'Configuration du des SMS', 'api_key' => 'sms.config'),
-            array('id' => 29, 'tri' => 25, 'nom' => 'Cours lecture', 'description' => 'Affichage des cours', 'api_key' => 'mat_perso.lecture'),
-            array('id' => 30, 'tri' => 26, 'nom' => 'Cours modification', 'description' => 'Modification des cours', 'api_key' => 'mat_perso.modification'),
-            array('id' => 31, 'tri' => 27, 'nom' => 'Cours config', 'description' => 'Configuration des cours', 'api_key' => 'mat_perso.config'),
+            array('id' => 29, 'tri' => 25, 'nom' => 'Cours lecture', 'description' => 'Affichage des cours', 'api_key' => 'cours.lecture'),
+            array('id' => 30, 'tri' => 26, 'nom' => 'Cours modification', 'description' => 'Modification des cours', 'api_key' => 'cours.modification'),
+            array('id' => 31, 'tri' => 27, 'nom' => 'Cours config', 'description' => 'Configuration des cours', 'api_key' => 'cours.config'),
         ];
 
         // foreach ($permissions as $p) {
@@ -78,10 +80,12 @@ class DBCustomSeed extends Command
         // }
         Permission::insert($permissions);
 
-        $roleWithExerciceUpdateIds = PermissionRole::where('permission_id', '=', 6)->get(['role_id'])->toArray();
-        $roleWithExerciceConfigIds = PermissionRole::where('permission_id', '=', 14)->get(['role_id'])->toArray();
-        PermissionRole::insert(array_map(fn ($r) => ['role_id' => $r['role_id'], 'permission_id' => 27], $roleWithExerciceUpdateIds));
-        PermissionRole::insert(array_map(fn ($r) => ['role_id' => $r['role_id'], 'permission_id' => 28], $roleWithExerciceConfigIds));
+        $roleWithSapeurLectureIds = PermissionRole::where('permission_id', '=', 1)->get(['role_id'])->toArray();
+        $roleWithSapeurModifIds = PermissionRole::where('permission_id', '=', 2)->get(['role_id'])->toArray();
+        $roleWithSapeurConfigIds = PermissionRole::where('permission_id', '=', 12)->get(['role_id'])->toArray();
+        PermissionRole::insert(array_map(fn ($r) => ['role_id' => $r['role_id'], 'permission_id' => 29], $roleWithSapeurLectureIds));
+        PermissionRole::insert(array_map(fn ($r) => ['role_id' => $r['role_id'], 'permission_id' => 30], $roleWithSapeurModifIds));
+        PermissionRole::insert(array_map(fn ($r) => ['role_id' => $r['role_id'], 'permission_id' => 31], $roleWithSapeurConfigIds));
 
         printf("Migrating done\n");
         return 0;
