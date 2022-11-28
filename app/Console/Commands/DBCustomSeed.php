@@ -66,8 +66,11 @@ class DBCustomSeed extends Command
             // array('id' => 24, 'tri' => 45, 'nom' => 'Mat. perso lecture', 'description' => 'Affichage du matériel personnel', 'api_key' => 'mat_perso.lecture'),
             // array('id' => 25, 'tri' => 46, 'nom' => 'Mat. perso modification', 'description' => 'Modification du matériel personnel', 'api_key' => 'mat_perso.modification'),
             // array('id' => 26, 'tri' => 47, 'nom' => 'Mat. perso config', 'description' => 'Configuration du matériel personnel', 'api_key' => 'mat_perso.config'),
-            array('id' => 27, 'tri' => 35, 'nom' => 'SMS envoie', 'description' => 'Envoie de SMS', 'api_key' => 'sms.envoie'),
-            array('id' => 28, 'tri' => 36, 'nom' => 'SMS config', 'description' => 'Configuration du des SMS', 'api_key' => 'sms.config'),
+            // array('id' => 27, 'tri' => 35, 'nom' => 'SMS envoie', 'description' => 'Envoie de SMS', 'api_key' => 'sms.envoie'),
+            // array('id' => 28, 'tri' => 36, 'nom' => 'SMS config', 'description' => 'Configuration du des SMS', 'api_key' => 'sms.config'),
+            array('id' => 29, 'tri' => 25, 'nom' => 'Cours lecture', 'description' => 'Affichage des cours', 'api_key' => 'mat_perso.lecture'),
+            array('id' => 30, 'tri' => 26, 'nom' => 'Cours modification', 'description' => 'Modification des cours', 'api_key' => 'mat_perso.modification'),
+            array('id' => 31, 'tri' => 27, 'nom' => 'Cours config', 'description' => 'Configuration des cours', 'api_key' => 'mat_perso.config'),
         ];
 
         // foreach ($permissions as $p) {
