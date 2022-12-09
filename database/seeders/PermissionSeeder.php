@@ -63,6 +63,11 @@ class PermissionSeeder extends Seeder
             array('id' => 29, 'tri' => 25, 'nom' => 'Cours lecture', 'description' => 'Affichage des cours', 'api_key' => 'cours.lecture'),
             array('id' => 30, 'tri' => 26, 'nom' => 'Cours modification', 'description' => 'Modification des cours', 'api_key' => 'cours.modification'),
             array('id' => 31, 'tri' => 27, 'nom' => 'Cours config', 'description' => 'Configuration des cours', 'api_key' => 'cours.config'),
+
+            array('id' => 32, 'tri' => 31, 'nom' => 'Feuille heure personnelle', 'description' => 'Saisie de feuilles d\'heures personnelles', 'api_key' => 'feuille_heure.saisie_perso'),
+            array('id' => 33, 'tri' => 32, 'nom' => 'Feuille heure commune', 'description' => 'Saisie de feuilles d\'heures communes', 'api_key' => 'feuille_heure.saisie_commune'),
+            array('id' => 34, 'tri' => 33, 'nom' => 'Feuille heure validation', 'description' => 'Validation des feuilles d\'heures', 'api_key' => 'feuille_heure.validation'),
+            array('id' => 35, 'tri' => 34, 'nom' => 'Feuille heure config', 'description' => 'Configuration des feuilles d\'heures', 'api_key' => 'feuille_heure.config'),
         );
 
         foreach ($elements as $element) {

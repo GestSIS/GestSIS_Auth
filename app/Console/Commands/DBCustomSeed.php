@@ -70,9 +70,14 @@ class DBCustomSeed extends Command
             // array('id' => 26, 'tri' => 47, 'nom' => 'Mat. perso config', 'description' => 'Configuration du matériel personnel', 'api_key' => 'mat_perso.config'),
             // array('id' => 27, 'tri' => 35, 'nom' => 'SMS envoie', 'description' => 'Envoie de SMS', 'api_key' => 'sms.envoie'),
             // array('id' => 28, 'tri' => 36, 'nom' => 'SMS config', 'description' => 'Configuration du des SMS', 'api_key' => 'sms.config'),
-            array('id' => 29, 'tri' => 25, 'nom' => 'Cours lecture', 'description' => 'Affichage des cours', 'api_key' => 'cours.lecture'),
-            array('id' => 30, 'tri' => 26, 'nom' => 'Cours modification', 'description' => 'Modification des cours', 'api_key' => 'cours.modification'),
-            array('id' => 31, 'tri' => 27, 'nom' => 'Cours config', 'description' => 'Configuration des cours', 'api_key' => 'cours.config'),
+            // array('id' => 29, 'tri' => 25, 'nom' => 'Cours lecture', 'description' => 'Affichage des cours', 'api_key' => 'cours.lecture'),
+            // array('id' => 30, 'tri' => 26, 'nom' => 'Cours modification', 'description' => 'Modification des cours', 'api_key' => 'cours.modification'),
+            // array('id' => 31, 'tri' => 27, 'nom' => 'Cours config', 'description' => 'Configuration des cours', 'api_key' => 'cours.config'),
+
+            array('id' => 32, 'tri' => 31, 'nom' => 'Feuille heure personnelle', 'description' => 'Saisie de feuilles d\'heures personnelles', 'api_key' => 'feuille_heure.saisie_perso'),
+            array('id' => 33, 'tri' => 32, 'nom' => 'Feuille heure commune', 'description' => 'Saisie de feuilles d\'heures communes', 'api_key' => 'feuille_heure.saisie_commune'),
+            array('id' => 34, 'tri' => 33, 'nom' => 'Feuille heure validation', 'description' => 'Validation des feuilles d\'heures', 'api_key' => 'feuille_heure.validation'),
+            array('id' => 35, 'tri' => 34, 'nom' => 'Feuille heure config', 'description' => 'Configuration des feuilles d\'heures', 'api_key' => 'feuille_heure.config'),
         ];
 
         // foreach ($permissions as $p) {
@@ -80,12 +85,12 @@ class DBCustomSeed extends Command
         // }
         Permission::insert($permissions);
 
-        $roleWithSapeurLectureIds = PermissionRole::where('permission_id', '=', 1)->get(['role_id'])->toArray();
-        $roleWithSapeurModifIds = PermissionRole::where('permission_id', '=', 2)->get(['role_id'])->toArray();
-        $roleWithSapeurConfigIds = PermissionRole::where('permission_id', '=', 12)->get(['role_id'])->toArray();
-        PermissionRole::insert(array_map(fn ($r) => ['role_id' => $r['role_id'], 'permission_id' => 29], $roleWithSapeurLectureIds));
-        PermissionRole::insert(array_map(fn ($r) => ['role_id' => $r['role_id'], 'permission_id' => 30], $roleWithSapeurModifIds));
-        PermissionRole::insert(array_map(fn ($r) => ['role_id' => $r['role_id'], 'permission_id' => 31], $roleWithSapeurConfigIds));
+        // $roleWithSapeurLectureIds = PermissionRole::where('permission_id', '=', 1)->get(['role_id'])->toArray();
+        // $roleWithSapeurModifIds = PermissionRole::where('permission_id', '=', 2)->get(['role_id'])->toArray();
+        // $roleWithSapeurConfigIds = PermissionRole::where('permission_id', '=', 12)->get(['role_id'])->toArray();
+        // PermissionRole::insert(array_map(fn ($r) => ['role_id' => $r['role_id'], 'permission_id' => 29], $roleWithSapeurLectureIds));
+        // PermissionRole::insert(array_map(fn ($r) => ['role_id' => $r['role_id'], 'permission_id' => 30], $roleWithSapeurModifIds));
+        // PermissionRole::insert(array_map(fn ($r) => ['role_id' => $r['role_id'], 'permission_id' => 31], $roleWithSapeurConfigIds));
 
         printf("Migrating done\n");
         return 0;
