@@ -35,7 +35,6 @@ class UserSeeder extends Seeder
 
         $elements = array(
             array('user_id' => 1, 'sapeur_id' => 1, 'sis_id' => 1),
-            array('user_id' => 1, 'sapeur_id' => 1, 'sis_id' => 2),
         );
 
         foreach ($elements as $element) {
