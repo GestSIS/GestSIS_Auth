@@ -47,11 +47,11 @@ class PermissionSeeder extends Seeder
             array('id' => 8, 'tri' => 330, 'nom' => 'Exercice validation', 'description' => 'Validation des exercices', 'api_key' => 'exercice.validation'),
             array('id' => 14, 'tri' => 340, 'nom' => 'Config pour exercice', 'description' => 'Configuration pour module exercice', 'api_key' => 'exercice.config'),
 
-            array('id' => 32, 'tri' => 400, 'nom' => 'Fiche travail lecture', 'description' => 'Configuration des fiches d\'travails', 'api_key' => 'fiche_travail.lecture'),
-            array('id' => 33, 'tri' => 410, 'nom' => 'Fiche travail personnelle', 'description' => 'Saisie de fiches d\'travails personnelles', 'api_key' => 'fiche_travail.saisie_perso'),
-            array('id' => 34, 'tri' => 420, 'nom' => 'Fiche travail commune', 'description' => 'Saisie de fiches d\'travails communes', 'api_key' => 'fiche_travail.saisie_commune'),
-            array('id' => 35, 'tri' => 430, 'nom' => 'Fiche travail validation', 'description' => 'Validation des fiches d\'travails', 'api_key' => 'fiche_travail.validation'),
-            array('id' => 36, 'tri' => 440, 'nom' => 'Fiche travail config', 'description' => 'Configuration des fiches d\'travails', 'api_key' => 'fiche_travail.config'),
+            array('id' => 32, 'tri' => 400, 'nom' => 'Fiche travail lecture', 'description' => 'Configuration des fiches de travail', 'api_key' => 'fiche_travail.lecture'),
+            array('id' => 33, 'tri' => 410, 'nom' => 'Fiche travail personnelle', 'description' => 'Saisie de fiches de travail personnelles', 'api_key' => 'fiche_travail.saisie_perso'),
+            array('id' => 34, 'tri' => 420, 'nom' => 'Fiche travail commune', 'description' => 'Saisie de fiches de travail communes', 'api_key' => 'fiche_travail.saisie_commune'),
+            array('id' => 35, 'tri' => 430, 'nom' => 'Fiche travail validation', 'description' => 'Validation des fiches de travail', 'api_key' => 'fiche_travail.validation'),
+            array('id' => 36, 'tri' => 440, 'nom' => 'Fiche travail config', 'description' => 'Configuration des fiches de travail', 'api_key' => 'fiche_travail.config'),
 
             array('id' => 29, 'tri' => 500, 'nom' => 'Cours lecture', 'description' => 'Affichage des cours', 'api_key' => 'cours.lecture'),
             array('id' => 30, 'tri' => 510, 'nom' => 'Cours modification', 'description' => 'Modification des cours', 'api_key' => 'cours.modification'),
