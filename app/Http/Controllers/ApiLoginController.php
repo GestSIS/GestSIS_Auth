@@ -92,24 +92,15 @@ class ApiLoginController extends Controller
         $sapeurs = User::getSapeurs($user->id);
         $accessToken = TokenTools::createAccessToken($user, $permissions, $mobiles, $sapeurs);
 
-        // Get active refreshToken
-        // TODO: We should create a single use refreshToken
-        //       Usable only once, to prevent any one to steal an old token and authenticate using it.
-        //       When used, should be deactivated and a new one should be generated
-        $refreshToken = $user->getActiveRefreshToken();
-        if ($refreshToken === null) {
-            $token = TokenTools::createRefreshToken();
-            // Store refresh token in database
-            $refreshToken = new RefreshToken();
-            $refreshToken->token = $token->token;
-            $refreshToken->expire = $token->expire;
-            $user->refreshTokens()->save($refreshToken);
-        } else {
-            // Expand refreshToken duration
-            $token = TokenTools::createRefreshToken();
-            $refreshToken->expire = $token->expire;
-            $refreshToken->save();
-        }
+        // We create a single use refreshToken
+        // Usable only once, to prevent any one to steal an old token and authenticate using it.
+        // When used, will be deactivated and a new one should be generated
+        $token = TokenTools::createRefreshToken();
+        $refreshToken = new RefreshToken();
+        $refreshToken->token = $token->token;
+        $refreshToken->expire = $token->expire;
+        $refreshToken->user_id = $user->id;
+        $user->refreshTokens()->save($refreshToken);
 
         return response()->json(
             array(

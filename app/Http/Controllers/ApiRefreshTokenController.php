@@ -41,11 +41,24 @@ class ApiRefreshTokenController extends Controller
         $sapeurs = User::getSapeurs($refreshToken->user_id);
         $accessToken = TokenTools::createAccessToken($refreshToken->user, $permissions, $mobiles, $sapeurs);
 
+        // Create new refreshToken
+        $token = TokenTools::createRefreshToken();
+
+        // Store refresh token in database
+        $newRefreshToken = new RefreshToken();
+        $newRefreshToken->token = $token->token;
+        $newRefreshToken->expire = $token->expire;
+        $newRefreshToken->user_id = $refreshToken->user_id;
+        $newRefreshToken->save();
+
+        // Single use token, we destroy the old one
+        $refreshToken->delete();
+
         return response()->json(
             array(
                 "message" => "Successful login",
                 "accessToken" => $accessToken,
-                "refreshToken" => $refreshToken->token,
+                "refreshToken" => $newRefreshToken->token,
                 "user" => $refreshToken->user
             )
         );
