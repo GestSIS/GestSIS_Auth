@@ -10,7 +10,7 @@ class Sis extends Model
     use HasFactory;
     protected $table = 'sis';
     protected $fillable = [
-        'nom', 'description', 'api_key', 'mobile'
+        'nom', 'abreviation', 'api_key', 'mobile'
     ];
     protected $casts = [
         'mobile' => 'boolean'

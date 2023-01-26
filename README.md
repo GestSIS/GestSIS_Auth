@@ -88,3 +88,10 @@ Vous devriez ainsi obtenir quelque chose comme :
 ### Copier le fichier `TokenTools`
 
 Copier le fichier `app\Auth\TokenTools.php` dans un nouveau dossier `app\Auth` dans votre projet. Ce fichier utilise le drivers `keys` pour chargé la clé publique.
+
+## Ajout de SIS
+
+1. Créer une nouvelle base de donnée sur le serveur avec le format suivant `DB_PREFIX + SIS_ABREVIATION`
+2. Créer un utilisateur pour cette base de donnée nommée `DB_USER_PREFIX + SIS_ABREVIATION`
+3. Modifier le fichier `.env` de `GestSIS_API` afin d'ajouter le nom du sis à la variable d'environement `DB_LISTE` (valeurs séparés par une virgule)
+4. Pour finir, ajouter le SIS sur le serveur d'authentification en utilisant l'interface administrateur

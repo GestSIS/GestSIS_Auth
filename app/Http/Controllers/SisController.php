@@ -20,6 +20,30 @@ class SisController extends Controller
     }
 
     /**
+     * Create the specified resource in storage.
+     *
+     * @param Request $request
+     * @return Response
+     * @throws Exception
+     */
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'api_key' => 'required|string|min:1',
+            'nom' => 'required|string|min:1',
+            'abreviation' => 'string|nullable',
+            'mobile' => 'required|boolean',
+        ]);
+
+        $sis = new Sis();
+        $sis->fill($data);
+        $sis->api_key = $data['api_key'];
+        $sis->save();
+
+        return response()->json(['data' => $sis]);
+    }
+
+    /**
      * Update the specified resource in storage.
      *
      * @param Request $request
@@ -30,7 +54,7 @@ class SisController extends Controller
     {
         $data = $request->validate([
             'nom' => 'required|string|min:1',
-            'description' => 'string|nullable',
+            'abreviation' => 'string|nullable',
             'mobile' => 'required|boolean',
         ]);
 
