@@ -3,11 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Auth\TokenTools;
-use App\Mail\ConfirmationEmail;
 use App\Mail\ResetPassword;
-use App\RefreshToken;
-use App\ResetPasswordToken;
-use App\User;
+use App\Models\ResetPasswordToken;
+use App\Models\User;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Contracts\Auth\StatefulGuard;

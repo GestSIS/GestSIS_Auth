@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Sis;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
-use App\User;
-use App\Role;
+use App\Models\User;
+use App\Models\Role;
+use App\Models\Sis;
 
 class UserController extends Controller
 {

@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Auth\TokenTools;
 use App\Mail\ConfirmationEmail;
-use App\RefreshToken;
-use App\RegisterToken;
-use App\User;
+use App\Models\RefreshToken;
+use App\Models\RegisterToken;
+use App\Models\User;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;

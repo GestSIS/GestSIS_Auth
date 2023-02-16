@@ -4,14 +4,12 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateSapeursTable extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
-     *
-     * @return void
      */
-    public function up()
+    public function up(): void
     {
         Schema::create('sapeurs', function (Blueprint $table) {
             $table->id();
@@ -21,10 +19,10 @@ class CreateSapeursTable extends Migration
 
             $table->unsignedBigInteger('sis_id');
             $table->foreign('sis_id')->references('id')->on('sis')->onDelete('cascade');
-            
+
             $table->unsignedBigInteger('user_id');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            
+
             $table->unique(['sapeur_id', 'sis_id']);
             $table->unique(['user_id', 'sis_id']);
         });
@@ -32,11 +30,9 @@ class CreateSapeursTable extends Migration
 
     /**
      * Reverse the migrations.
-     *
-     * @return void
      */
-    public function down()
+    public function down(): void
     {
         Schema::dropIfExists('sapeurs');
     }
-}
+};

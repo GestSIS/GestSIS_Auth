@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Role;
 use App\Auth\TokenTools;
-use App\RegisterToken;
-use App\User;
-use App\UserRole;
+use App\Models\Role;
+use App\Models\RegisterToken;
+use App\Models\User;
+use App\Models\UserRole;
 use Illuminate\Http\Request;
 use Exception;
 use ParagonIE\ConstantTime\Base64UrlSafe;

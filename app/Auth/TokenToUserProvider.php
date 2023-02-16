@@ -1,6 +1,8 @@
-<?php namespace App\Auth;
+<?php
 
-use App\User;
+namespace App\Auth;
+
+use App\Models\User;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\UserProvider;
 use Illuminate\Support\Str;
@@ -22,8 +24,8 @@ class TokenToUserProvider implements UserProvider
     public function retrieveByToken($identifier, $token)
     {
         return null;
-//        $token = $this->token->with('user')->where($identifier, $token)->first();
-//        return $token && $token->user ? $token->user : null;
+        //        $token = $this->token->with('user')->where($identifier, $token)->first();
+        //        return $token && $token->user ? $token->user : null;
     }
 
     public function updateRememberToken(Authenticatable $user, $token)

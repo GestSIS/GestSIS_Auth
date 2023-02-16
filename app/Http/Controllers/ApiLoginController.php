@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Auth\TokenTools;
-use App\RefreshToken;
-use App\User;
+use App\Models\RefreshToken;
+use App\Models\User;
 use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;

@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Auth\TokenTools;
 use App\Mail\ConfirmationEmail;
-use App\User;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Exception;

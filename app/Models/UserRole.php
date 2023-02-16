@@ -1,13 +1,13 @@
 <?php
 
-namespace App;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PermissionRole extends Model
+class UserRole extends Model
 {
     use HasFactory;
 
-    protected $casts = ['permission_id' => 'integer', 'role_id' => 'integer'];
+    protected $casts = ['user_id' => 'integer', 'role_id' => 'integer'];
 }
