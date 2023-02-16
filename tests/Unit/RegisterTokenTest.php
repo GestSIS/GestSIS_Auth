@@ -3,10 +3,8 @@
 namespace Tests\Unit;
 
 use App\Auth\TokenTools;
-use App\User;
+use App\Models\User;
 use Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Http;
 
 class RegisterTokenTest extends TestCase
 {
@@ -15,7 +13,7 @@ class RegisterTokenTest extends TestCase
      *
      * @return void
      */
-    public function testCreateRegisterTokenWithValidPermissions()
+    public function testCreateRegisterTokenWithValidPermissions(): void
     {
         $user = new User();
         $bearerToken = TokenTools::createAccessToken($user, ['test' => ['utilisateur.tout']], [], []);

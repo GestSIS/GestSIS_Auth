@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Auth\TokenTools;
-use App\Sapeur;
-use App\Sis;
-use App\User;
+use App\Models\Sapeur;
+use App\Models\Sis;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;

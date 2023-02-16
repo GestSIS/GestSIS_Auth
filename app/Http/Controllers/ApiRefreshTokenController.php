@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Auth\TokenTools;
-use App\RefreshToken;
-use App\User;
+use App\Models\RefreshToken;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;

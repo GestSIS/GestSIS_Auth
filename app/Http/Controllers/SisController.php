@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Sis;
+use App\Models\Sis;
 use Illuminate\Http\Request;
 
 class SisController extends Controller

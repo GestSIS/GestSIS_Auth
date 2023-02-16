@@ -4,14 +4,12 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class UpdateSisTable extends Migration
+return new class extends Migration
 {
     /**
      * Run the migrations.
-     *
-     * @return void
      */
-    public function up()
+    public function up(): void
     {
         Schema::table('sis', function (Blueprint $table) {
             $table->boolean('mobile')->default(false);
@@ -20,13 +18,11 @@ class UpdateSisTable extends Migration
 
     /**
      * Reverse the migrations.
-     *
-     * @return void
      */
-    public function down()
+    public function down(): void
     {
         Schema::table('sis', function (Blueprint $table) {
             $table->dropColumn('mobile');
         });
     }
-}
+};
