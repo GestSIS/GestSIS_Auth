@@ -5,8 +5,6 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Carbon\Carbon;
-use App\Role;
-use App\Models\UserRole;
 use Illuminate\Support\Facades\DB;
 
 class User extends Authenticatable
