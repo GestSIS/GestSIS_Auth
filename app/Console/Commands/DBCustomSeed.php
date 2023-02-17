@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Permission;
-use App\PermissionRole;
+use App\Models\Permission;
+use App\Models\PermissionRole;
 use Illuminate\Console\Command;
 
 class DBCustomSeed extends Command
