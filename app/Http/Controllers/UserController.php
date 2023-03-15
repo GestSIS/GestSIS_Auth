@@ -10,6 +10,28 @@ use App\Models\Sis;
 
 class UserController extends Controller
 {
+    public function index(Request $request)
+    {
+        // Load users with roles
+        $userIds = DB::table('user_roles')
+            ->join('roles', 'roles.id', '=', 'user_roles.role_id')
+            ->select(['user_roles.user_id as user_id'])
+            ->union(
+                DB::table('sapeurs')
+                    ->select(['sapeurs.user_id as user_id'])
+            )
+            ->distinct()
+            ->pluck('user_id')
+            ->toArray();
+
+        $roleIds = Role::pluck('id')->toArray();
+
+        $users = User::whereIn('users.id', $userIds)->with(['userRoles' => function ($query) use ($roleIds) {
+            $query->whereIn('user_roles.role_id', $roleIds);
+        }, 'sapeur'])->get();
+        return response()->json(["data" => $users]);
+    }
+
     /**
      * Return all roles of a given SIS
      *
