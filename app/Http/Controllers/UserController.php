@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\RefreshToken;
+use App\Models\ResetPasswordToken;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Role;
+use App\Models\Sapeur;
 use App\Models\Sis;
+use App\Models\UserRole;
 
 class UserController extends Controller
 {
@@ -30,6 +34,16 @@ class UserController extends Controller
             $query->whereIn('user_roles.role_id', $roleIds);
         }, 'sapeur'])->get();
         return response()->json(["data" => $users]);
+    }
+
+    public function destroy(Request $request, $userId)
+    {
+        RefreshToken::where('user_id', '=', $userId)->delete();
+        UserRole::where('user_id', '=', $userId)->delete();
+        Sapeur::where('user_id', '=', $userId)->delete();
+        ResetPasswordToken::where('user_id', '=', $userId)->delete();
+        User::where('id', '=', $userId)->delete();
+        return response()->json(["data" => 'success']);
     }
 
     /**
