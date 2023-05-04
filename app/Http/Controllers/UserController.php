@@ -28,15 +28,49 @@ class UserController extends Controller
             ->pluck('user_id')
             ->toArray();
 
-        $roleIds = Role::pluck('id')->toArray();
+        // $roleIds = Role::pluck('id')->toArray();
 
-        $users = User::whereIn('users.id', $userIds)->with(['userRoles' => function ($query) use ($roleIds) {
-            $query->whereIn('user_roles.role_id', $roleIds);
-        }, 'sapeur'])->get();
+        $users = User::whereIn('users.id', $userIds)->with([
+            'userRoles'
+            //  => function ($query) use ($roleIds) {
+            //     $query->whereIn('user_roles.role_id', $roleIds);
+            // }
+            , 'sapeur'
+        ])->get();
         return response()->json(["data" => $users]);
     }
 
-    public function destroy(Request $request, $userId)
+    /**
+     * Modification d'un utilisateur
+     *
+     * @param Request $request
+     * @return Response
+     * @throws Exception
+     */
+    public function update(Request $request, int $userId)
+    {
+        $user = User::find($userId);
+        if ($user == null) {
+            return response()->json(['error' => "Utilisateur inexistant"]);
+        }
+
+        $data = $request->validate([
+            'email' => 'required|email',
+            'name' => 'required|string|min:1',
+            'admin' => 'required|boolean',
+        ]);
+
+        $user->update($data);
+        $user->admin = $data['admin'];
+        $user->save();
+
+        return response()->json(['data' => User::with(['userRoles', 'sapeur'])->find($userId)->get()]);
+    }
+
+    /**
+     * Suppression d'un utilisateur
+     */
+    public function destroy(Request $request, int $userId)
     {
         RefreshToken::where('user_id', '=', $userId)->delete();
         UserRole::where('user_id', '=', $userId)->delete();

@@ -38,7 +38,7 @@ Route::group(['prefix' => 'v1'], function () {
     Route::get('sis', [SisController::class, 'index']);
     Route::group(['middleware' => 'jwtTokenAdmin'], function () {
         Route::resource('sis', SisController::class)->only(['store', 'update']);
-        Route::resource('utilisateurs', UserController::class)->only(['index', 'destroy']);
+        Route::resource('utilisateurs', UserController::class)->only(['index', 'update', 'destroy']);
     });
 
     Route::group(['middleware' => 'jwtTokenRole'], function () {
