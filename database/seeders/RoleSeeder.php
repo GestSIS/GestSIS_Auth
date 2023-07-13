@@ -60,6 +60,10 @@ class RoleSeeder extends Seeder
             array('permission_id' => 33, 'role_id' => 1),
             array('permission_id' => 34, 'role_id' => 1),
             array('permission_id' => 35, 'role_id' => 1),
+            array('permission_id' => 36, 'role_id' => 1),
+            array('permission_id' => 37, 'role_id' => 1),
+            array('permission_id' => 38, 'role_id' => 1),
+            array('permission_id' => 39, 'role_id' => 1),
 
             array('permission_id' => 1, 'role_id' => 2),
 
@@ -98,6 +102,10 @@ class RoleSeeder extends Seeder
             array('permission_id' => 33, 'role_id' => 3),
             array('permission_id' => 34, 'role_id' => 3),
             array('permission_id' => 35, 'role_id' => 3),
+            array('permission_id' => 36, 'role_id' => 3),
+            array('permission_id' => 37, 'role_id' => 3),
+            array('permission_id' => 38, 'role_id' => 3),
+            array('permission_id' => 39, 'role_id' => 3),
         );
 
         foreach ($elements as $element) {

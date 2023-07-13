@@ -24,6 +24,7 @@ class PermissionSeeder extends Seeder
             // Cours : 500
             // Matériel personnel : 600
             // Organisation : 700
+            // Absences : 750
             // Comptabilité : 800
             // Contrôles médicaux : 900
             // SMS : 1100
@@ -62,6 +63,10 @@ class PermissionSeeder extends Seeder
             array('id' => 26, 'tri' => 620, 'nom' => 'Mat. perso config', 'description' => 'Configuration du matériel personnel', 'api_key' => 'mat_perso.config'),
 
             array('id' => 9, 'tri' => 700, 'nom' => 'Organisation modification', 'description' => 'Modification des groupes', 'api_key' => 'organisation.modification'),
+
+            array('id' => 37, 'tri' => 750, 'nom' => 'Absences lecture', 'description' => 'Affichage des absences', 'api_key' => 'absence.lecture'),
+            array('id' => 38, 'tri' => 760, 'nom' => 'Absences modification', 'description' => 'Modification des absences', 'api_key' => 'absence.modification'),
+            array('id' => 39, 'tri' => 770, 'nom' => 'Absences config', 'description' => 'Configuration des absences', 'api_key' => 'absence.config'),
 
             array('id' => 3, 'tri' => 800, 'nom' => 'Comptabilité', 'description' => 'Comptabilité, contrôle total', 'api_key' => 'comptabilite.tout'),
             array('id' => 16, 'tri' => 810, 'nom' => 'Config pour comptabilite', 'description' => 'Configuration pour module contrôles médicaux', 'api_key' => 'comptabilite.config'),
