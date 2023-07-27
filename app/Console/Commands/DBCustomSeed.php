@@ -96,22 +96,22 @@ class DBCustomSeed extends Command
             array('id' => 20, 'tri' => 2000, 'nom' => 'Admin', 'description' => 'Paramètres admin du système', 'api_key' => 'admin.tout'),
         ];
 
-        Permission::insert([
-            array('id' => 37, 'tri' => 750, 'nom' => 'Absences lecture', 'description' => 'Affichage des absences', 'api_key' => 'absence.lecture'),
-            array('id' => 38, 'tri' => 760, 'nom' => 'Absences modification', 'description' => 'Modification des absences', 'api_key' => 'absence.modification'),
-            array('id' => 39, 'tri' => 770, 'nom' => 'Absences config', 'description' => 'Configuration des absences', 'api_key' => 'absence.config'),
-        ]);
+        // Permission::insert([
+        //     array('id' => 37, 'tri' => 750, 'nom' => 'Absences lecture', 'description' => 'Affichage des absences', 'api_key' => 'absence.lecture'),
+        //     array('id' => 38, 'tri' => 760, 'nom' => 'Absences modification', 'description' => 'Modification des absences', 'api_key' => 'absence.modification'),
+        //     array('id' => 39, 'tri' => 770, 'nom' => 'Absences config', 'description' => 'Configuration des absences', 'api_key' => 'absence.config'),
+        // ]);
         foreach ($permissions as $p) {
             Permission::where('id', '=', $p['id'])->update(['tri' => $p['tri'], 'api_key' => $p['api_key'], 'description' => $p['description'], 'nom' => $p['nom']]);
         }
         // Permission::insert($permissions);
 
-        $roleNamedAdmin = Role::where('nom', 'LIKE', 'Admi%')->get(['id'])->toArray();
-        // $roleWithSapeurModifIds = PermissionRole::where('permission_id', '=', 2)->get(['role_id'])->toArray();
-        // $roleWithSapeurConfigIds = PermissionRole::where('permission_id', '=', 12)->get(['role_id'])->toArray();
-        PermissionRole::insert(array_map(fn ($r) => ['role_id' => $r['id'], 'permission_id' => 37], $roleNamedAdmin));
-        PermissionRole::insert(array_map(fn ($r) => ['role_id' => $r['id'], 'permission_id' => 38], $roleNamedAdmin));
-        PermissionRole::insert(array_map(fn ($r) => ['role_id' => $r['id'], 'permission_id' => 39], $roleNamedAdmin));
+        // $roleNamedAdmin = Role::where('nom', 'LIKE', 'Admi%')->get(['id'])->toArray();
+        // // $roleWithSapeurModifIds = PermissionRole::where('permission_id', '=', 2)->get(['role_id'])->toArray();
+        // // $roleWithSapeurConfigIds = PermissionRole::where('permission_id', '=', 12)->get(['role_id'])->toArray();
+        // PermissionRole::insert(array_map(fn ($r) => ['role_id' => $r['id'], 'permission_id' => 37], $roleNamedAdmin));
+        // PermissionRole::insert(array_map(fn ($r) => ['role_id' => $r['id'], 'permission_id' => 38], $roleNamedAdmin));
+        // PermissionRole::insert(array_map(fn ($r) => ['role_id' => $r['id'], 'permission_id' => 39], $roleNamedAdmin));
 
         printf("Migrating done\n");
         return 0;
