@@ -4,12 +4,14 @@ namespace App\Auth;
 
 use App\Models\User;
 use Illuminate\Contracts\Auth\Authenticatable;
-use Illuminate\Contracts\Auth\UserProvider;
 use Illuminate\Support\Str;
+use Illuminate\Auth\EloquentUserProvider;
 
-class TokenToUserProvider implements UserProvider
+class TokenToUserProvider extends EloquentUserProvider
 {
     private $user;
+
+    // TODO: adapt for Laravel 11
 
     public function __construct(User $user)
     {
@@ -26,6 +28,17 @@ class TokenToUserProvider implements UserProvider
         return null;
         //        $token = $this->token->with('user')->where($identifier, $token)->first();
         //        return $token && $token->user ? $token->user : null;
+    }
+
+    public function rehashPasswordIfRequired(Authenticatable $user, array $credentials, bool $force = false)
+    {
+        if (!$this->hasher->needsRehash($user->getAuthPassword()) && ! $force) {
+            return;
+        }
+
+        $user->forceFill([
+            $user->getAuthPasswordName() => $this->hasher->make($credentials['password']),
+        ])->save();
     }
 
     public function updateRememberToken(Authenticatable $user, $token)
