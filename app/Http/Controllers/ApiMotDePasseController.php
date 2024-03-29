@@ -98,19 +98,19 @@ class ApiMotDePasseController extends Controller
         $password = $validated['password'];
 
         // Chargement du jeton depuis la DB
-        $PasswordResetToken = PasswordResetToken::where('token', '=', $jeton)->first();
+        $passwordResetToken = PasswordResetToken::where('token', '=', $jeton)->first();
 
         // Controller la validité
-        if (is_null($PasswordResetToken)) {
+        if (is_null($passwordResetToken)) {
             return response()->json(['error' => ['message' => 'Jeton invalide ou déjà utilisé']], 401);
         }
-        if (Carbon::parse($PasswordResetToken->validite)->lt(Carbon::now())) {
+        if (Carbon::parse($passwordResetToken->validite)->lt(Carbon::now())) {
             return response()->json(['error' => ['message' => 'Jeton expiré']], 401);
         }
 
         // Suppression du jeton dans la DB
-        $userId = $PasswordResetToken->user_id;
-        $PasswordResetToken->delete();
+        $userId = $passwordResetToken->user_id;
+        $passwordResetToken->delete();
 
         // Stockage du nouveau mot de passe
         $user = User::find($userId);
