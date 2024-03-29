@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Auth\TokenTools;
 use App\Mail\ResetPassword;
-use App\Models\ResetPasswordToken;
+use App\Models\PasswordResetToken;
 use App\Models\User;
 use Carbon\Carbon;
 use Exception;
@@ -66,7 +66,7 @@ class ApiMotDePasseController extends Controller
         }
 
         // Sauvegarder le jeton dans la DB
-        $token = new ResetPasswordToken();
+        $token = new PasswordResetToken();
         $token->fill(['token' => $resetToken->token, 'user_id' => $user->id, 'validite' => $resetToken->expire]);
         $token->save();
 
@@ -98,19 +98,19 @@ class ApiMotDePasseController extends Controller
         $password = $validated['password'];
 
         // Chargement du jeton depuis la DB
-        $resetPasswordToken = ResetPasswordToken::where('token', '=', $jeton)->first();
+        $PasswordResetToken = PasswordResetToken::where('token', '=', $jeton)->first();
 
         // Controller la validité
-        if (is_null($resetPasswordToken)) {
+        if (is_null($PasswordResetToken)) {
             return response()->json(['error' => ['message' => 'Jeton invalide ou déjà utilisé']], 401);
         }
-        if (Carbon::parse($resetPasswordToken->validite)->lt(Carbon::now())) {
+        if (Carbon::parse($PasswordResetToken->validite)->lt(Carbon::now())) {
             return response()->json(['error' => ['message' => 'Jeton expiré']], 401);
         }
 
         // Suppression du jeton dans la DB
-        $userId = $resetPasswordToken->user_id;
-        $resetPasswordToken->delete();
+        $userId = $PasswordResetToken->user_id;
+        $PasswordResetToken->delete();
 
         // Stockage du nouveau mot de passe
         $user = User::find($userId);

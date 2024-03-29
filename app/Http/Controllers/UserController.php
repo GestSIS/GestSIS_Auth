@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\RefreshToken;
-use App\Models\ResetPasswordToken;
+use App\Models\PasswordResetToken;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Models\User;
@@ -55,7 +55,7 @@ class UserController extends Controller
         RefreshToken::where('user_id', '=', $userId)->delete();
         UserRole::where('user_id', '=', $userId)->delete();
         Sapeur::where('user_id', '=', $userId)->delete();
-        ResetPasswordToken::where('user_id', '=', $userId)->delete();
+        PasswordResetToken::where('user_id', '=', $userId)->delete();
         User::where('id', '=', $userId)->delete();
         return response()->json(["data" => 'success']);
     }

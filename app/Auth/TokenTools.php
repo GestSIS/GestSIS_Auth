@@ -4,6 +4,7 @@
 namespace App\Auth;
 
 use Carbon\Carbon;
+use Firebase\JWT\ExpiredException;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
@@ -119,7 +120,7 @@ class TokenTools
     /**
      * @param $token
      * @return object
-     * @throw ExpiredException
+     * @throws ExpiredException
      * @throws FileNotFoundException
      */
     public static function validateToken($token)

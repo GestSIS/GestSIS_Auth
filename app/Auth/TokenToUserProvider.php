@@ -11,8 +11,6 @@ class TokenToUserProvider extends EloquentUserProvider
 {
     private $user;
 
-    // TODO: adapt for Laravel 11
-
     public function __construct(User $user)
     {
         $this->user = $user;
@@ -28,17 +26,6 @@ class TokenToUserProvider extends EloquentUserProvider
         return null;
         //        $token = $this->token->with('user')->where($identifier, $token)->first();
         //        return $token && $token->user ? $token->user : null;
-    }
-
-    public function rehashPasswordIfRequired(Authenticatable $user, array $credentials, bool $force = false)
-    {
-        if (!$this->hasher->needsRehash($user->getAuthPassword()) && ! $force) {
-            return;
-        }
-
-        $user->forceFill([
-            $user->getAuthPasswordName() => $this->hasher->make($credentials['password']),
-        ])->save();
     }
 
     public function updateRememberToken(Authenticatable $user, $token)

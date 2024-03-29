@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Auth\EloquentUserProvider;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Carbon\Carbon;
@@ -30,13 +31,18 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be cast to native types.
-     *
-     * @var array
+     * Get the attributes that should be cast.
+     * 
+     * @return array
      */
-    protected $casts = [
-        'email_verified_at' => 'datetime', 'admin' => 'boolean'
-    ];
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'admin' => 'boolean',
+        ];
+    }
 
     public static function getPermissions($userId)
     {
@@ -128,8 +134,8 @@ class User extends Authenticatable
         return $this->hasMany(Sapeur::class);
     }
 
-    public function resetPasswordTokens()
+    public function PasswordResetTokens()
     {
-        return $this->hasMany(ResetPasswordToken::class, 'user_id');
+        return $this->hasMany(PasswordResetToken::class, 'user_id');
     }
 }
