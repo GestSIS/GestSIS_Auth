@@ -4,10 +4,10 @@ namespace App\Auth;
 
 use App\Models\User;
 use Illuminate\Contracts\Auth\Authenticatable;
-use Illuminate\Contracts\Auth\UserProvider;
 use Illuminate\Support\Str;
+use Illuminate\Auth\EloquentUserProvider;
 
-class TokenToUserProvider implements UserProvider
+class TokenToUserProvider extends EloquentUserProvider
 {
     private $user;
 
