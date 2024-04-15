@@ -5,7 +5,7 @@ RUN apt-get update \
     && docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/ --with-webp=/usr/include/ \
     && docker-php-ext-install gd \
     # gmp
-    && apt-get install -y --no-install-recommends libgmp-dev \
+    && apt-get install -y --no-install-recommends libgmp-dev unzip \
     && docker-php-ext-install gmp \
     # pdo_mysql
     && docker-php-ext-install pdo_mysql \
