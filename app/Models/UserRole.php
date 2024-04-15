@@ -9,5 +9,8 @@ class UserRole extends Model
 {
     use HasFactory;
 
-    protected $casts = ['user_id' => 'integer', 'role_id' => 'integer'];
+    protected function casts(): array
+    {
+        return ['user_id' => 'integer', 'role_id' => 'integer'];
+    }
 }

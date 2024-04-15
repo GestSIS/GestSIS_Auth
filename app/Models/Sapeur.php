@@ -9,5 +9,8 @@ class Sapeur extends Model
 {
     use HasFactory;
 
-    protected $casts = ['sapeur_id' => 'integer', 'sis_id' => 'integer', 'user_id' => 'integer'];
+    protected function casts(): array
+    {
+        return ['sapeur_id' => 'integer', 'sis_id' => 'integer', 'user_id' => 'integer'];
+    }
 }

@@ -9,5 +9,8 @@ class PermissionRole extends Model
 {
     use HasFactory;
 
-    protected $casts = ['permission_id' => 'integer', 'role_id' => 'integer'];
+    protected function casts(): array
+    {
+        return ['permission_id' => 'integer', 'role_id' => 'integer'];
+    }
 }

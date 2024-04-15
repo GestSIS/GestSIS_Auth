@@ -13,5 +13,8 @@ class Permission extends Model
         'nom', 'description', 'api_key'
     ];
 
-    protected $casts = ['sis_id' => 'integer'];
+    protected function casts(): array
+    {
+        return  ['sis_id' => 'integer'];
+    }
 }

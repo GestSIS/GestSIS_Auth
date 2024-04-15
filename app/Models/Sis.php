@@ -12,7 +12,8 @@ class Sis extends Model
     protected $fillable = [
         'nom', 'abreviation', 'api_key', 'mobile'
     ];
-    protected $casts = [
-        'mobile' => 'boolean'
-    ];
+    protected function casts(): array
+    {
+        return ['mobile' => 'boolean'];
+    }
 }

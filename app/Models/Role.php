@@ -11,7 +11,10 @@ class Role extends Model
         'nom', 'description'
     ];
 
-    protected $casts = ['sis_id' => 'integer'];
+    protected function casts(): array
+    {
+        return ['sis_id' => 'integer'];
+    }
 
     public function users()
     {
