@@ -14,7 +14,7 @@
         "laravel/framework": "^11.0",
         "laravel/tinker": "^2.0",
         "laravel/ui": "^4.5",
-        "paragonie/constant_time_encoding": "^2.6",
+        "paragonie/constant_time_encoding": "^3.0",
         "spatie/laravel-ignition": "^2.4"
     },
     "require-dev": {
