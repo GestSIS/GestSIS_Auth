@@ -8,13 +8,13 @@
     ],
     "license": "MIT",
     "require": {
-        "php": "^8.2",
+        "php": "^8.3",
         "firebase/php-jwt": "^6.0",
         "guzzlehttp/guzzle": "^7.0.1",
         "laravel/framework": "^11.0",
         "laravel/tinker": "^2.0",
         "laravel/ui": "^4.5",
-        "paragonie/constant_time_encoding": "^2.6",
+        "paragonie/constant_time_encoding": "^3.0",
         "spatie/laravel-ignition": "^2.4"
     },
     "require-dev": {

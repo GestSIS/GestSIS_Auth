@@ -36,7 +36,6 @@
 - Lors d'ajout de sapeur, envoie d'un email pour s'inscrire sur GestSIS ou pas ?
     Pour l'instant non. Mais pourquoi pas dans le future
 
-TODO: Définir les routes pour créer un compte :
 - Auth
     /register?token=khksfdhkjhsdkdsojre -> ajout check pour email + prendre en compte un potentiel token
     /login -> comme avant
