@@ -53,12 +53,12 @@ class ApiLoginController extends Controller
     {
         Log::debug("ADMIN Request for a user token");
         $userId = $request->get('user_id');
-        if(!$userId){
+        if (!$userId) {
             return response()->json(["Missing `user_id` parameter", 400]);
         }
 
         $user = User::find($userId);
-        if (!$user){
+        if (!$user) {
             return response()->json(["Missing `user_id` parameter", 400]);
         }
 
@@ -72,7 +72,6 @@ class ApiLoginController extends Controller
                 "accessToken" => $accessToken,
             )
         );
-        
     }
 
     /**
