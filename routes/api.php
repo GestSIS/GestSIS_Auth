@@ -36,7 +36,9 @@ Route::group(['prefix' => 'v1'], function () {
     Route::post('change-password', [ApiMotDePasseController::class, 'changer']);
 
     Route::get('sis', [SisController::class, 'index']);
+    
     Route::group(['middleware' => 'jwtTokenAdmin'], function () {
+        Route::get('token', [ApiLoginController::class, 'token']);
         Route::resource('sis', SisController::class)->only(['store', 'update']);
         Route::resource('utilisateurs', UserController::class)->only(['index', 'update', 'destroy']);
     });

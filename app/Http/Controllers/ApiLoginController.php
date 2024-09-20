@@ -42,6 +42,40 @@ class ApiLoginController extends Controller
     }
 
     /**
+     * Handle a token request to the application.
+     *
+     * @param Request $request
+     * @return RedirectResponse|Response|JsonResponse
+     *
+     * @throws ValidationException
+     */
+    public function token(Request $request)
+    {
+        Log::debug("ADMIN Request for a user token");
+        $userId = $request->get('user_id');
+        if(!$userId){
+            return response()->json(["Missing `user_id` parameter", 400]);
+        }
+
+        $user = User::find($userId);
+        if (!$user){
+            return response()->json(["Missing `user_id` parameter", 400]);
+        }
+
+        $permissions = User::getPermissions($user->id);
+        $mobiles = User::getMobile($user->id);
+        $sapeurs = User::getSapeurs($user->id);
+        $accessToken = TokenTools::createAccessToken($user, $permissions, $mobiles, $sapeurs);
+
+        return response()->json(
+            array(
+                "accessToken" => $accessToken,
+            )
+        );
+        
+    }
+
+    /**
      * Get a validator for an incoming registration request.
      *
      * @param array $data
