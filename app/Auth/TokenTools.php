@@ -3,6 +3,7 @@
 
 namespace App\Auth;
 
+use App\Models\User;
 use Carbon\Carbon;
 use Firebase\JWT\ExpiredException;
 use Firebase\JWT\JWT;
@@ -30,12 +31,7 @@ class TokenTools
     private const PRIVATE_KEY_FILE = "auth-private.key";
     private const PUBLIC_KEY_FILE = "auth-public.key";
 
-    /**
-     * @param $user
-     * @return string
-     * @throws FileNotFoundException
-     */
-    public static function createAccessToken($user, $permissions, $mobiles, $sapeurs)
+    public static function createAccessToken(User $user, array $permissions, array $mobiles, array $sapeurs): string
     {
         Log::debug("CREATE ACCESS TOKEN " . $user->name);
 
@@ -66,10 +62,7 @@ class TokenTools
         return JWT::encode($token, $privateKey, 'RS256');
     }
 
-    /**
-     * @return Stdclass $token
-     */
-    public static function createRefreshToken()
+    public static function createRefreshToken(): Stdclass
     {
         Log::debug("CREATE REFRESH TOKEN");
 
@@ -83,10 +76,7 @@ class TokenTools
         return $refreshToken;
     }
 
-    /**
-     * @return Stdclass $token
-     */
-    public static function createConfirmationToken()
+    public static function createConfirmationToken(): Stdclass
     {
         Log::debug("CREATE CONFIRMATION TOKEN");
 
@@ -100,10 +90,7 @@ class TokenTools
         return $confirmToken;
     }
 
-    /**
-     * @return Stdclass $token
-     */
-    public static function createResetToken()
+    public static function createResetToken(): Stdclass
     {
         Log::debug("CREATE Reset TOKEN");
 
@@ -118,12 +105,10 @@ class TokenTools
     }
 
     /**
-     * @param $token
-     * @return object
      * @throws ExpiredException
      * @throws FileNotFoundException
      */
-    public static function validateToken($token)
+    public static function validateToken(string $token): stdClass
     {
         Log::debug("VALIDATE TOKEN");
         $publicKey = Storage::disk('keys')->get(self::PUBLIC_KEY_FILE);

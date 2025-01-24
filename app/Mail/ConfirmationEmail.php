@@ -11,16 +11,13 @@ class ConfirmationEmail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $user;
-
     /**
      * Create a new message instance.
      *
      * @return void
      */
-    public function __construct(User $user)
+    public function __construct(public User $user)
     {
-        $this->user = $user;
     }
 
     /**
@@ -28,7 +25,7 @@ class ConfirmationEmail extends Mailable
      *
      * @return $this
      */
-    public function build()
+    public function build(): ConfirmationEmail
     {
         return $this->from('test@gestsis.ch', 'GestSIS')
             ->subject("Inscription à GestSIS")

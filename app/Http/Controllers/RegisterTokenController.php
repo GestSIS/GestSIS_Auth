@@ -5,18 +5,20 @@ namespace App\Http\Controllers;
 use App\Auth\TokenTools;
 use App\Models\Role;
 use App\Models\RegisterToken;
+use App\Models\Sis;
 use App\Models\User;
 use App\Models\UserRole;
 use Illuminate\Http\Request;
 use Exception;
 use ParagonIE\ConstantTime\Base64UrlSafe;
-use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class RegisterTokenController extends Controller
 {
-    public function newToken(Request $request)
+    public function newToken(Request $request): JsonResponse
     {
         // Validate inputs
         $validation = $this->validator($request->all());
@@ -38,16 +40,19 @@ class RegisterTokenController extends Controller
 
         // Controle que les rôles à ajouter peuvent l'être par l'utilisateur
         if ($jwt->data->admin !== true) {
-            foreach ($roles as $element) {
-                if (!array_key_exists($element->sis->api_key, $permissions) || !in_array('utilisateur.tout', $permissions[$element->sis->api_key])) {
-                    return response()->json(["error" => "Permissions insuffisantes for " . $element->sis->api_key], 401);
+            /** @var Role $role */
+            foreach ($roles as $role) {
+                /** @var Sis $sis */
+                $sis = $role->sis;
+                if (!array_key_exists($sis->api_key, $permissions) || !in_array('utilisateur.tout', $permissions[$sis->api_key])) {
+                    return response()->json(["error" => "Permissions insuffisantes for " . $sis->api_key], 401);
                 }
             }
         }
 
         $registerToken = new RegisterToken();
         $registerToken->token = Base64UrlSafe::encode(random_bytes(20));
-        $registerToken->validite = Carbon::now()->add(1, 'month');
+        $registerToken->validite = Carbon::now()->addMonths(1);
         $registerToken->save();
         $registerToken->roles()->attach($rolesId);
         $registerToken->save();
@@ -55,9 +60,8 @@ class RegisterTokenController extends Controller
         return response()->json(["data" => $registerToken->token], 200);
     }
 
-    public function consume(Request $request)
+    public function consume(Request $request): JsonResponse
     {
-
         $token = $request->validate([
             'token' => 'string|required|min:1'
         ]);
@@ -107,21 +111,16 @@ class RegisterTokenController extends Controller
             $registerToken->delete();
         }
 
-        return response()->json(
-            array(
-                "message" => "Permissions ajoutées",
-                "accessToken" => $accessToken,
-            )
-        );
+        return response()->json([
+            "message" => "Permissions ajoutées",
+            "accessToken" => $accessToken,
+        ]);
     }
 
     /**
      * Get a validator for an incoming registration request.
-     *
-     * @param array $data
-     * @return \Illuminate\Contracts\Validation\Validator
      */
-    protected function validator(array $data)
+    protected function validator(array $data): \Illuminate\Validation\Validator
     {
         return Validator::make($data, [
             'roles.*' => ['required', 'integer', 'min:1', 'distinct'],

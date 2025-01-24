@@ -28,11 +28,8 @@ class ApiMotDePasseController extends Controller
 
     /**
      * Handle a registration request for the application.
-     *
-     * @param Request $request
-     * @return Response
      */
-    public function request(Request $request)
+    public function request(Request $request): JsonResponse
     {
         // Décider de quoi logger
         Log::debug("Call request password reset");
@@ -76,11 +73,8 @@ class ApiMotDePasseController extends Controller
 
     /**
      * Handle a registration request for the application.
-     *
-     * @param Request $request
-     * @return Response
      */
-    public function reset(Request $request)
+    public function reset(Request $request): JsonResponse
     {
         Log::debug("Utilisation d'un reset password token");
 

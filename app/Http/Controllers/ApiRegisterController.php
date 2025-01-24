@@ -9,6 +9,7 @@ use App\Models\RegisterToken;
 use App\Models\User;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
@@ -23,11 +24,8 @@ class ApiRegisterController extends Controller
 
     /**
      * Handle a registration request for the application.
-     *
-     * @param Request $request
-     * @return Response
      */
-    public function register(Request $request)
+    public function register(Request $request): JsonResponse
     {
         // TODO: Décider de quoi logger
         Log::debug("Call register");
@@ -98,23 +96,18 @@ class ApiRegisterController extends Controller
             $registerToken->delete();
         }
 
-        return response()->json(
-            array(
-                "message" => "Successful login",
-                "accessToken" => $accessToken,
-                "refreshToken" => $refreshToken->token,
-                "user" => $user
-            )
-        );
+        return response()->json([
+            "message" => "Successful login",
+            "accessToken" => $accessToken,
+            "refreshToken" => $refreshToken->token,
+            "user" => $user
+        ]);
     }
 
     /**
      * Get a validator for an incoming registration request.
-     *
-     * @param array $data
-     * @return \Illuminate\Contracts\Validation\Validator
      */
-    protected function validator(array $data)
+    protected function validator(array $data): \Illuminate\Contracts\Validation\Validator
     {
         return Validator::make($data, [
             'name' => ['required', 'string', 'max:255'],

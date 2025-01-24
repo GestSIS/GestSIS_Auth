@@ -1,33 +1,40 @@
 <?php
 
 namespace App\Models;
-
-use Illuminate\Auth\EloquentUserProvider;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 
 class User extends Authenticatable
 {
     use Notifiable;
+    use HasFactory;
 
     /**
      * The attributes that are mass assignable.
      *
-     * @var array
+     * @var list<string>
      */
     protected $fillable = [
-        'name', 'email', 'password', 'validate_email_token'
+        'name',
+        'email',
+        'password',
+        'validate_email_token'
     ];
 
     /**
      * The attributes that should be hidden for arrays.
      *
-     * @var array
+     * @var list<string>
      */
     protected $hidden = [
-        'password', 'remember_token', 'validate_email_token'
+        'password',
+        'remember_token',
+        'validate_email_token'
     ];
 
     /**
@@ -44,12 +51,12 @@ class User extends Authenticatable
         ];
     }
 
-    public static function getPermissions($userId)
+    public static function getPermissions(int|string $userId): array
     {
         $user = User::find($userId);
         if ($user && $user->admin) {
             $sisListe = Sis::all();
-            $groupedPermissions = array();
+            $groupedPermissions = [];
             foreach ($sisListe as $element) {
                 $groupedPermissions[$element->api_key][] = "admin";
             }
@@ -66,7 +73,7 @@ class User extends Authenticatable
                 ->distinct()
                 ->get();
 
-            $groupedPermissions = array();
+            $groupedPermissions = [];
             foreach ($permissions as $element) {
                 $groupedPermissions[$element->sis_key][] = $element->perm_key;
             }
@@ -74,7 +81,12 @@ class User extends Authenticatable
         }
     }
 
-    public static function getSapeurs($userId)
+    /**
+     * Summary of getSapeurs
+     * @param int|string $userId
+     * @return array<int, int>
+     */
+    public static function getSapeurs(int|string $userId): array
     {
         $sapeurs = DB::table('sapeurs')
             ->join('sis', 'sis.id', '=', 'sapeurs.sis_id')
@@ -83,14 +95,14 @@ class User extends Authenticatable
             ->distinct()
             ->get();
 
-        $indexedSapeurs = array();
+        $indexedSapeurs = [];
         foreach ($sapeurs as $element) {
             $indexedSapeurs[$element->sis_key] = $element->sapeur_id;
         }
         return $indexedSapeurs;
     }
 
-    public static function getMobile($userId)
+    public static function getMobile(int|string $userId)
     {
         $mobiles = DB::table('roles')
             ->join('user_roles', 'roles.id', '=', 'user_roles.role_id')
@@ -100,7 +112,7 @@ class User extends Authenticatable
             ->distinct()
             ->get();
 
-        $groupedMobile = array();
+        $groupedMobile = [];
         foreach ($mobiles as $element) {
             if ($element->mobile) {
                 $groupedMobile[$element->sis_key][] = $element->mobile;
@@ -109,32 +121,42 @@ class User extends Authenticatable
         return array_keys($groupedMobile);
     }
 
-    public function refreshTokens()
+    /**
+     * refreshTokens
+     * @return HasMany<RefreshToken,$this>
+     */
+    public function refreshTokens(): HasMany
     {
         return $this->hasMany(RefreshToken::class);
     }
 
-    public function userRoles()
+    /**
+     * @return HasMany<UserRole,$this>
+     */
+    public function userRoles(): HasMany
     {
         return $this->hasMany(UserRole::class);
     }
 
-    public function getActiveRefreshToken()
+    /**
+     * @return ?RefreshToken
+     */
+    public function getActiveRefreshToken(): ?RefreshToken
     {
         return $this->refreshTokens()->where('expire', '>', Carbon::now())->first();
     }
 
-    public function roles()
+    public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'user_roles');
     }
 
-    public function sapeur()
+    public function sapeur(): HasMany
     {
         return $this->hasMany(Sapeur::class);
     }
 
-    public function PasswordResetTokens()
+    public function PasswordResetTokens(): HasMany
     {
         return $this->hasMany(PasswordResetToken::class, 'user_id');
     }

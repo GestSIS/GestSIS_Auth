@@ -11,10 +11,11 @@ use App\Models\Role;
 use App\Models\Sapeur;
 use App\Models\Sis;
 use App\Models\UserRole;
+use Illuminate\Http\JsonResponse;
 
 class UserController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         $users = User::with(['userRoles', 'sapeur'])->get();
         return response()->json(["data" => $users]);
@@ -22,12 +23,8 @@ class UserController extends Controller
 
     /**
      * Modification d'un utilisateur
-     *
-     * @param Request $request
-     * @return Response
-     * @throws Exception
      */
-    public function update(Request $request, int $userId)
+    public function update(Request $request, int $userId): JsonResponse
     {
         $user = User::find($userId);
         if ($user == null) {
@@ -50,7 +47,7 @@ class UserController extends Controller
     /**
      * Suppression d'un utilisateur
      */
-    public function destroy(Request $request, int $userId)
+    public function destroy(Request $request, int $userId): JsonResponse
     {
         RefreshToken::where('user_id', '=', $userId)->delete();
         UserRole::where('user_id', '=', $userId)->delete();
@@ -64,9 +61,9 @@ class UserController extends Controller
      * Return all roles of a given SIS
      *
      * @param Request $request
-     * @return Response
+     * @return JsonResponse
      */
-    public function parSis(Request $request)
+    public function parSis(Request $request): JsonResponse
     {
         // Checks pour sisId
         $sisKey = $request->header('Sis-Id', Null);

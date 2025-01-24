@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('sis', function (Blueprint $table) {
+        Schema::create('sis', static function (Blueprint $table) {
             $table->id();
             $table->string('api_key')->unique();
             $table->string('nom');

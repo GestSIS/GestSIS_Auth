@@ -5,16 +5,14 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Role;
 use App\Models\Sis;
+use Illuminate\Http\JsonResponse;
 
 class RoleController extends Controller
 {
     /**
      * Return all roles of a given SIS
-     *
-     * @param Request $request
-     * @return Response
      */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         // Checks pour sisId
         $sisKey = $request->header('Sis-Id', null);
@@ -23,17 +21,15 @@ class RoleController extends Controller
             return response()->json(["error" => "Invalid sis key"], 401);
         }
 
-        return Role::with(["permissionRoles"])->where("roles.sis_id", '=', $sis->id)->get();
+        return response()->json([
+            "data" => Role::with(["permissionRoles"])->where("roles.sis_id", '=', $sis->id)->get()
+        ]);
     }
 
     /**
      * Store a newly created resource in storage.
-     *
-     * @param Request $request
-     * @return Response
-     * @throws Exception
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         // Checks pour sisId
         $sisKey = $request->header('Sis-Id', null);
@@ -64,12 +60,8 @@ class RoleController extends Controller
 
     /**
      * Update the specified resource in storage.
-     *
-     * @param Request $request
-     * @return Response
-     * @throws Exception
      */
-    public function update(Request $request, int $roleId)
+    public function update(Request $request, int $roleId): JsonResponse
     {
         // Checks pour sisId
         $sisKey = $request->header('Sis-Id', Null);
@@ -103,11 +95,8 @@ class RoleController extends Controller
 
     /**
      * Remove the specified resource from storage.
-     *
-     * @param Request $request
-     * @return Response
      */
-    public function destroy(Request $request, int $roleId)
+    public function destroy(Request $request, int $roleId): JsonResponse
     {
         // Checks pour sisId
         $sisKey = $request->header('Sis-Id', Null);

@@ -3,16 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sis;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class SisController extends Controller
 {
     /**
      * Display a listing of the resource.
-     *
-     * @return Response
      */
-    public function index()
+    public function index(): JsonResponse
     {
         $sis = Sis::get();
 
@@ -21,12 +20,8 @@ class SisController extends Controller
 
     /**
      * Create the specified resource in storage.
-     *
-     * @param Request $request
-     * @return Response
-     * @throws Exception
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
             'api_key' => 'required|string|min:1',
@@ -45,12 +40,8 @@ class SisController extends Controller
 
     /**
      * Update the specified resource in storage.
-     *
-     * @param Request $request
-     * @return Response
-     * @throws Exception
      */
-    public function update(Request $request, $sisId)
+    public function update(Request $request, int $sisId): JsonResponse
     {
         $data = $request->validate([
             'nom' => 'required|string|min:1',

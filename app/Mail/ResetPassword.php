@@ -11,17 +11,15 @@ class ResetPassword extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $user;
-    public $token;
+    public User $user;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-    public function __construct(string $token)
+    public function __construct(public string $token)
     {
-        $this->token = $token;
     }
 
     /**
@@ -29,7 +27,7 @@ class ResetPassword extends Mailable
      *
      * @return $this
      */
-    public function build()
+    public function build(): ResetPassword
     {
         return $this->from('test@gestsis.ch', 'GestSIS')
             ->subject("Réinitialisation du mot de passe GestSIS")

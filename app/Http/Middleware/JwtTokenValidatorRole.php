@@ -16,7 +16,7 @@ class JwtTokenValidatorRole
      * @param  \Closure  $next
      * @return mixed
      */
-    public function handle(Request $request, Closure $next, ...$roles)
+    public function handle(Request $request, Closure $next, string ...$roles)
     {
         try {
             $token = TokenTools::validateToken($request->bearerToken());

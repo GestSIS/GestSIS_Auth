@@ -7,8 +7,8 @@ use App\Models\Sapeur;
 use App\Models\Sis;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Http;
@@ -18,11 +18,8 @@ class ApiConfirmerEmailController extends Controller
 
     /**
      * Handle a registration request for the application.
-     *
-     * @param Request $request
-     * @return Response
      */
-    public function confirmerEmail(Request $request)
+    public function confirmerEmail(Request $request): JsonResponse
     {
         // TODO: Décider de quoi logger
         Log::debug("Call confirmation de l'email");
@@ -79,11 +76,8 @@ class ApiConfirmerEmailController extends Controller
 
     /**
      * Get a validator for an incoming registration request.
-     *
-     * @param array $data
-     * @return \Illuminate\Contracts\Validation\Validator
      */
-    protected function validator(array $data)
+    protected function validator(array $data): \Illuminate\Contracts\Validation\Validator
     {
         return Validator::make($data, [
             'token' => ['required', 'string', 'min:8'],

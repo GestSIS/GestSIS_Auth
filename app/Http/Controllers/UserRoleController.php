@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Role;
 use App\Models\Sis;
 use App\Models\UserRole;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -14,7 +15,7 @@ class UserRoleController extends Controller
      * Return all roles of a given SIS
      *
      * @param Request $request
-     * @return Response
+     * @return JsonResponse
      */
     public function index(Request $request)
     {
@@ -25,18 +26,15 @@ class UserRoleController extends Controller
             return response()->json(["error" => "Invalid sis key"], 401);
         }
 
-        return Role::with(["userRoles"])->where("roles.sis_id", '=', $sis->id)->get();
+        return response()->json([
+            "data" => Role::with(["userRoles"])->where("roles.sis_id", '=', $sis->id)->get()
+        ]);
     }
 
     /**
      * Update all the roles for a given user and provided SIS
-     *
-     * @param Request $request
-     * @param int $sisId
-     * @return Response
-     * @throws Exception
      */
-    public function updateRoles(Request $request, int $userId)
+    public function updateRoles(Request $request, int $userId): JsonResponse
     {
         // Checks pour sisId
         $sisKey = $request->header('Sis-Id', Null);
@@ -54,7 +52,7 @@ class UserRoleController extends Controller
         $data = $request->validate([
             'roles.*' => 'nullable|integer|min:1|distinct|exists:roles,id',
         ]);
-        $providedRoles = array();
+        $providedRoles = [];
         if (array_key_exists('roles', $data)) {
             $providedRoles = array_map(function ($id) {
                 return intval($id);
@@ -80,13 +78,8 @@ class UserRoleController extends Controller
 
     /**
      * Store a newly created resource in storage.
-     *
-     * @param Request $request
-     * @param int $sisId
-     * @return Response
-     * @throws Exception
      */
-    public function store(Request $request, int $roleId)
+    public function store(Request $request, int $roleId): JsonResponse
     {
         // Checks pour sisId
         $sisKey = $request->header('Sis-Id', Null);
@@ -115,12 +108,8 @@ class UserRoleController extends Controller
 
     /**
      * Remove the specified resource from storage.
-     *
-     * @param Request $request
-     * @param int $sisId
-     * @return Response
      */
-    public function destroy(Request $request, int $roleId, int $userRoleId)
+    public function destroy(Request $request, int $roleId, int $userRoleId): JsonResponse
     {
         // Checks pour sisId
         $sisKey = $request->header('Sis-Id', Null);

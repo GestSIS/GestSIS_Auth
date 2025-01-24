@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Exception;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Mail;
 
 class ApiResendConfirmationController extends Controller
@@ -17,7 +18,7 @@ class ApiResendConfirmationController extends Controller
      * Handle a resend confirmation email request for the application.
      *
      * @param Request $request
-     * @return Response
+     * @return JsonResponse
      * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
      */
     public function resend(Request $request)

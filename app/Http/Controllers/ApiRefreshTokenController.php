@@ -10,18 +10,15 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 
 class ApiRefreshTokenController extends Controller
 {
 
     /**
      * Handle a registration request for the application.
-     *
-     * @param Request $request
-     * @return Response
-     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
      */
-    public function refresh(Request $request)
+    public function refresh(Request $request): JsonResponse
     {
         Log::debug("Call refresh token");
 
