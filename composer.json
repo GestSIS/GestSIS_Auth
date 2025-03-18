@@ -15,6 +15,7 @@
         "laravel/tinker": "^2.0",
         "laravel/ui": "^4.5",
         "paragonie/constant_time_encoding": "^3.0",
+        "sentry/sentry-laravel": "^4.13",
         "spatie/laravel-ignition": "^2.4"
     },
     "require-dev": {
