@@ -20,7 +20,7 @@ class UserRoleController extends Controller
     public function index(Request $request)
     {
         // Checks pour sisId
-        $sisKey = $request->header('Sis-Key', Null);
+        $sisKey = $request->header('Sis-Id', Null);
         $sis = Sis::where('api_key', $sisKey)->first();
         if (is_null($sis)) {
             return response()->json(["error" => "Invalid sis key"], 401);
@@ -37,7 +37,7 @@ class UserRoleController extends Controller
     public function updateRoles(Request $request, int $userId): JsonResponse
     {
         // Checks pour sisId
-        $sisKey = $request->header('Sis-Key', Null);
+        $sisKey = $request->header('Sis-Id', Null);
         $sis = Sis::where('api_key', $sisKey)->first();
         if (is_null($sis)) {
             return response()->json(["error" => "Invalid sis key"], 401);
@@ -82,7 +82,7 @@ class UserRoleController extends Controller
     public function store(Request $request, int $roleId): JsonResponse
     {
         // Checks pour sisId
-        $sisKey = $request->header('Sis-Key', Null);
+        $sisKey = $request->header('Sis-Id', Null);
         $sis = Sis::where('api_key', $sisKey)->first();
         if (is_null($sis)) {
             return response()->json(["error" => "Invalid sis key"], 401);
@@ -112,7 +112,7 @@ class UserRoleController extends Controller
     public function destroy(Request $request, int $roleId, int $userRoleId): JsonResponse
     {
         // Checks pour sisId
-        $sisKey = $request->header('Sis-Key', Null);
+        $sisKey = $request->header('Sis-Id', Null);
         $sis = Sis::where('api_key', $sisKey)->first();
         if (is_null($sis)) {
             return response()->json(["error" => "Invalid sis key"], 401);

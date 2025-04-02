@@ -24,7 +24,7 @@ class RegisterTokenTest extends TestCase
         ];
 
         $response = $this->withHeaders([
-            'Sis-Key' => 'test',
+            'Sis-Id' => 'test',
             'Authorization' => 'Bearer ' . $bearerToken,
         ])->post("api/v1/register-token/", $params);
 
