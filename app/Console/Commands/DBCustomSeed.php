@@ -69,9 +69,9 @@ class DBCustomSeed extends Command
             ['id' => 30, 'tri' => 510, 'nom' => 'Cours modification', 'description' => 'Modification des cours', 'api_key' => 'cours.modification'],
             ['id' => 31, 'tri' => 520, 'nom' => 'Cours config', 'description' => 'Configuration des cours', 'api_key' => 'cours.config'],
 
-            ['id' => 24, 'tri' => 600, 'nom' => 'Mat. perso lecture', 'description' => 'Affichage du matériel personnel', 'api_key' => 'mat_perso.lecture'],
-            ['id' => 25, 'tri' => 610, 'nom' => 'Mat. perso modification', 'description' => 'Modification du matériel personnel', 'api_key' => 'mat_perso.modification'],
-            ['id' => 26, 'tri' => 620, 'nom' => 'Mat. perso config', 'description' => 'Configuration du matériel personnel', 'api_key' => 'mat_perso.config'],
+            ['id' => 24, 'tri' => 600, 'nom' => 'Matériel lecture', 'description' => 'Affichage du matériel', 'api_key' => 'materiel.lecture'],
+            ['id' => 25, 'tri' => 610, 'nom' => 'Matériel modification', 'description' => 'Modification du matériel', 'api_key' => 'materiel.modification'],
+            ['id' => 26, 'tri' => 620, 'nom' => 'Matériel config', 'description' => 'Configuration du matériel', 'api_key' => 'materiel.config'],
 
             ['id' => 9, 'tri' => 700, 'nom' => 'Organisation modification', 'description' => 'Modification des groupes', 'api_key' => 'organisation.modification'],
 
@@ -96,16 +96,13 @@ class DBCustomSeed extends Command
             ['id' => 20, 'tri' => 2000, 'nom' => 'Admin', 'description' => 'Paramètres admin du système', 'api_key' => 'admin.tout'],
         ];
 
-        Permission::insert([
-            ['id' => 40, 'tri' => 800, 'nom' => 'Comptabilité lecture', 'description' => 'Comptabilité, lecture', 'api_key' => 'comptabilite.lecture'],
-        ]);
         foreach ($permissions as $p) {
             Permission::where('id', '=', $p['id'])->update(['tri' => $p['tri'], 'api_key' => $p['api_key'], 'description' => $p['description'], 'nom' => $p['nom']]);
         }
 
         // $roleNamedAdmin = Role::where('nom', 'LIKE', 'Admi%')->get(['id'])->toArray();
-        $roleWithComptabiliteTout = PermissionRole::where('permission_id', '=', 3)->get(['role_id'])->toArray();
-        PermissionRole::insert(array_map(fn ($r) => ['role_id' => $r['role_id'], 'permission_id' => 40], $roleWithComptabiliteTout));
+        // $roleWithComptabiliteTout = PermissionRole::where('permission_id', '=', 3)->get(['role_id'])->toArray();
+        // PermissionRole::insert(array_map(fn ($r) => ['role_id' => $r['role_id'], 'permission_id' => 40], $roleWithComptabiliteTout));
 
         printf("Migrating done\n");
         return 0;

@@ -58,9 +58,9 @@ class PermissionSeeder extends Seeder
             ['id' => 30, 'tri' => 510, 'nom' => 'Cours modification', 'description' => 'Modification des cours', 'api_key' => 'cours.modification'],
             ['id' => 31, 'tri' => 520, 'nom' => 'Cours config', 'description' => 'Configuration des cours', 'api_key' => 'cours.config'],
 
-            ['id' => 24, 'tri' => 600, 'nom' => 'Mat. perso lecture', 'description' => 'Affichage du matériel personnel', 'api_key' => 'mat_perso.lecture'],
-            ['id' => 25, 'tri' => 610, 'nom' => 'Mat. perso modification', 'description' => 'Modification du matériel personnel', 'api_key' => 'mat_perso.modification'],
-            ['id' => 26, 'tri' => 620, 'nom' => 'Mat. perso config', 'description' => 'Configuration du matériel personnel', 'api_key' => 'mat_perso.config'],
+            ['id' => 24, 'tri' => 600, 'nom' => 'Matériel lecture', 'description' => 'Affichage du matériel', 'api_key' => 'materiel.lecture'],
+            ['id' => 25, 'tri' => 610, 'nom' => 'Matériel modification', 'description' => 'Modification du matériel', 'api_key' => 'materiel.modification'],
+            ['id' => 26, 'tri' => 620, 'nom' => 'Matériel config', 'description' => 'Configuration du matériel', 'api_key' => 'materiel.config'],
 
             ['id' => 9, 'tri' => 700, 'nom' => 'Organisation modification', 'description' => 'Modification des groupes', 'api_key' => 'organisation.modification'],
 
