@@ -82,6 +82,10 @@ class PermissionSeeder extends Seeder
             ['id' => 27, 'tri' => 1100, 'nom' => 'SMS envoie', 'description' => 'Envoie de SMS', 'api_key' => 'sms.envoie'],
             ['id' => 28, 'tri' => 1110, 'nom' => 'SMS config', 'description' => 'Configuration du des SMS', 'api_key' => 'sms.config'],
 
+            ['id' => 41, 'tri' => 1200, 'nom' => 'RTA lecture', 'description' => 'Accès aux informations RTA', 'api_key' => 'rta.lecture'],
+            ['id' => 42, 'tri' => 1210, 'nom' => 'RTA modification', 'description' => 'Envoie de modifications au RTA', 'api_key' => 'rta.modification'],
+            ['id' => 43, 'tri' => 1230, 'nom' => 'RTA config', 'description' => 'Configuration du RTA', 'api_key' => 'rta.config'],
+
             ['id' => 20, 'tri' => 2000, 'nom' => 'Admin', 'description' => 'Paramètres admin du système', 'api_key' => 'admin.tout'],
         );
 

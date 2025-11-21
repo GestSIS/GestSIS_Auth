@@ -41,7 +41,7 @@ class DBCustomSeed extends Command
     public function handle()
     {
         printf("Seed Permissions\n");
-        $permissions =  [
+        $permissions = [
             ['id' => 22, 'tri' => 50, 'nom' => 'Effectif', 'description' => 'Affichage de l\'effectif', 'api_key' => 'effectif.tout'],
 
             ['id' => 1, 'tri' => 100, 'nom' => 'Sapeur lecture', 'description' => 'Affichage des informations sapeurs', 'api_key' => 'sapeur.lecture'],
@@ -93,16 +93,16 @@ class DBCustomSeed extends Command
             ['id' => 27, 'tri' => 1100, 'nom' => 'SMS envoie', 'description' => 'Envoie de SMS', 'api_key' => 'sms.envoie'],
             ['id' => 28, 'tri' => 1110, 'nom' => 'SMS config', 'description' => 'Configuration du des SMS', 'api_key' => 'sms.config'],
 
+            ['id' => 41, 'tri' => 1200, 'nom' => 'RTA lecture', 'description' => 'Accès aux informations RTA', 'api_key' => 'rta.lecture'],
+            ['id' => 42, 'tri' => 1210, 'nom' => 'RTA modification', 'description' => 'Envoie de modifications au RTA', 'api_key' => 'rta.modification'],
+            ['id' => 43, 'tri' => 1230, 'nom' => 'RTA config', 'description' => 'Configuration du RTA', 'api_key' => 'rta.config'],
+
             ['id' => 20, 'tri' => 2000, 'nom' => 'Admin', 'description' => 'Paramètres admin du système', 'api_key' => 'admin.tout'],
         ];
 
         foreach ($permissions as $p) {
-            Permission::where('id', '=', $p['id'])->update(['tri' => $p['tri'], 'api_key' => $p['api_key'], 'description' => $p['description'], 'nom' => $p['nom']]);
+            Permission::updateOrCreate(['id' => $p['id']], $p);
         }
-
-        // $roleNamedAdmin = Role::where('nom', 'LIKE', 'Admi%')->get(['id'])->toArray();
-        // $roleWithComptabiliteTout = PermissionRole::where('permission_id', '=', 3)->get(['role_id'])->toArray();
-        // PermissionRole::insert(array_map(fn ($r) => ['role_id' => $r['role_id'], 'permission_id' => 40], $roleWithComptabiliteTout));
 
         printf("Migrating done\n");
         return 0;
