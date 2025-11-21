@@ -7,11 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 class Permission extends Model
 {
     protected $fillable = [
-        'nom', 'description', 'api_key'
+        'nom',
+        'description',
+        'api_key',
+        'tri',
     ];
 
     protected function casts(): array
     {
-        return ['sis_id' => 'integer'];
+        return ['sis_id' => 'integer', 'tri' => 'integer'];
     }
 }

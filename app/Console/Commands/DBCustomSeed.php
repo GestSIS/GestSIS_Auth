@@ -104,6 +104,28 @@ class DBCustomSeed extends Command
             Permission::updateOrCreate(['id' => $p['id']], $p);
         }
 
+        $rolesIds = PermissionRole::where(['permission_id' => 9])->get()->pluck('role_id');
+        $temp = array_merge(
+            ...array_map(
+                fn($roleId) => [
+                    ['permission_id' => 41, 'role_id' => $roleId],
+                    ['permission_id' => 42, 'role_id' => $roleId],
+                    ['permission_id' => 43, 'role_id' => $roleId],
+                ],
+                array_unique($rolesIds->toArray())
+            )
+        );
+        PermissionRole::insert(array_merge(
+            ...array_map(
+                fn($roleId) => [
+                    ['permission_id' => 41, 'role_id' => $roleId],
+                    ['permission_id' => 42, 'role_id' => $roleId],
+                    ['permission_id' => 43, 'role_id' => $roleId],
+                ],
+                array_unique($rolesIds->toArray())
+            )
+        ));
+
         printf("Migrating done\n");
         return 0;
     }
