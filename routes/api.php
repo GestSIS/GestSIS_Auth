@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminRoleController;
 use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\AdminUserRoleController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ApiLoginController;
 use App\Http\Controllers\ApiRegisterController;
@@ -44,6 +45,7 @@ Route::group(['prefix' => 'v1'], function () {
         Route::resource('sis', SisController::class, ['as' => 'admin'])->only(['store', 'update']);
         Route::resource('users', AdminUserController::class, ['as' => 'admin'])->only(['index', 'show', 'update', 'destroy']);
         Route::resource('roles', AdminRoleController::class, ['as' => 'admin'])->only(['index', 'show', 'update', 'destroy']);
+        Route::resource('user-roles', AdminUserRoleController::class, ['as' => 'admin'])->only(['store', 'destroy']);
     });
 
     Route::group(['middleware' => 'jwtTokenRole'], function () {
