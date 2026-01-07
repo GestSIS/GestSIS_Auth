@@ -53,7 +53,7 @@ class RoleController extends Controller
         $role = new Role($data);
         $role->sis_id = $sis->id;
         $role->save();
-        $role->permissions()->attach($data['permissions']);
+        $role->permissions()->attach($data['permissions'] ?? []);
 
         return response()->json(['data' => Role::where('id', '=', $role->id)->with('permissionRoles')->first()]);
     }
