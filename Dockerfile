@@ -1,11 +1,11 @@
-FROM php:8.3-fpm
+FROM php:8.4-fpm
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libfreetype6-dev libjpeg-dev libpng-dev libwebp-dev libzip-dev \
     && docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/ --with-webp=/usr/include/ \
     && docker-php-ext-install gd \
     # gmp
-    && apt-get install -y --no-install-recommends libgmp-dev unzip \
+    && apt-get install -y --no-install-recommends libgmp-dev git vim zip unzip \
     && docker-php-ext-install gmp \
     # pdo_mysql
     && docker-php-ext-install pdo_mysql \
