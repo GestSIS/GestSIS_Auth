@@ -6,7 +6,6 @@ use App\Auth\TokenTools;
 use App\Models\RefreshToken;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;

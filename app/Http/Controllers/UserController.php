@@ -2,15 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\RefreshToken;
-use App\Models\PasswordResetToken;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Role;
-use App\Models\Sapeur;
 use App\Models\Sis;
-use App\Models\UserRole;
 use Illuminate\Http\JsonResponse;
 
 class UserController extends Controller

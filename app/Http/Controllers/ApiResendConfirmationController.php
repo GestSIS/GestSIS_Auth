@@ -6,7 +6,6 @@ use App\Auth\TokenTools;
 use App\Mail\ConfirmationEmail;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Mail;
