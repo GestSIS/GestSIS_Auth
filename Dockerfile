@@ -1,18 +1,10 @@
-FROM php:8.4-fpm
+FROM php:8.5-fpm
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libfreetype6-dev libjpeg-dev libpng-dev libwebp-dev libzip-dev \
     && docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/ --with-webp=/usr/include/ \
-    && docker-php-ext-install gd \
-    # gmp
     && apt-get install -y --no-install-recommends libgmp-dev git vim zip unzip \
-    && docker-php-ext-install gmp \
-    # pdo_mysql
-    && docker-php-ext-install pdo_mysql \
-    # opcache
-    && docker-php-ext-enable opcache \
-    # zip
-    && docker-php-ext-install zip \
+    && docker-php-ext-install gd gmp pdo_mysql zip \
     # clean up
     && apt-get autoclean -y \
     && rm -rf /var/lib/apt/lists/* \
