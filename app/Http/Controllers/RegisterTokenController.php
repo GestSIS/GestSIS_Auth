@@ -35,7 +35,7 @@ class RegisterTokenController extends Controller
         }
 
         $permissions = (array) $jwt->data->permissions;
-        $rolesId = $request->get('roles');
+        $rolesId = $request->input('roles');
         $roles = Role::whereIn('id', $rolesId)->with('sis')->get();
 
         // Controle que les rôles à ajouter peuvent l'être par l'utilisateur

@@ -27,8 +27,18 @@ class ApiRefreshTokenController extends Controller
             return response()->json(['error' => $validation->errors()], 401);
         }
 
-        $refreshToken = RefreshToken::where('expire', '>', Carbon::now())->where('token', '=', $request->get('token'))->with('user')->first();
+        // Hash the provided token before database lookup
+        // This prevents timing attacks as the hash is computed in constant time
+        $hashedToken = TokenTools::hashToken($request->input('token'));
+        $refreshToken = RefreshToken::where('expire', '>', Carbon::now())
+            ->where('token', '=', $hashedToken)
+            ->with('user')
+            ->first();
+
         if (!$refreshToken) {
+            Log::warning('Invalid or expired refresh token attempt', [
+                'ip' => $request->ip(),
+            ]);
             return response()->json(['error' => 'Refresh token expired'], 401);
         }
 
@@ -40,9 +50,9 @@ class ApiRefreshTokenController extends Controller
         // Create new refreshToken
         $token = TokenTools::createRefreshToken();
 
-        // Store refresh token in database
+        // Store refresh token in database (hashed)
         $newRefreshToken = new RefreshToken();
-        $newRefreshToken->token = $token->token;
+        $newRefreshToken->token = TokenTools::hashToken($token->token); // Hash before storing
         $newRefreshToken->expire = $token->expire;
         $newRefreshToken->user_id = $refreshToken->user_id;
         $newRefreshToken->save();
@@ -54,7 +64,7 @@ class ApiRefreshTokenController extends Controller
             array(
                 "message" => "Successful login",
                 "accessToken" => $accessToken,
-                "refreshToken" => $newRefreshToken->token,
+                "refreshToken" => $token->token, // Send plain token to client
                 "user" => $refreshToken->user
             )
         );

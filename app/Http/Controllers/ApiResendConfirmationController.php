@@ -41,9 +41,14 @@ class ApiResendConfirmationController extends Controller
             return response()->json(["error" => "Votre email est déjà vérifié !"], 401);
         }
 
+        // Generate a new confirmation token
+        $newToken = TokenTools::createConfirmationToken();
+        $user->validate_email_token = TokenTools::hashToken($newToken->token);
+        $user->save();
+
         // Envoie du lien de confirmation par email
         try {
-            Mail::to($user)->send(new ConfirmationEmail($user));
+            Mail::to($user)->send(new ConfirmationEmail($user, $newToken->token));
         } catch (Exception $e) {
             return response()->json(["error" => "Une erreur à eu lieu lors de l'envoie de l'email de confirmation"], 401);
         }

@@ -62,9 +62,13 @@ class ApiMotDePasseController extends Controller
             return response()->json(['message' => self::RESET_MDP_CONFIRMATION_RESPONSE]);
         }
 
-        // Sauvegarder le jeton dans la DB
+        // Sauvegarder le jeton dans la DB (hashed)
         $token = new PasswordResetToken();
-        $token->fill(['token' => $resetToken->token, 'user_id' => $user->id, 'validite' => $resetToken->expire]);
+        $token->fill([
+            'token' => TokenTools::hashToken($resetToken->token), // Hash before storing
+            'user_id' => $user->id,
+            'validite' => $resetToken->expire
+        ]);
         $token->save();
 
         // Retourner le message standard
@@ -80,7 +84,11 @@ class ApiMotDePasseController extends Controller
 
         $validation = Validator::make($request->all(), [
             'token' => ['required', 'string'],
-            'password' => ['required', 'min:8']
+            'password' => [
+                'required',
+                'string',
+                'min:12',
+            ],
         ]);
 
         if ($validation->fails()) {
@@ -91,15 +99,20 @@ class ApiMotDePasseController extends Controller
         $jeton = $validated['token'];
         $password = $validated['password'];
 
+        // Hash the provided token before database lookup
+        $hashedToken = TokenTools::hashToken($jeton);
+        
         // Chargement du jeton depuis la DB
-        $passwordResetToken = PasswordResetToken::where('token', '=', $jeton)->first();
+        $passwordResetToken = PasswordResetToken::where('token', '=', $hashedToken)
+            ->where('validite', '>=', Carbon::now())
+            ->first();
 
-        // Controller la validité
         if (is_null($passwordResetToken)) {
+            Log::warning('Invalid or expired password reset token attempt', [
+                'ip' => request()->ip(),
+            ]);
+            
             return response()->json(['error' => ['message' => 'Jeton invalide ou déjà utilisé']], 401);
-        }
-        if (Carbon::parse($passwordResetToken->validite)->lt(Carbon::now())) {
-            return response()->json(['error' => ['message' => 'Jeton expiré']], 401);
         }
 
         // Suppression du jeton dans la DB
@@ -110,6 +123,14 @@ class ApiMotDePasseController extends Controller
         $user = User::find($userId);
         $user->password = Hash::make($password);
         $user->save();
+
+        // Revoke all refresh tokens (invalidate all sessions)
+        $user->refreshTokens()->delete();
+
+        Log::info('Password reset successful', [
+            'user_id' => $user->id,
+            'ip' => request()->ip(),
+        ]);
 
         // return success
         return response()->json(['message' => 'Mot de passe réinitialisé avec succès']);
@@ -129,7 +150,11 @@ class ApiMotDePasseController extends Controller
         $data = $request->validate([
             $this->username() => 'required|string',
             'password' => 'required|string',
-            'new_password' => 'required|string|min:8',
+            'new_password' => [
+                'required',
+                'string',
+                'min:12',
+            ],
         ]);
 
         $endString = "@gestsis.ch";
@@ -140,8 +165,22 @@ class ApiMotDePasseController extends Controller
         if ($this->attemptLogin($request)) {
             $user = Auth::user();
             User::find($user->id)->update(['password' => Hash::make($data['new_password'])]);
+            
+            // Revoke all refresh tokens (invalidate all sessions)
+            $user->refreshTokens()->delete();
+            
+            Log::info('Password changed successfully', [
+                'user_id' => $user->id,
+                'ip' => $request->ip(),
+            ]);
+            
             return response()->json(['message' => 'Modification effectuée avec succès']);
         }
+
+        Log::warning('Failed password change attempt', [
+            'email' => $data['email'] ?? 'unknown',
+            'ip' => $request->ip(),
+        ]);
 
         return response()->json(['error' => 'Identifiants invalides'], 401);
     }

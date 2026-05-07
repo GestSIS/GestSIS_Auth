@@ -30,11 +30,15 @@ class ApiConfirmerEmailController extends Controller
             return response()->json(['error' => $validation->errors()], 401);
         }
 
-        // Chargement de l'utilisateur
-        $token = $request->get('token');
-        $user = User::where('validate_email_token', '=', $token)->first();
+        // Hash the provided token before database lookup
+        $providedToken = $request->input('token');
+        $hashedToken = TokenTools::hashToken($providedToken);
+        $user = User::where('validate_email_token', '=', $hashedToken)->first();
 
         if (is_null($user)) {
+            Log::warning('Invalid email confirmation token attempt', [
+                'ip' => $request->ip(),
+            ]);
             return response()->json(['error' => 'Jeton de confirmation invalide ou déjà utilisé.'], 401);
         }
 
@@ -42,6 +46,11 @@ class ApiConfirmerEmailController extends Controller
         $user->validate_email_token = null;
         $user->email_verified_at = Carbon::now();
         $user->save();
+
+        Log::info('Email confirmed successfully', [
+            'user_id' => $user->id,
+            'ip' => $request->ip(),
+        ]);
 
         // Ajout des liaisons avec sapeur
         $response = Http::withHeaders([

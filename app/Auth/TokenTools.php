@@ -31,6 +31,25 @@ class TokenTools
     private const PRIVATE_KEY_FILE = "auth-private.key";
     private const PUBLIC_KEY_FILE = "auth-public.key";
 
+    /**
+     * Hash a token for secure storage.
+     * Uses SHA-256 for deterministic hashing (required for database lookups).
+     * Following Laravel Sanctum's approach for personal access tokens.
+     */
+    public static function hashToken(string $plainToken): string
+    {
+        return hash('sha256', $plainToken);
+    }
+
+    /**
+     * Compare a plain token with a hashed token in constant time.
+     * Prevents timing attacks by using hash_equals().
+     */
+    public static function verifyToken(string $plainToken, string $hashedToken): bool
+    {
+        return hash_equals($hashedToken, self::hashToken($plainToken));
+    }
+
     public static function createAccessToken(User $user, array $permissions, array $mobiles, array $sapeurs): string
     {
         Log::debug("CREATE ACCESS TOKEN " . $user->name);

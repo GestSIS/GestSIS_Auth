@@ -30,7 +30,14 @@ class ApiLoginController extends Controller
             return $this->sendLoginResponse(Auth::user());
         }
 
-        return response()->json(['error' => 'invalid credentials'], 401);
+        // Log failed login attempt
+        Log::warning('Failed login attempt', [
+            'email' => $request->input('email'),
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        return response()->json(['error' => 'Les identifiants fournis sont incorrects'], 401);
     }
 
     /**
@@ -39,7 +46,7 @@ class ApiLoginController extends Controller
     public function token(Request $request): JsonResponse
     {
         Log::debug("ADMIN Request for a user token");
-        $userId = $request->get('user_id');
+        $userId = $request->input('user_id');
         if (!$userId) {
             return response()->json(["Missing `user_id` parameter", 400]);
         }
@@ -103,7 +110,7 @@ class ApiLoginController extends Controller
         // When used, will be deactivated and a new one should be generated
         $token = TokenTools::createRefreshToken();
         $refreshToken = new RefreshToken();
-        $refreshToken->token = $token->token;
+        $refreshToken->token = TokenTools::hashToken($token->token); // Hash before storing
         $refreshToken->expire = $token->expire;
         $refreshToken->user_id = $user->id;
         $user->refreshTokens()->save($refreshToken);
@@ -112,7 +119,7 @@ class ApiLoginController extends Controller
             array(
                 "message" => "Successful login",
                 "accessToken" => $accessToken,
-                "refreshToken" => $refreshToken->token,
+                "refreshToken" => $token->token, // Send plain token to client
                 "user" => User::where('id', $user->id)->first()
             )
         );

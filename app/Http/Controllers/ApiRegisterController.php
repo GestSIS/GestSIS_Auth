@@ -36,7 +36,7 @@ class ApiRegisterController extends Controller
         }
 
         // Check présence de token
-        $registerToken = $request->get('token');
+        $registerToken = $request->input('token');
         $rolesId = [];
         if ($registerToken != null && $registerToken != '') {
             $registerToken = RegisterToken::where('token', '=', $registerToken)
@@ -51,7 +51,7 @@ class ApiRegisterController extends Controller
                 ->pluck('role_id')->toArray();
         } else {
             // Controle que l'email est existant au sein d'un SIS
-            $email = $request->get('email');
+            $email = $request->input('email');
 
             $response = Http::withHeaders([
                 'Sis-Key' => '_',
@@ -63,16 +63,18 @@ class ApiRegisterController extends Controller
             }
         }
 
-        $user = $this->create($request->all());
+        $userData = $this->create($request->all());
+        $user = $userData['user'];
+        $plainEmailToken = $userData['plain_token'];
 
         $token = TokenTools::createRefreshToken();
         $refreshToken = new RefreshToken();
-        $refreshToken->token = $token->token;
+        $refreshToken->token = TokenTools::hashToken($token->token); // Hash before storing
         $refreshToken->expire = $token->expire;
 
         // Envoie du lien de confirmation par email
         try {
-            Mail::to($user)->send(new ConfirmationEmail($user));
+            Mail::to($user)->send(new ConfirmationEmail($user, $plainEmailToken));
         } catch (Exception $e) {
             $user->delete();
             return response()->json(["error" => "Une erreur à eu lieu lors de l'envoie de l'email de confirmation"], 401);
@@ -98,7 +100,7 @@ class ApiRegisterController extends Controller
         return response()->json([
             "message" => "Successful login",
             "accessToken" => $accessToken,
-            "refreshToken" => $refreshToken->token,
+            "refreshToken" => $token->token, // Send plain token to client
             "user" => $user
         ]);
     }
@@ -111,7 +113,12 @@ class ApiRegisterController extends Controller
         return Validator::make($data, [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => [
+                'required',
+                'string',
+                'min:12',
+                'confirmed',
+            ],
             'token' => ['string', 'min:8', 'nullable'],
         ]);
     }
@@ -120,16 +127,21 @@ class ApiRegisterController extends Controller
      * Create a new user instance after a valid registration.
      *
      * @param array $data
-     * @return User
+     * @return array ['user' => User, 'plain_token' => string]
      */
     protected function create(array $data)
     {
         $token = TokenTools::createConfirmationToken();
-        return User::create([
+        $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'validate_email_token' => $token->token,
+            'validate_email_token' => TokenTools::hashToken($token->token), // Hash before storing
             'password' => Hash::make($data['password']),
         ]);
+
+        return [
+            'user' => $user,
+            'plain_token' => $token->token // Return plain token for email
+        ];
     }
 }

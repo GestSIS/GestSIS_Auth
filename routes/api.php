@@ -30,13 +30,24 @@ use App\Http\Controllers\RoleController;
 
 Route::group(['prefix' => 'v1'], function () {
 
-    Route::post('login', [ApiLoginController::class, 'login']);
-    Route::post('register', [ApiRegisterController::class, 'register']);
-    Route::post('refresh-token', [ApiRefreshTokenController::class, 'refresh']);
-    Route::post('confirmer-email', [ApiConfirmerEmailController::class, 'confirmerEmail']);
-    Route::post('forgotten-password', [ApiMotDePasseController::class, 'request']);
-    Route::post('reset-password', [ApiMotDePasseController::class, 'reset']);
-    Route::post('change-password', [ApiMotDePasseController::class, 'changer']);
+    // Auth endpoints with strict rate limiting
+    Route::middleware('throttle:5,1')->group(function () {
+        Route::post('login', [ApiLoginController::class, 'login']);
+        Route::post('forgotten-password', [ApiMotDePasseController::class, 'request']);
+        Route::post('reset-password', [ApiMotDePasseController::class, 'reset']);
+        Route::post('change-password', [ApiMotDePasseController::class, 'changer']);
+    });
+
+    // Registration with rate limiting
+    Route::middleware('throttle:5,60')->group(function () {
+        Route::post('register', [ApiRegisterController::class, 'register']);
+    });
+
+    // Moderate limit
+    Route::middleware('throttle:10,1')->group(function () {
+        Route::post('refresh-token', [ApiRefreshTokenController::class, 'refresh']);
+        Route::post('confirmer-email', [ApiConfirmerEmailController::class, 'confirmerEmail']);
+    });
 
     Route::get('sis', [SisController::class, 'index']);
 
