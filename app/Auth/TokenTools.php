@@ -81,6 +81,47 @@ class TokenTools
         return JWT::encode($token, $privateKey, 'RS256');
     }
 
+    /**
+     * Create a custom duration access token.
+     * 
+     * @param User $user The user for whom the token is created
+     * @param array $permissions Permissions grouped by SIS
+     * @param array $mobiles Mobile numbers
+     * @param array $sapeurs Sapeur IDs
+     * @param int $durationInDays Duration of the token in days
+     * @return string The JWT token
+     */
+    public static function createCustomDurationToken(User $user, array $permissions, array $mobiles, array $sapeurs, int $durationInDays): string
+    {
+        Log::debug("CREATE CUSTOM DURATION TOKEN " . $user->name . " - Duration: " . $durationInDays . " days");
+
+        $privateKey = Storage::disk('keys')->get(self::PRIVATE_KEY_FILE);
+
+        $issuedat_claim = time(); // issued at
+        $notbefore_claim = $issuedat_claim - 10; //not before in seconds
+        $expire_claim = $issuedat_claim + $durationInDays * 86400; // expire time in seconds (86400 = 24 hours)
+
+        $token = array(
+            "iss" => self::ISSUER,
+            "aud" => self::AUDIENCE,
+            "iat" => $issuedat_claim,
+            "nbf" => $notbefore_claim,
+            "exp" => $expire_claim,
+            "data" => [
+                "id" => $user->id,
+                "admin" => $user->admin,
+                "validated" => $user->email_verified_at !== null,
+                "pseudo" => $user->name,
+                "email" => $user->email,
+                "permissions" => $permissions,
+                "mobiles" => $mobiles,
+                "sapeurs" => $sapeurs,
+            ]
+        );
+
+        return JWT::encode($token, $privateKey, 'RS256');
+    }
+
     public static function createRefreshToken(): Stdclass
     {
         Log::debug("CREATE REFRESH TOKEN");
