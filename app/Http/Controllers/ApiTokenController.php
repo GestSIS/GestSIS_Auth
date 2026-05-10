@@ -48,7 +48,7 @@ class ApiTokenController extends Controller
                 ];
             });
 
-        return response()->json(['tokens' => $tokens]);
+        return response()->json(['data' => $tokens]);
     }
 
     /**
@@ -170,6 +170,7 @@ class ApiTokenController extends Controller
         return response()->json([
             'message' => 'Jeton API créé avec succès. Sauvegardez ce jeton en sécurité - il ne sera plus affiché.',
             'token' => $tokenData->token, // Send plain token to client ONCE
+            'data' => [...($apiToken->toArray()), 'token' => $tokenData->token],
             'token_info' => [
                 'id' => $apiToken->id,
                 'name' => $apiToken->name,
