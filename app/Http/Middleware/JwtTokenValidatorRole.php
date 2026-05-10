@@ -2,10 +2,12 @@
 
 namespace App\Http\Middleware;
 
-use Closure;
 use App\Auth\TokenTools;
+use App\Models\User;
+use Closure;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class JwtTokenValidatorRole
 {
@@ -22,6 +24,14 @@ class JwtTokenValidatorRole
             $token = TokenTools::validateToken($request->bearerToken());
         } catch (Exception $e) {
             return response()->json(["error" => "Accès refusé"], 401);
+        }
+
+        // Set authenticated user from token
+        if (isset($token->data->id)) {
+            $user = User::find($token->data->id);
+            if ($user) {
+                Auth::setUser($user);
+            }
         }
 
         if (count($roles) > 0) {

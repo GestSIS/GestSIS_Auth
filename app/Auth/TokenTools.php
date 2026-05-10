@@ -24,6 +24,7 @@ class TokenTools
     private const REFRESH_TOKEN_LENGTH = 16;
     private const VALIDATION_TOKEN_LENGTH = 32;
     private const RESET_TOKEN_LENGTH = 32;
+    private const API_TOKEN_LENGTH = 32;
 
     private const ISSUER = "GestSIS_Auth";
     private const AUDIENCE = "GestSIS_API";
@@ -162,6 +163,28 @@ class TokenTools
         $resetToken->token = bin2hex($token);
         $resetToken->expire = Carbon::now()->addDays(self::RESET_TOKEN_DURATION_IN_HOURS);
         return $resetToken;
+    }
+
+    /**
+     * Create an API token for personal access.
+     * Similar to reset tokens but with configurable duration.
+     * 
+     * @param int $durationDays Number of days until the token expires
+     * @return Stdclass Object with token (plain hex string) and expire (Carbon timestamp)
+     */
+    public static function createApiToken(int $durationDays): Stdclass
+    {
+        Log::debug("CREATE API TOKEN - Duration: {$durationDays} days");
+
+        // Generate a random string (32 chars for sufficient entropy)
+        $token = Str::random(self::API_TOKEN_LENGTH);
+
+        // Convert the binary data into hexadecimal representation
+        $apiToken = new Stdclass();
+        $apiToken->token = bin2hex($token);
+        $apiToken->expire = Carbon::now()->addDays($durationDays);
+        
+        return $apiToken;
     }
 
     /**

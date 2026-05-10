@@ -11,7 +11,8 @@ class Role extends Model
 {
     protected $fillable = [
         'nom',
-        'description'
+        'description',
+        'sis_id'
     ];
 
     protected function casts(): array

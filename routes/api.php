@@ -8,6 +8,8 @@ use App\Http\Controllers\ApiLoginController;
 use App\Http\Controllers\ApiRegisterController;
 use App\Http\Controllers\ApiRefreshTokenController;
 use App\Http\Controllers\ApiConfirmerEmailController;
+use App\Http\Controllers\ApiTokenAuthController;
+use App\Http\Controllers\ApiTokenController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserRoleController;
@@ -47,6 +49,7 @@ Route::group(['prefix' => 'v1'], function () {
     Route::middleware('throttle:10,1')->group(function () {
         Route::post('refresh-token', [ApiRefreshTokenController::class, 'refresh']);
         Route::post('confirmer-email', [ApiConfirmerEmailController::class, 'confirmerEmail']);
+        Route::post('token-auth', [ApiTokenAuthController::class, 'authenticate']);
     });
 
     Route::get('sis', [SisController::class, 'index']);
@@ -63,6 +66,14 @@ Route::group(['prefix' => 'v1'], function () {
         Route::get('permissions/', [PermissionController::class, 'index']);
         Route::post('resend-confirmation/', [ApiResendConfirmationController::class, 'resend']);
         Route::post('use-token/', [RegisterTokenController::class, 'consume']);
+
+        // API Token management endpoints
+        Route::apiResource('user/tokens', ApiTokenController::class)->only(['index', 'destroy']);
+    });
+
+    // API Token creation with stricter rate limiting (5 tokens per hour)
+    Route::middleware(['jwtTokenRole', 'throttle:5,60'])->group(function () {
+        Route::apiResource('user/tokens', ApiTokenController::class)->only(['store']);
     });
 
     Route::group(['middleware' => 'jwtTokenRole:utilisateur.config'], function () {
