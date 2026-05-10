@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Auth\TokenTools;
 use App\Models\ApiToken;
 use App\Models\Permission;
+use App\Models\Sis;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,7 +24,7 @@ class ApiTokenController extends Controller
         $user = Auth::user();
 
         $tokens = ApiToken::where('user_id', $user->id)
-            ->with('permissions:id,nom,api_key')
+            ->with(['permissions:id,nom,api_key', 'allowedSis:id,nom,api_key'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($token) {
@@ -38,6 +39,11 @@ class ApiTokenController extends Controller
                         'id' => $p->id,
                         'nom' => $p->nom,
                         'api_key' => $p->api_key,
+                    ]),
+                    'allowed_sis' => $token->allowedSis->map(fn($s) => [
+                        'id' => $s->id,
+                        'nom' => $s->nom,
+                        'api_key' => $s->api_key,
                     ]),
                 ];
             });
@@ -60,6 +66,8 @@ class ApiTokenController extends Controller
             'expires_in_days' => ['required', 'integer', 'min:1', 'max:365'],
             'permission_ids' => ['required', 'array', 'min:1'],
             'permission_ids.*' => ['required', 'integer', 'exists:permissions,id'],
+            'sis_ids' => ['nullable', 'array'],
+            'sis_ids.*' => ['required', 'integer', 'exists:sis,id'],
         ]);
 
         if ($validator->fails()) {
@@ -79,24 +87,55 @@ class ApiTokenController extends Controller
             ], 422);
         }
 
-        // Get user's current permissions
-        $userPermissions = User::getPermissions($user->id);
-        $userPermissionKeys = collect($userPermissions)
-            ->flatMap(fn($perms, $sisKey) => $perms)
-            ->unique()
-            ->toArray();
+        // Admins can create tokens for any SIS with any permissions
+        // Non-admins must have the permissions and SIS access they're assigning
+        if (!$user->admin) {
+            // Non-admins must specify at least one SIS
+            if (empty($validated['sis_ids'])) {
+                return response()->json([
+                    'error' => "Vous devez spécifier au moins un SIS pour ce jeton"
+                ], 422);
+            }
 
-        // Validate that user has all requested permissions
-        $requestedPermissions = Permission::whereIn('id', $validated['permission_ids'])->get();
-        $invalidPermission = $requestedPermissions->first(
-            fn($permission) => !in_array($permission->api_key, $userPermissionKeys)
-        );
+            // Get user's current permissions grouped by SIS
+            $userPermissions = User::getPermissions($user->id);
 
-        if ($invalidPermission) {
-            return response()->json([
-                'error' => "Vous ne disposez pas de la permission : {$invalidPermission->nom} ({$invalidPermission->api_key})"
-            ], 403);
+            // Get requested permissions
+            $requestedPermissions = Permission::whereIn('id', $validated['permission_ids'])->get();
+            $requestedPermissionKeys = $requestedPermissions->pluck('api_key')->toArray();
+
+            // Get requested SIS
+            $requestedSis = Sis::whereIn('id', $validated['sis_ids'])->get();
+
+            // Verify that user has ALL requested permissions in EACH requested SIS
+            foreach ($requestedSis as $sis) {
+                // Check if user has access to this SIS
+                if (!isset($userPermissions[$sis->api_key])) {
+                    return response()->json([
+                        'error' => "Vous n'avez aucune permission pour le SIS : {$sis->nom}"
+                    ], 403);
+                }
+
+                $userSisPermissions = $userPermissions[$sis->api_key];
+
+                // Check if user has all requested permissions in this SIS
+                $missingPermissions = array_diff($requestedPermissionKeys, $userSisPermissions);
+
+                if (!empty($missingPermissions)) {
+                    $missingPermissionNames = $requestedPermissions
+                        ->whereIn('api_key', $missingPermissions)
+                        ->pluck('nom')
+                        ->implode(', ');
+
+                    return response()->json([
+                        'error' => "Vous ne disposez pas des permissions suivantes pour le SIS {$sis->nom} : {$missingPermissionNames}"
+                    ], 403);
+                }
+            }
         }
+
+        // Get requested permissions for response
+        $requestedPermissions = Permission::whereIn('id', $validated['permission_ids'])->get();
 
         // Generate API token
         $tokenData = TokenTools::createApiToken($validated['expires_in_days']);
@@ -113,11 +152,19 @@ class ApiTokenController extends Controller
         // Attach permissions to token
         $apiToken->permissions()->attach($validated['permission_ids']);
 
+        // Attach SIS restrictions if provided
+        if (!empty($validated['sis_ids'])) {
+            $apiToken->allowedSis()->attach($validated['sis_ids']);
+        }
+
         Log::info('API token created', [
             'token_id' => $apiToken->id,
             'user_id' => $user->id,
+            'created_by_admin' => $user->admin,
             'name' => $apiToken->name,
             'permissions_count' => count($validated['permission_ids']),
+            'sis_restriction' => !empty($validated['sis_ids']),
+            'sis_count' => count($validated['sis_ids'] ?? []),
         ]);
 
         return response()->json([
@@ -133,6 +180,13 @@ class ApiTokenController extends Controller
                     'nom' => $p->nom,
                     'api_key' => $p->api_key,
                 ]),
+                'allowed_sis' => !empty($validated['sis_ids'])
+                    ? Sis::whereIn('id', $validated['sis_ids'])->get()->map(fn($s) => [
+                        'id' => $s->id,
+                        'nom' => $s->nom,
+                        'api_key' => $s->api_key,
+                    ])
+                    : [],
             ],
         ], 201);
     }
@@ -140,18 +194,18 @@ class ApiTokenController extends Controller
     /**
      * Revoke (delete) an API token.
      */
-    public function destroy(Request $request, ApiToken $token): JsonResponse
+    public function destroy(Request $request, ApiToken $apiToken): JsonResponse
     {
         $user = Auth::user();
 
         // Verify the token belongs to the authenticated user
-        if ($token->user_id !== $user->id) {
+        if ($apiToken->user_id !== $user->id) {
             return response()->json(['error' => 'Jeton introuvable'], 404);
         }
 
-        $tokenName = $token->name;
-        $tokenId = $token->id;
-        $token->delete();
+        $tokenName = $apiToken->name;
+        $tokenId = $apiToken->id;
+        $apiToken->delete();
 
         Log::info('API token revoked', [
             'token_id' => $tokenId,

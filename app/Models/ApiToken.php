@@ -62,6 +62,15 @@ class ApiToken extends Model
     }
 
     /**
+     * Get the SIS allowed for this token.
+     * If empty, the token is valid for all user's SIS.
+     */
+    public function allowedSis(): BelongsToMany
+    {
+        return $this->belongsToMany(Sis::class, 'api_token_sis');
+    }
+
+    /**
      * Scope to only include active (non-expired) tokens.
      */
     public function scopeActive($query)
@@ -80,6 +89,7 @@ class ApiToken extends Model
     /**
      * Get valid permissions for this token.
      * Returns only permissions the user still has, grouped by SIS.
+     * If the token has restricted SIS, only include those SIS.
      * 
      * @return array
      */
@@ -90,6 +100,14 @@ class ApiToken extends Model
 
         // Get user's current permissions (grouped by SIS)
         $userPermissions = User::getPermissions($this->user_id);
+
+        // If token has restricted SIS, filter user permissions to only those SIS
+        $allowedSisKeys = $this->allowedSis()->pluck('api_key')->toArray();
+        if (!empty($allowedSisKeys)) {
+            $userPermissions = collect($userPermissions)
+                ->filter(fn($perms, $sisKey) => in_array($sisKey, $allowedSisKeys))
+                ->toArray();
+        }
 
         // Flatten user permissions for quick lookup
         $userPermissionKeys = collect($userPermissions)

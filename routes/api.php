@@ -68,12 +68,12 @@ Route::group(['prefix' => 'v1'], function () {
         Route::post('use-token/', [RegisterTokenController::class, 'consume']);
 
         // API Token management endpoints
-        Route::apiResource('user/tokens', ApiTokenController::class)->only(['index', 'destroy']);
+        Route::apiResource('api-tokens', ApiTokenController::class)->only(['index', 'destroy']);
     });
 
     // API Token creation with stricter rate limiting (5 tokens per hour)
     Route::middleware(['jwtTokenRole', 'throttle:5,60'])->group(function () {
-        Route::apiResource('user/tokens', ApiTokenController::class)->only(['store']);
+        Route::apiResource('api-tokens', ApiTokenController::class)->only(['store']);
     });
 
     Route::group(['middleware' => 'jwtTokenRole:utilisateur.config'], function () {

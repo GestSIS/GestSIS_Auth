@@ -51,7 +51,7 @@ class TokenTools
         return hash_equals($hashedToken, self::hashToken($plainToken));
     }
 
-    public static function createAccessToken(User $user, array $permissions, array $mobiles, array $sapeurs): string
+    public static function createAccessToken(User $user, array $permissions, array $mobiles, array $sapeurs, ?bool $adminOverride = null): string
     {
         Log::debug("CREATE ACCESS TOKEN " . $user->name);
 
@@ -69,7 +69,7 @@ class TokenTools
             "exp" => $expire_claim,
             "data" => [
                 "id" => $user->id,
-                "admin" => $user->admin,
+                "admin" => $adminOverride ?? $user->admin,
                 "validated" => $user->email_verified_at !== null,
                 "pseudo" => $user->name,
                 "email" => $user->email,
