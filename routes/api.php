@@ -56,10 +56,10 @@ Route::group(['prefix' => 'v1'], function () {
 
     Route::group(['prefix' => 'admin', 'middleware' => 'jwtTokenAdmin'], function () {
         Route::get('token', [ApiLoginController::class, 'token']);
-        Route::resource('sis', SisController::class, ['as' => 'admin'])->only(['store', 'update']);
-        Route::resource('users', AdminUserController::class, ['as' => 'admin'])->only(['index', 'show', 'update', 'destroy']);
-        Route::resource('roles', AdminRoleController::class, ['as' => 'admin'])->only(['index', 'show', 'update', 'destroy']);
-        Route::resource('user-roles', AdminUserRoleController::class, ['as' => 'admin'])->only(['store', 'destroy']);
+        Route::apiResource('sis', SisController::class, ['as' => 'admin'])->only(['store', 'update']);
+        Route::apiResource('users', AdminUserController::class, ['as' => 'admin'])->only(['index', 'show', 'update', 'destroy']);
+        Route::apiResource('roles', AdminRoleController::class, ['as' => 'admin'])->only(['index', 'show', 'update', 'destroy']);
+        Route::apiResource('user-roles', AdminUserRoleController::class, ['as' => 'admin'])->only(['store', 'destroy']);
     });
 
     Route::group(['middleware' => 'jwtTokenRole'], function () {
@@ -77,16 +77,16 @@ Route::group(['prefix' => 'v1'], function () {
     });
 
     Route::group(['middleware' => 'jwtTokenRole:utilisateur.config'], function () {
-        Route::resource('roles', RoleController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('roles', RoleController::class)->only(['store', 'update', 'destroy']);
     });
 
     Route::group(['middleware' => 'jwtTokenRole:utilisateur.tout'], function () {
-        Route::resource('roles', RoleController::class)->only(['index']);
-        Route::resource('roles.users', UserRoleController::class)->only(['index', 'store', 'destroy']);
+        Route::apiResource('roles', RoleController::class)->only(['index']);
+        Route::apiResource('roles.users', UserRoleController::class)->only(['index', 'store', 'destroy']);
 
         Route::post('register-token', [RegisterTokenController::class, 'newToken']);
 
-        Route::resource('users', UserController::class)->only(['index']); // With roles
+        Route::apiResource('users', UserController::class)->only(['index']); // With roles
         Route::post('users/{user_id}/roles', [UserRoleController::class, 'updateRoles']); // Allow to update all the role of a user for a given SIS
     });
 });
