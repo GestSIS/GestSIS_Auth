@@ -1,4 +1,4 @@
-[![CI](https://github.com/Ph0tonic/GestSIS_Auth/actions/workflows/main.yml/badge.svg?branch=master)](https://github.com/Ph0tonic/GestSIS_Auth/actions/workflows/main.yml)
+[![CI](https://github.com/GestSIS/GestSIS_Auth/actions/workflows/main.yml/badge.svg)](https://github.com/GestSIS/GestSIS_Auth/actions/workflows/main.yml)
 
 # GestSIS_Auth
 
