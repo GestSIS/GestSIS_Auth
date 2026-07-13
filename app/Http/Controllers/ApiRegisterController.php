@@ -9,6 +9,7 @@ use App\Models\RegisterToken;
 use App\Models\User;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -63,7 +64,15 @@ class ApiRegisterController extends Controller
             }
         }
 
-        $userData = $this->create($request->all());
+        // The `unique:users` validation above and this insert are not atomic, so two
+        // concurrent registrations with the same email can both pass validation and
+        // reach here. The database unique index is the source of truth; catch its
+        // violation and return the same shape the validator produces for a duplicate.
+        try {
+            $userData = $this->create($request->all());
+        } catch (UniqueConstraintViolationException $e) {
+            return response()->json(['error' => ['email' => [__('validation.unique', ['attribute' => 'email'])]]], 401);
+        }
         $user = $userData['user'];
         $plainEmailToken = $userData['plain_token'];
 
