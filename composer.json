@@ -15,8 +15,7 @@
         "laravel/tinker": "^3.0",
         "laravel/ui": "^4.5",
         "paragonie/constant_time_encoding": "^3.0",
-        "sentry/sentry-laravel": "^4.13",
-        "spatie/laravel-ignition": "^2.4"
+        "sentry/sentry-laravel": "^4.13"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24",
