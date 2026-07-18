@@ -23,7 +23,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'validate_email_token'
+        'validate_email_token',
+        'validate_email_expire'
     ];
 
     /**
@@ -34,7 +35,8 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
-        'validate_email_token'
+        'validate_email_token',
+        'validate_email_expire'
     ];
 
     /**
@@ -46,6 +48,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'validate_email_expire' => 'datetime',
             'password' => 'hashed',
             'admin' => 'boolean',
         ];

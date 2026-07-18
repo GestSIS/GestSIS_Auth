@@ -44,6 +44,7 @@ class ApiResendConfirmationController extends Controller
         // Generate a new confirmation token
         $newToken = TokenTools::createConfirmationToken();
         $user->validate_email_token = TokenTools::hashToken($newToken->token);
+        $user->validate_email_expire = $newToken->expire;
         $user->save();
 
         // Envoie du lien de confirmation par email

@@ -145,6 +145,7 @@ class ApiRegisterController extends Controller
             'name' => $data['name'],
             'email' => $data['email'],
             'validate_email_token' => TokenTools::hashToken($token->token), // Hash before storing
+            'validate_email_expire' => $token->expire,
             'password' => Hash::make($data['password']),
         ]);
 

@@ -33,17 +33,20 @@ class ApiConfirmerEmailController extends Controller
         // Hash the provided token before database lookup
         $providedToken = $request->input('token');
         $hashedToken = TokenTools::hashToken($providedToken);
-        $user = User::where('validate_email_token', '=', $hashedToken)->first();
+        $user = User::where('validate_email_token', '=', $hashedToken)
+            ->where('validate_email_expire', '>=', Carbon::now())
+            ->first();
 
         if (is_null($user)) {
-            Log::warning('Invalid email confirmation token attempt', [
+            Log::warning('Invalid or expired email confirmation token attempt', [
                 'ip' => $request->ip(),
             ]);
-            return response()->json(['error' => 'Jeton de confirmation invalide ou déjà utilisé.'], 401);
+            return response()->json(['error' => 'Jeton de confirmation invalide, expiré ou déjà utilisé.'], 401);
         }
 
         // Validation du compte
         $user->validate_email_token = null;
+        $user->validate_email_expire = null;
         $user->email_verified_at = Carbon::now();
         $user->save();
 

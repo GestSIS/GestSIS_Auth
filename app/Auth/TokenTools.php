@@ -161,7 +161,7 @@ class TokenTools
         //Convert the binary data into hexadecimal representation.
         $resetToken = new Stdclass();
         $resetToken->token = bin2hex($token);
-        $resetToken->expire = Carbon::now()->addDays(self::RESET_TOKEN_DURATION_IN_HOURS);
+        $resetToken->expire = Carbon::now()->addHours(self::RESET_TOKEN_DURATION_IN_HOURS);
         return $resetToken;
     }
 
