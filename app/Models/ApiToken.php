@@ -119,11 +119,10 @@ class ApiToken extends Model
         return $tokenPermissions
             ->filter(fn($permission) => in_array($permission->api_key, $userPermissionKeys))
             ->reduce(function ($result, $permission) use ($userPermissions) {
-                // Find which SIS this permission belongs to for this user
+                // Add this permission to every SIS in which the user holds it
                 foreach ($userPermissions as $sisKey => $perms) {
                     if (in_array($permission->api_key, $perms)) {
                         $result[$sisKey][] = $permission->api_key;
-                        break;
                     }
                 }
                 return $result;

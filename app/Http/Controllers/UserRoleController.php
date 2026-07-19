@@ -103,6 +103,9 @@ class UserRoleController extends Controller
         ]);
 
         $role = Role::find($roleId);
+        if (is_null($role)) {
+            return response()->json(["error" => "Role not found"], 404);
+        }
         if ($role->sis_id != $sis->id) {
             return response()->json(["error" => $role->sis_id], 401);
         }
