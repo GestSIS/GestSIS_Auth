@@ -86,7 +86,10 @@ class RoleController extends Controller
         }
 
         // Modification
-        $role = Role::where('id', '=', $roleId)->first();
+        $role = Role::where('id', '=', $roleId)->where('sis_id', '=', $sis->id)->first();
+        if (is_null($role)) {
+            return response()->json(["error" => "Role not found or does not belong to this SIS"], 404);
+        }
         $role->update($data);
         $role->permissions()->sync($data['permissions']);
 

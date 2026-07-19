@@ -59,6 +59,16 @@ class UserRoleController extends Controller
             }, array_values($data['roles']));
         }
 
+        // Verify all provided roles belong to the current SIS
+        if (!empty($providedRoles)) {
+            $validRoleCount = Role::whereIn('id', $providedRoles)
+                ->where('sis_id', '=', $sis->id)
+                ->count();
+            if ($validRoleCount !== count($providedRoles)) {
+                return response()->json(["error" => "One or more roles do not belong to this SIS"], 403);
+            }
+        }
+
         // Rôles à supprimer
         $rolesToRemove = array_diff($roles, $providedRoles);
         UserRole::where('user_id', '=', $userId)->whereIn('role_id', $rolesToRemove)->delete();
