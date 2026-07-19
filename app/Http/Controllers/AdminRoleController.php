@@ -35,7 +35,7 @@ class AdminRoleController extends Controller
         $role->update($data);
         $role->save();
 
-        return response()->json(['data' => Role::with(['permissions'])->find($roleId)->get()]);
+        return response()->json(['data' => Role::with(['permissions'])->find($roleId)]);
     }
 
     public function show(Request $request, int $roleId): JsonResponse

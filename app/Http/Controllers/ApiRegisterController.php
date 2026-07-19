@@ -40,7 +40,7 @@ class ApiRegisterController extends Controller
         $registerToken = $request->input('token');
         $rolesId = [];
         if ($registerToken != null && $registerToken != '') {
-            $registerToken = RegisterToken::where('token', '=', $registerToken)
+            $registerToken = RegisterToken::where('token', '=', TokenTools::hashToken($registerToken))
                 ->where('validite', '>=', Carbon::now())->first();
 
             // Validate register token validité
@@ -60,18 +60,20 @@ class ApiRegisterController extends Controller
             ])->acceptJson()->timeout(3)->get(config('gestsis.api_url', '') . '/api/v2/email-validate', ['email' => $email]); //->throw()->json();
 
             if (!$response->successful() || !$response['data']) {
-                return response()->json(["error" => "Email invalide"], 401);
+                // Same response as the duplicate-email case below: a caller must not
+                // be able to tell apart "unknown email" from "already registered"
+                return response()->json(['error' => ['email' => ['Email invalide ou déjà utilisé']]], 401);
             }
         }
 
-        // The `unique:users` validation above and this insert are not atomic, so two
-        // concurrent registrations with the same email can both pass validation and
-        // reach here. The database unique index is the source of truth; catch its
-        // violation and return the same shape the validator produces for a duplicate.
+        // Duplicate emails are caught here via the database unique index rather than
+        // a `unique:users` validation rule: the rule's distinctive error message
+        // would let an unauthenticated caller enumerate registered addresses, and
+        // the check would not be atomic with the insert anyway.
         try {
             $userData = $this->create($request->all());
         } catch (UniqueConstraintViolationException $e) {
-            return response()->json(['error' => ['email' => [__('validation.unique', ['attribute' => 'email'])]]], 401);
+            return response()->json(['error' => ['email' => ['Email invalide ou déjà utilisé']]], 401);
         }
         $user = $userData['user'];
         $plainEmailToken = $userData['plain_token'];
@@ -121,7 +123,7 @@ class ApiRegisterController extends Controller
     {
         return Validator::make($data, [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'email' => ['required', 'string', 'email', 'max:255'],
             'password' => [
                 'required',
                 'string',

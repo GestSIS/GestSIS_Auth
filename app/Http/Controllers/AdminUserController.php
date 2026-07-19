@@ -38,7 +38,7 @@ class AdminUserController extends Controller
         $user->admin = $data['admin'];
         $user->save();
 
-        return response()->json(['data' => User::with(['userRoles', 'sapeur'])->find($userId)->get()]);
+        return response()->json(['data' => User::with(['userRoles', 'sapeur'])->find($userId)]);
     }
 
     public function show(Request $request, int $userId): JsonResponse

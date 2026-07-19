@@ -294,9 +294,9 @@ class ApiTokenTest extends TestCase
         ])->getJson('/api/v1/api-tokens');
 
         $response->assertStatus(200);
-        $response->assertJsonCount(2, 'tokens');
+        $response->assertJsonCount(2, 'data');
         $response->assertJsonStructure([
-            'tokens' => [
+            'data' => [
                 '*' => [
                     'id',
                     'name',
@@ -310,7 +310,7 @@ class ApiTokenTest extends TestCase
         ]);
 
         // Verify token values are not exposed
-        $tokens = $response->json('tokens');
+        $tokens = $response->json('data');
         foreach ($tokens as $token) {
             $this->assertArrayNotHasKey('token', $token);
         }

@@ -50,14 +50,16 @@ class RegisterTokenController extends Controller
             }
         }
 
+        $plainToken = Base64UrlSafe::encode(random_bytes(20));
+
         $registerToken = new RegisterToken();
-        $registerToken->token = Base64UrlSafe::encode(random_bytes(20));
+        $registerToken->token = TokenTools::hashToken($plainToken); // Hash before storing
         $registerToken->validite = Carbon::now()->addMonths(1);
         $registerToken->save();
         $registerToken->roles()->attach($rolesId);
         $registerToken->save();
 
-        return response()->json(["data" => $registerToken->token], 200);
+        return response()->json(["data" => $plainToken], 200);
     }
 
     public function consume(Request $request): JsonResponse
@@ -66,7 +68,7 @@ class RegisterTokenController extends Controller
             'token' => 'string|required|min:1'
         ]);
 
-        $registerToken = RegisterToken::where('token', '=', $token)
+        $registerToken = RegisterToken::where('token', '=', TokenTools::hashToken($token['token']))
             ->where('validite', '>=', Carbon::now())->first();
 
         // Validate register token validité
@@ -123,6 +125,7 @@ class RegisterTokenController extends Controller
     protected function validator(array $data): \Illuminate\Validation\Validator
     {
         return Validator::make($data, [
+            'roles' => ['required', 'array', 'min:1'],
             'roles.*' => ['required', 'integer', 'min:1', 'distinct'],
             'description' => ['string', 'nullable']
         ]);
