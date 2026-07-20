@@ -68,9 +68,19 @@ class ApiConfirmerEmailController extends Controller
             // Ajout des liaisons avec Sapeur
             $sapeurs = [];
             foreach ($response['data'] as $sisKey => $sapeurId) {
+                // Ignore les SIS retournés par l'API mais inconnus localement
+                if (!isset($sis[$sisKey])) {
+                    Log::warning('SIS inconnu localement lors de la liaison sapeur', [
+                        'sis_key' => $sisKey,
+                        'user_id' => $user->id,
+                    ]);
+                    continue;
+                }
                 array_push($sapeurs, ['sapeur_id' => $sapeurId, 'sis_id' => $sis[$sisKey]->id, 'user_id' => $user->id]);
             }
-            Sapeur::insert($sapeurs);
+            if (!empty($sapeurs)) {
+                Sapeur::insert($sapeurs);
+            }
         }
 
         $permissions = User::getPermissions($user->id);
