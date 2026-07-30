@@ -27,7 +27,7 @@ class ApiResendConfirmationController extends Controller
         try {
             $jwt = TokenTools::validateToken($authToken);
         } catch (Exception $e) {
-            return response()->json(["error" => "Invalid bearer token" . $e], 401);
+            return response()->json(["error" => "Invalid bearer token"], 401);
         }
 
         $id = $jwt->data->id;

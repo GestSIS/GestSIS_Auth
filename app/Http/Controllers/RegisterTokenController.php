@@ -31,7 +31,7 @@ class RegisterTokenController extends Controller
         try {
             $jwt = TokenTools::validateToken($authToken);
         } catch (Exception $e) {
-            return response()->json(["error" => "Invalid bearer token" . $e], 401);
+            return response()->json(["error" => "Invalid bearer token"], 401);
         }
 
         $permissions = (array) $jwt->data->permissions;
@@ -81,7 +81,7 @@ class RegisterTokenController extends Controller
         try {
             $jwt = TokenTools::validateToken($authToken);
         } catch (Exception $e) {
-            return response()->json(["error" => "Invalid bearer token" . $e], 401);
+            return response()->json(["error" => "Invalid bearer token"], 401);
         }
         $id = (array) $jwt->data->id;
         $user = User::where('id', $id)->first();
