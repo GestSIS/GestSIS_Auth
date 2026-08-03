@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class ApiRegisterTest extends TestCase
@@ -12,9 +14,18 @@ class ApiRegisterTest extends TestCase
      * field-keyed validation error (HTTP 401 with `error.email`) rather than
      * surfacing the database unique-constraint violation as a 500. The frontend
      * (PageRegister.vue) relies on `error.email` being set to show its message.
+     *
+     * Registration without a token checks the email against GestSIS_API before
+     * reaching the duplicate-email check, so this test needs that service reachable.
      */
     public function testRegisterWithExistingEmailReturnsEmailError(): void
     {
+        try {
+            Http::timeout(1)->get(config('gestsis.api_url', ''));
+        } catch (ConnectionException) {
+            $this->markTestSkipped('GestSIS_API is not reachable.');
+        }
+
         $existing = User::factory()->create(['email' => 'duplicate@example.com']);
 
         $response = $this->postJson('/api/v1/register', [
