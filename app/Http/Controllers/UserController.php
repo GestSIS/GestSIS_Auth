@@ -14,7 +14,7 @@ class UserController extends Controller
     public function index(Request $request): JsonResponse
     {
         // Checks pour sisId
-        $sisKey = $request->header('Sis-Key', $request->header('Sis-Id', Null));
+        $sisKey = $request->header('Sis-Key', Null);
         $sis = Sis::where('api_key', $sisKey)->first();
         if (is_null($sis)) {
             return response()->json(["error" => "Invalid sis key"], 401);

@@ -35,7 +35,7 @@ class JwtTokenValidatorRole
         }
 
         if (count($roles) > 0) {
-            $sisKey = $request->header('Sis-Key', $request->header('Sis-Id', Null));
+            $sisKey = $request->header('Sis-Key', Null);
             if (is_null($sisKey)) {
                 return response()->json(["error" => "Sis non sélectionné"], 401);
             }
