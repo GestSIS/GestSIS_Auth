@@ -51,6 +51,8 @@ class User extends Authenticatable
             'validate_email_expire' => 'datetime',
             'password' => 'hashed',
             'admin' => 'boolean',
+            'pending_deactivation_at' => 'datetime',
+            'disabled_at' => 'datetime',
         ];
     }
 
@@ -94,6 +96,7 @@ class User extends Authenticatable
         $sapeurs = DB::table('sapeurs')
             ->join('sis', 'sis.id', '=', 'sapeurs.sis_id')
             ->where('sapeurs.user_id', '=', $userId)
+            ->whereNull('sapeurs.deactivated_at')
             ->select('sis.api_key as sis_key', 'sapeurs.sapeur_id as sapeur_id')
             ->distinct()
             ->get();

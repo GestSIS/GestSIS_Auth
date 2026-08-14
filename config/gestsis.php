@@ -22,4 +22,15 @@ return [
     */
   'app_url' => env('APP_GESTSIS_APP_URL', ''),
 
+  /*
+    |--------------------------------------------------------------------------
+    | Délai de grâce avant désactivation d'un compte sans rôle
+    |--------------------------------------------------------------------------
+    |
+    | Nombre de jours entre le moment où un compte sans rôle (et sans sapeur
+    | actif lié) est marqué à désactiver, et sa désactivation effective.
+    |
+    */
+  'deactivation_grace_days' => (int) env('GESTSIS_DEACTIVATION_GRACE_DAYS', 30),
+
 ];

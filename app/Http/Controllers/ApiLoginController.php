@@ -27,16 +27,26 @@ class ApiLoginController extends Controller
         }
 
         if ($this->attemptLogin($request)) {
-            return $this->sendLoginResponse(Auth::user());
+            $user = Auth::user();
+            if ($user->disabled_at === null) {
+                return $this->sendLoginResponse($user);
+            }
+
+            Log::warning('Login attempt on disabled account', [
+                'user_id' => $user->id,
+                'ip' => $request->ip(),
+            ]);
+        } else {
+            // Log failed login attempt
+            Log::warning('Failed login attempt', [
+                'email' => $request->input('email'),
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
         }
 
-        // Log failed login attempt
-        Log::warning('Failed login attempt', [
-            'email' => $request->input('email'),
-            'ip' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-        ]);
-
+        // Même message pour identifiants invalides et compte désactivé :
+        // ne pas confirmer à un tiers qu'une paire email/mot de passe est valide.
         return response()->json(['error' => 'Les identifiants fournis sont incorrects'], 401);
     }
 
