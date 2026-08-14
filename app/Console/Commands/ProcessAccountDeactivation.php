@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
-#[Signature('users:process-deactivation {--dry-run : Affiche les actions sans écrire en base ni envoyer d\'email}')]
+#[Signature('users:process-deactivation {--dry-run : Affiche les actions sans écrire en base ni envoyer d\'email} {--no-notify : Marque les comptes/liens à désactiver sans envoyer les emails d\'avertissement (amorçage initial)}')]
 #[Description('Marque à désactiver, puis désactive, les comptes sans rôle et sans sapeur actif lié')]
 class ProcessAccountDeactivation extends Command
 {
@@ -26,6 +26,7 @@ class ProcessAccountDeactivation extends Command
     public function handle(): int
     {
         $dryRun = (bool) $this->option('dry-run');
+        $notify = !$this->option('no-notify');
 
         $actifsParSisId = $this->fetchSapeursActifsParSisId();
         if ($actifsParSisId === null) {
@@ -48,7 +49,7 @@ class ProcessAccountDeactivation extends Command
             }
 
             if ($user->pending_deactivation_at === null) {
-                $this->flagForDeactivation($user, $dryRun);
+                $this->flagForDeactivation($user, $dryRun, $notify);
                 $flagged++;
             } elseif ($user->pending_deactivation_at->isPast()) {
                 $this->disableAccount($user, $dryRun);
@@ -74,7 +75,7 @@ class ProcessAccountDeactivation extends Command
         $this->info("Comptes désactivés : {$disabled}");
         $this->info("Comptes réhabilités : {$reinstated}");
 
-        $linkStats = $this->processSapeurLinks($actifsParSisId, $dryRun);
+        $linkStats = $this->processSapeurLinks($actifsParSisId, $dryRun, $notify);
         $this->info("Liens sapeur marqués à couper : {$linkStats['flagged']}");
         $this->info("Liens sapeur coupés : {$linkStats['cut']}");
         $this->info("Liens sapeur réhabilités : {$linkStats['reinstated']}");
@@ -90,7 +91,7 @@ class ProcessAccountDeactivation extends Command
      * @param array<int, array<int, int>> $actifsParSisId
      * @return array{flagged: int, cut: int, reinstated: int}
      */
-    private function processSapeurLinks(array $actifsParSisId, bool $dryRun): array
+    private function processSapeurLinks(array $actifsParSisId, bool $dryRun, bool $notify): array
     {
         $flagged = 0;
         $cut = 0;
@@ -112,8 +113,8 @@ class ProcessAccountDeactivation extends Command
             if ($link->pending_deactivation_at === null) {
                 // Un départ complet (aucun sapeur actif nulle part) est déjà notifié
                 // par l'email de désactivation de compte : pas de doublon ici.
-                $notify = $this->hasActiveSapeur($link->user, $actifsParSisId);
-                $this->flagLinkForDeactivation($link, $dryRun, $notify);
+                $shouldNotify = $notify && $this->hasActiveSapeur($link->user, $actifsParSisId);
+                $this->flagLinkForDeactivation($link, $dryRun, $shouldNotify);
                 $flagged++;
             } elseif ($link->pending_deactivation_at->isPast()) {
                 $this->cutLinkAccess($link, $dryRun);
@@ -212,7 +213,7 @@ class ProcessAccountDeactivation extends Command
         return false;
     }
 
-    private function flagForDeactivation(User $user, bool $dryRun): void
+    private function flagForDeactivation(User $user, bool $dryRun, bool $notify): void
     {
         $deactivateAt = now()->addDays((int) config('gestsis.deactivation_grace_days', 30));
         $this->line("[flag] {$user->email} -> désactivation prévue le {$deactivateAt->format('Y-m-d')}" . ($dryRun ? ' (dry-run)' : ''));
@@ -224,7 +225,9 @@ class ProcessAccountDeactivation extends Command
         $user->pending_deactivation_at = $deactivateAt;
         $user->save();
 
-        Mail::to($user->email)->send(new AccountPendingDeactivationMail($user));
+        if ($notify) {
+            Mail::to($user->email)->send(new AccountPendingDeactivationMail($user));
+        }
     }
 
     private function disableAccount(User $user, bool $dryRun): void

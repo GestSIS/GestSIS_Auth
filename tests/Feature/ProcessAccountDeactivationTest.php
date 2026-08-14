@@ -221,6 +221,30 @@ class ProcessAccountDeactivationTest extends TestCase
         Mail::assertNothingSent();
     }
 
+    public function testNoNotifyFlagsAccountsAndLinksWithoutSendingAnyEmail(): void
+    {
+        Mail::fake();
+        $sisA = Sis::firstOrCreate(['api_key' => 'sis_a'], ['nom' => 'SIS A', 'abreviation' => 'SA']);
+        $sisB = Sis::firstOrCreate(['api_key' => 'sis_b'], ['nom' => 'SIS B', 'abreviation' => 'SB']);
+        $this->fakeSapeursActifs(['sis_a' => [1], 'sis_b' => []]);
+
+        // Départ complet : compte sans rôle et sans sapeur actif.
+        $orphan = User::factory()->create(['admin' => false]);
+
+        // Départ partiel : reste actif via sisA, mais plus via sisB.
+        $partial = User::factory()->create(['admin' => false]);
+        $this->linkSapeur($partial, $sisA, 1);
+        $staleLink = $this->linkSapeur($partial, $sisB, 2);
+
+        $this->artisan('users:process-deactivation', ['--no-notify' => true])->assertExitCode(0);
+
+        $orphan->refresh();
+        $staleLink->refresh();
+        $this->assertNotNull($orphan->pending_deactivation_at);
+        $this->assertNotNull($staleLink->pending_deactivation_at);
+        Mail::assertNothingSent();
+    }
+
     public function testGetSapeursExcludesDeactivatedLinks(): void
     {
         $sisA = Sis::firstOrCreate(['api_key' => 'sis_a'], ['nom' => 'SIS A', 'abreviation' => 'SA']);
