@@ -6,6 +6,7 @@ use App\Auth\TokenTools;
 use App\Mail\AccountPendingDeactivationMail;
 use App\Mail\SapeurAccessPendingDeactivationMail;
 use App\Models\ApiToken;
+use App\Models\Role;
 use App\Models\Sapeur;
 use App\Models\Sis;
 use App\Models\User;
@@ -15,15 +16,33 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use RuntimeException;
+use Throwable;
 
 #[Signature('users:process-deactivation {--dry-run : Affiche les actions sans écrire en base ni envoyer d\'email} {--no-notify : Marque les comptes/liens à désactiver sans envoyer les emails d\'avertissement (amorçage initial)}')]
-#[Description('Marque à désactiver, puis désactive, les comptes sans rôle et sans sapeur actif lié')]
+#[Description('Retire immédiatement les rôles des sapeurs devenus inactifs, puis marque à désactiver/désactive les comptes sans rôle et sans sapeur actif lié')]
 class ProcessAccountDeactivation extends Command
 {
     /**
      * Execute the console command.
+     *
+     * Toute erreur inattendue est reportée à Sentry (via le handler
+     * d'exceptions Laravel déjà branché sur Sentry/Bugsink dans
+     * bootstrap/app.php) et se termine par un échec propre de la commande,
+     * plutôt qu'un crash non géré.
      */
     public function handle(): int
+    {
+        try {
+            return $this->process();
+        } catch (Throwable $e) {
+            report($e);
+            $this->error("Erreur inattendue : {$e->getMessage()}");
+            return self::FAILURE;
+        }
+    }
+
+    private function process(): int
     {
         $dryRun = (bool) $this->option('dry-run');
         $notify = !$this->option('no-notify');
@@ -33,6 +52,9 @@ class ProcessAccountDeactivation extends Command
             $this->error("Impossible de récupérer la liste des sapeurs actifs depuis l'API, abandon.");
             return self::FAILURE;
         }
+
+        $revokedRoles = $this->revokeStaleRoles($actifsParSisId, $dryRun);
+        $this->info("Rôles retirés (sapeur inactif dans ce SIS) : {$revokedRoles}");
 
         $flagged = 0;
         $disabled = 0;
@@ -81,6 +103,58 @@ class ProcessAccountDeactivation extends Command
         $this->info("Liens sapeur réhabilités : {$linkStats['reinstated']}");
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Retire immédiatement (sans délai de grâce ni email) les rôles d'un SIS
+     * dès que le sapeur qui y est lié n'y est plus actif : contrairement au
+     * compte ou au lien `sapeurs` (accès self-service), un rôle porte des
+     * droits métier (validation, comptabilité, admin...) qui ne doivent pas
+     * survivre à un oubli de retrait côté SIS. Seule une trace est loguée.
+     *
+     * @param array<int, array<int, int>> $actifsParSisId
+     */
+    private function revokeStaleRoles(array $actifsParSisId, bool $dryRun): int
+    {
+        $revoked = 0;
+        $sisIdByRoleId = Role::pluck('sis_id', 'id');
+
+        $users = User::with('sapeur', 'userRoles')->whereHas('userRoles')->get();
+
+        foreach ($users as $user) {
+            $sapeurBySisId = $user->sapeur->keyBy('sis_id');
+
+            foreach ($user->userRoles as $userRole) {
+                $sisId = $sisIdByRoleId[$userRole->role_id] ?? null;
+                $link = $sisId !== null ? $sapeurBySisId->get($sisId) : null;
+
+                // Pas de lien sapeur connu pour ce SIS : aucun signal fiable, on ne touche pas.
+                if ($link === null) {
+                    continue;
+                }
+
+                if (in_array($link->sapeur_id, $actifsParSisId[$sisId] ?? [], true)) {
+                    continue;
+                }
+
+                $this->line("[revoke-role] {$user->email} / sis_id={$sisId} / role_id={$userRole->role_id}" . ($dryRun ? ' (dry-run)' : ''));
+
+                if ($dryRun) {
+                    continue;
+                }
+
+                Log::info('users:process-deactivation - rôle retiré (sapeur inactif)', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'role_id' => $userRole->role_id,
+                    'sis_id' => $sisId,
+                ]);
+                $userRole->delete();
+                $revoked++;
+            }
+        }
+
+        return $revoked;
     }
 
     /**
@@ -180,6 +254,11 @@ class ProcessAccountDeactivation extends Command
         ])->acceptJson()->timeout(10)->get(config('gestsis.api_url', '') . '/api/v2/sapeurs-actifs');
 
         if (!$response->successful()) {
+            // Un échec de sync ici signifie que l'API est injoignable ou en erreur :
+            // remonté à Sentry/Bugsink, pas seulement loggé.
+            report(new RuntimeException(
+                "users:process-deactivation - échec de récupération des sapeurs actifs (status {$response->status()})"
+            ));
             Log::error('users:process-deactivation - échec de récupération des sapeurs actifs', [
                 'status' => $response->status(),
             ]);

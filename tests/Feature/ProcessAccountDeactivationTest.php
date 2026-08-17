@@ -11,6 +11,8 @@ use App\Models\Sapeur;
 use App\Models\Sis;
 use App\Models\User;
 use App\Models\UserRole;
+use Illuminate\Contracts\Debug\ExceptionHandler;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
@@ -243,6 +245,130 @@ class ProcessAccountDeactivationTest extends TestCase
         $this->assertNotNull($orphan->pending_deactivation_at);
         $this->assertNotNull($staleLink->pending_deactivation_at);
         Mail::assertNothingSent();
+    }
+
+    public function testRevokesRoleImmediatelyWhenSapeurBecomesInactiveInThatSis(): void
+    {
+        Mail::fake();
+        $sisA = Sis::firstOrCreate(['api_key' => 'sis_a'], ['nom' => 'SIS A', 'abreviation' => 'SA']);
+        $sisB = Sis::firstOrCreate(['api_key' => 'sis_b'], ['nom' => 'SIS B', 'abreviation' => 'SB']);
+        $this->fakeSapeursActifs(['sis_a' => [], 'sis_b' => [2]]);
+
+        $user = User::factory()->create(['admin' => false]);
+        $this->linkSapeur($user, $sisA, 1);
+        $this->linkSapeur($user, $sisB, 2);
+
+        $roleA = Role::create(['nom' => 'Role A', 'sis_id' => $sisA->id]);
+        $roleB = Role::create(['nom' => 'Role B', 'sis_id' => $sisB->id]);
+        $userRoleA = UserRole::create(['user_id' => $user->id, 'role_id' => $roleA->id]);
+        $userRoleB = UserRole::create(['user_id' => $user->id, 'role_id' => $roleB->id]);
+
+        $this->artisan('users:process-deactivation')->assertExitCode(0);
+
+        $this->assertDatabaseMissing('user_roles', ['id' => $userRoleA->id]);
+        $this->assertDatabaseHas('user_roles', ['id' => $userRoleB->id]);
+
+        $user->refresh();
+        $this->assertNull($user->pending_deactivation_at);
+    }
+
+    public function testDoesNotRevokeRoleWhenSapeurStillActiveInThatSis(): void
+    {
+        Mail::fake();
+        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $this->fakeSapeursActifs(['test' => [1]]);
+
+        $user = User::factory()->create(['admin' => false]);
+        $this->linkSapeur($user, $sis, 1);
+        $role = Role::create(['nom' => 'Role', 'sis_id' => $sis->id]);
+        $userRole = UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);
+
+        $this->artisan('users:process-deactivation')->assertExitCode(0);
+
+        $this->assertDatabaseHas('user_roles', ['id' => $userRole->id]);
+    }
+
+    public function testDoesNotRevokeRoleWhenNoSapeurLinkExistsForThatSis(): void
+    {
+        Mail::fake();
+        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $this->fakeSapeursActifs(['test' => []]);
+
+        // Rôle attribué sans lien sapeur connu pour ce SIS (ex. compte technique) :
+        // aucun signal d'activité fiable, on ne doit pas toucher au rôle.
+        $user = User::factory()->create(['admin' => false]);
+        $role = Role::create(['nom' => 'Role', 'sis_id' => $sis->id]);
+        $userRole = UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);
+
+        $this->artisan('users:process-deactivation')->assertExitCode(0);
+
+        $this->assertDatabaseHas('user_roles', ['id' => $userRole->id]);
+    }
+
+    public function testRevokingLastRoleCascadesToAccountFlagInTheSameRun(): void
+    {
+        Mail::fake();
+        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $this->fakeSapeursActifs(['test' => []]);
+
+        $user = User::factory()->create(['admin' => false]);
+        $this->linkSapeur($user, $sis, 1);
+        $role = Role::create(['nom' => 'Seul rôle', 'sis_id' => $sis->id]);
+        $userRole = UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);
+
+        $this->artisan('users:process-deactivation')->assertExitCode(0);
+
+        $this->assertDatabaseMissing('user_roles', ['id' => $userRole->id]);
+
+        $user->refresh();
+        $this->assertNotNull($user->pending_deactivation_at);
+        Mail::assertSent(AccountPendingDeactivationMail::class, fn($mail) => $mail->user->id === $user->id);
+    }
+
+    public function testDryRunDoesNotRevokeRole(): void
+    {
+        Mail::fake();
+        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $this->fakeSapeursActifs(['test' => []]);
+
+        $user = User::factory()->create(['admin' => false]);
+        $this->linkSapeur($user, $sis, 1);
+        $role = Role::create(['nom' => 'Role', 'sis_id' => $sis->id]);
+        $userRole = UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);
+
+        $this->artisan('users:process-deactivation', ['--dry-run' => true])->assertExitCode(0);
+
+        $this->assertDatabaseHas('user_roles', ['id' => $userRole->id]);
+    }
+
+    public function testReportsToSentryWhenApiReturnsAnErrorStatus(): void
+    {
+        Http::fake([
+            '*/api/v2/sapeurs-actifs*' => Http::response(['error' => 'boom'], 500),
+        ]);
+
+        $this->mock(ExceptionHandler::class, function ($mock) {
+            $mock->shouldReceive('report')->once();
+        });
+
+        $exitCode = $this->artisan('users:process-deactivation')->run();
+
+        $this->assertSame(1, $exitCode);
+    }
+
+    public function testReportsUnexpectedErrorsAndExitsCleanlyInsteadOfCrashing(): void
+    {
+        Http::fake(function () {
+            throw new ConnectionException('Connection refused');
+        });
+
+        $this->mock(ExceptionHandler::class, function ($mock) {
+            $mock->shouldReceive('report')->once();
+        });
+
+        $exitCode = $this->artisan('users:process-deactivation')->run();
+
+        $this->assertSame(1, $exitCode);
     }
 
     public function testGetSapeursExcludesDeactivatedLinks(): void

@@ -95,3 +95,25 @@ Copier le fichier `app\Auth\TokenTools.php` dans un nouveau dossier `app\Auth` d
 2. Créer un utilisateur pour cette base de donnée nommée `DB_USER_PREFIX + SIS_ABREVIATION`
 3. Modifier le fichier `.env` de `GestSIS_API` afin d'ajouter le nom du sis à la variable d'environement `DB_LISTE` (valeurs séparés par une virgule)
 4. Pour finir, ajouter le SIS sur le serveur d'authentification en utilisant l'interface administrateur
+
+## Tâches planifiées
+
+Les tâches cron sont définies dans `cron.sh` :
+```bash
+# Traitement de la désactivation des comptes/rôles/accès devenus obsolètes
+php artisan users:process-deactivation
+```
+
+Comme pour `GestSIS_API`, ce script n'est pas branché via Docker/docker-compose : il doit être installé manuellement dans le crontab du serveur de production.
+
+### `php artisan users:process-deactivation`
+
+Croise, pour chaque SIS, la liste des sapeurs actifs remontée par `GestSIS_API` (`GET /api/v2/sapeurs-actifs`) avec les rôles et liens `sapeurs` stockés dans Auth, et :
+
+1. **Retire immédiatement** les rôles d'un SIS dès que le sapeur qui y est lié n'y est plus actif (pas de délai, log uniquement — un rôle porte des droits métier).
+2. **Marque à désactiver puis désactive** (délai de grâce configurable via `GESTSIS_DEACTIVATION_GRACE_DAYS`, 30 jours par défaut) les comptes qui n'ont plus aucun rôle et ne sont plus rattachés à aucun sapeur actif. Un email prévient l'utilisateur au moment du flag ; la désactivation révoque aussi ses refresh tokens et API tokens.
+3. **Coupe l'accès à un SIS précis** (même délai de grâce) quand un sapeur y devient inactif mais reste actif dans un autre SIS — sans toucher au reste de son compte.
+
+Options :
+- `--dry-run` : affiche les actions qui seraient effectuées, sans rien écrire ni envoyer d'email.
+- `--no-notify` : effectue les mêmes actions sans envoyer les emails d'avertissement (utile pour l'amorçage initial, afin de ne pas notifier d'un coup tout l'historique existant).
