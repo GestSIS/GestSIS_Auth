@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminRoleController;
+use App\Http\Controllers\AdminSapeurController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AdminUserRoleController;
 use Illuminate\Support\Facades\Route;
@@ -60,6 +61,7 @@ Route::group(['prefix' => 'v1'], function () {
         Route::apiResource('users', AdminUserController::class, ['as' => 'admin'])->only(['index', 'show', 'update', 'destroy']);
         Route::apiResource('roles', AdminRoleController::class, ['as' => 'admin'])->only(['index', 'show', 'update', 'destroy']);
         Route::apiResource('user-roles', AdminUserRoleController::class, ['as' => 'admin'])->only(['store', 'destroy']);
+        Route::apiResource('sapeurs', AdminSapeurController::class, ['as' => 'admin'])->only(['destroy']);
     });
 
     Route::group(['middleware' => 'jwtTokenRole'], function () {
