@@ -100,11 +100,23 @@ Copier le fichier `app\Auth\TokenTools.php` dans un nouveau dossier `app\Auth` d
 
 Les tâches cron sont définies dans `cron.sh` :
 ```bash
+# Rattrapage des liens sapeur/utilisateur manquants (à exécuter avant process-deactivation)
+php artisan users:sync-sapeurs
+
 # Traitement de la désactivation des comptes/rôles/accès devenus obsolètes
 php artisan users:process-deactivation
 ```
 
 Comme pour `GestSIS_API`, ce script n'est pas branché via Docker/docker-compose : il doit être installé manuellement dans le crontab du serveur de production.
+
+### `php artisan users:sync-sapeurs`
+
+Récupère, pour chaque SIS, la liste `{sapeur_id: email}` remontée par `GestSIS_API` (`GET /api/v2/sapeurs-emails`, sans filtre `actif`) et crée les liens `sapeurs` manquants par correspondance d'email avec les comptes GestSIS existants — pour rattraper les cas où le lien aurait dû exister mais n'a pas été créé au moment de la confirmation d'email (email ajouté tardivement côté SIS, sapeur réactivé sous un nouvel enregistrement, etc.).
+
+Si l'email correspond à un compte qui a déjà un **autre** sapeur lié pour ce SIS, ou si ce `sapeur_id` est déjà lié à un **autre** compte (ex. changement d'email), rien n'est créé/modifié : une exception est reportée à Sentry/Bugsink pour investigation manuelle plutôt que de risquer un mauvais rattachement automatique.
+
+Option :
+- `--dry-run` : affiche les liens qui seraient créés et les conflits détectés, sans rien écrire en base.
 
 ### `php artisan users:process-deactivation`
 
