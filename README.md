@@ -111,7 +111,7 @@ Comme pour `GestSIS_API`, ce script n'est pas branché via Docker/docker-compose
 
 ### `php artisan users:sync-sapeurs`
 
-Récupère, pour chaque SIS, la liste `{sapeur_id: email}` remontée par `GestSIS_API` (`GET /api/v2/sapeurs-emails`, sans filtre `actif`) et crée les liens `sapeurs` manquants par correspondance d'email avec les comptes GestSIS existants — pour rattraper les cas où le lien aurait dû exister mais n'a pas été créé au moment de la confirmation d'email (email ajouté tardivement côté SIS, sapeur réactivé sous un nouvel enregistrement, etc.).
+Récupère, pour chaque SIS, la liste `{sapeur_id: email}` remontée par `GestSIS_API` (`GET /api/v2/sapeurs-emails`, filtrée sur les sapeurs/civils **actifs** — même filtre que `sapeurs-actifs`) et crée les liens `sapeurs` manquants par correspondance d'email avec les comptes GestSIS existants — pour rattraper les cas où le lien aurait dû exister mais n'a pas été créé au moment de la confirmation d'email (email ajouté tardivement côté SIS, sapeur réactivé sous un nouvel enregistrement, etc.). Le filtre `actif` évite aussi qu'un ancien enregistrement inactif partageant un email avec un nouveau sapeur actif ne déclenche un faux conflit.
 
 Si l'email correspond à un compte qui a déjà un **autre** sapeur lié pour ce SIS, ou si ce `sapeur_id` est déjà lié à un **autre** compte (ex. changement d'email), rien n'est créé/modifié : une exception est reportée à Sentry/Bugsink pour investigation manuelle plutôt que de risquer un mauvais rattachement automatique.
 
