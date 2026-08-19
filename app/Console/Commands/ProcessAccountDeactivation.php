@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Auth\TokenTools;
+use App\Console\Commands\Concerns\AnnouncesDryRunActions;
 use App\Mail\AccountPendingDeactivationMail;
 use App\Mail\SapeurAccessPendingDeactivationMail;
 use App\Models\ApiToken;
@@ -10,9 +11,11 @@ use App\Models\Role;
 use App\Models\Sapeur;
 use App\Models\Sis;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -23,6 +26,8 @@ use Throwable;
 #[Description('Retire immédiatement les rôles des sapeurs devenus inactifs, puis marque à désactiver/désactive les comptes sans rôle et sans sapeur actif lié')]
 class ProcessAccountDeactivation extends Command
 {
+    use AnnouncesDryRunActions;
+
     /**
      * Execute the console command.
      *
@@ -56,6 +61,83 @@ class ProcessAccountDeactivation extends Command
         $revokedRoles = $this->revokeStaleRoles($actifsParSisId, $dryRun);
         $this->info("Rôles retirés (sapeur inactif dans ce SIS) : {$revokedRoles}");
 
+        $accountStats = $this->processAccounts($actifsParSisId, $dryRun, $notify);
+        $this->info("Comptes marqués à désactiver : {$accountStats['flagged']}");
+        $this->info("Comptes désactivés : {$accountStats['disabled']}");
+        $this->info("Comptes réhabilités : {$accountStats['reinstated']}");
+        $this->info("Comptes réactivés (après désactivation) : {$accountStats['reactivated']}");
+
+        $linkStats = $this->processSapeurLinks($actifsParSisId, $dryRun, $notify);
+        $this->info("Liens sapeur marqués à couper : {$linkStats['flagged']}");
+        $this->info("Liens sapeur coupés : {$linkStats['cut']}");
+        $this->info("Liens sapeur réhabilités : {$linkStats['reinstated']}");
+        $this->info("Liens sapeur réactivés (après coupure) : {$linkStats['reactivated']}");
+
+        return self::SUCCESS;
+    }
+
+    // Rôles
+
+    /**
+     * Retire immédiatement (sans délai de grâce ni email) les rôles d'un SIS
+     * dès que le sapeur qui y est lié n'y est plus actif : contrairement au
+     * compte ou au lien `sapeurs` (accès self-service), un rôle porte des
+     * droits métier (validation, comptabilité, admin...) qui ne doivent pas
+     * survivre à un oubli de retrait côté SIS. Seule une trace est loguée.
+     *
+     * @param array<int, array<int, int>> $actifsParSisId
+     */
+    private function revokeStaleRoles(array $actifsParSisId, bool $dryRun): int
+    {
+        $revoked = 0;
+        $sisIdByRoleId = Role::pluck('sis_id', 'id');
+
+        $users = User::with('sapeur', 'userRoles')->whereHas('userRoles')->get();
+
+        foreach ($users as $user) {
+            $sapeurBySisId = $user->sapeur->keyBy('sis_id');
+
+            foreach ($user->userRoles as $userRole) {
+                $sisId = $sisIdByRoleId[$userRole->role_id] ?? null;
+                $link = $sisId !== null ? $sapeurBySisId->get($sisId) : null;
+
+                // Pas de lien sapeur connu pour ce SIS : aucun signal fiable, on ne touche pas.
+                if ($link === null) {
+                    continue;
+                }
+
+                if (in_array($link->sapeur_id, $actifsParSisId[$sisId] ?? [], true)) {
+                    continue;
+                }
+
+                $this->announce('revoke-role', "{$user->email} / sis_id={$sisId} / role_id={$userRole->role_id}", $dryRun);
+
+                if ($dryRun) {
+                    continue;
+                }
+
+                Log::info($this->getName() . ' - rôle retiré (sapeur inactif)', [
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'role_id' => $userRole->role_id,
+                    'sis_id' => $sisId,
+                ]);
+                $userRole->delete();
+                $revoked++;
+            }
+        }
+
+        return $revoked;
+    }
+
+    // Comptes
+
+    /**
+     * @param array<int, array<int, int>> $actifsParSisId
+     * @return array{flagged: int, disabled: int, reinstated: int, reactivated: int}
+     */
+    private function processAccounts(array $actifsParSisId, bool $dryRun, bool $notify): array
+    {
         $flagged = 0;
         $disabled = 0;
 
@@ -93,69 +175,90 @@ class ProcessAccountDeactivation extends Command
             }
         }
 
-        $this->info("Comptes marqués à désactiver : {$flagged}");
-        $this->info("Comptes désactivés : {$disabled}");
-        $this->info("Comptes réhabilités : {$reinstated}");
+        $reactivated = $this->reactivateDisabledAccounts($actifsParSisId, $dryRun);
 
-        $linkStats = $this->processSapeurLinks($actifsParSisId, $dryRun, $notify);
-        $this->info("Liens sapeur marqués à couper : {$linkStats['flagged']}");
-        $this->info("Liens sapeur coupés : {$linkStats['cut']}");
-        $this->info("Liens sapeur réhabilités : {$linkStats['reinstated']}");
+        return compact('flagged', 'disabled', 'reinstated', 'reactivated');
+    }
 
-        return self::SUCCESS;
+    private function flagForDeactivation(User $user, bool $dryRun, bool $notify): void
+    {
+        $deactivateAt = $this->gracePeriodDeadline();
+        $this->announce('flag', "{$user->email} -> désactivation prévue le {$deactivateAt->format('Y-m-d')}", $dryRun);
+
+        if ($dryRun) {
+            return;
+        }
+
+        $user->pending_deactivation_at = $deactivateAt;
+        $user->save();
+
+        if ($notify) {
+            Mail::to($user->email)->send(new AccountPendingDeactivationMail($user));
+        }
+    }
+
+    private function disableAccount(User $user, bool $dryRun): void
+    {
+        $this->announce('disable', $user->email, $dryRun);
+
+        if ($dryRun) {
+            return;
+        }
+
+        $user->disabled_at = now();
+        $user->save();
+
+        $user->refreshTokens()->delete();
+        ApiToken::where('user_id', $user->id)->delete();
+    }
+
+    private function reinstate(User $user, bool $dryRun): void
+    {
+        $this->announce('reinstate', $user->email, $dryRun);
+
+        if ($dryRun) {
+            return;
+        }
+
+        $user->pending_deactivation_at = null;
+        $user->save();
     }
 
     /**
-     * Retire immédiatement (sans délai de grâce ni email) les rôles d'un SIS
-     * dès que le sapeur qui y est lié n'y est plus actif : contrairement au
-     * compte ou au lien `sapeurs` (accès self-service), un rôle porte des
-     * droits métier (validation, comptabilité, admin...) qui ne doivent pas
-     * survivre à un oubli de retrait côté SIS. Seule une trace est loguée.
+     * Contrairement au stade "pending" (couvert par reinstate()), un compte déjà
+     * désactivé (disabled_at posé) ne repassait jamais par ce pipeline : sans ce
+     * passage, retrouver un rôle ou redevenir sapeur actif après désactivation
+     * ne rouvrait jamais automatiquement l'accès.
      *
      * @param array<int, array<int, int>> $actifsParSisId
      */
-    private function revokeStaleRoles(array $actifsParSisId, bool $dryRun): int
+    private function reactivateDisabledAccounts(array $actifsParSisId, bool $dryRun): int
     {
-        $revoked = 0;
-        $sisIdByRoleId = Role::pluck('sis_id', 'id');
+        $reactivated = 0;
 
-        $users = User::with('sapeur', 'userRoles')->whereHas('userRoles')->get();
+        $disabledUsers = User::with('sapeur', 'userRoles')->whereNotNull('disabled_at')->get();
 
-        foreach ($users as $user) {
-            $sapeurBySisId = $user->sapeur->keyBy('sis_id');
-
-            foreach ($user->userRoles as $userRole) {
-                $sisId = $sisIdByRoleId[$userRole->role_id] ?? null;
-                $link = $sisId !== null ? $sapeurBySisId->get($sisId) : null;
-
-                // Pas de lien sapeur connu pour ce SIS : aucun signal fiable, on ne touche pas.
-                if ($link === null) {
-                    continue;
-                }
-
-                if (in_array($link->sapeur_id, $actifsParSisId[$sisId] ?? [], true)) {
-                    continue;
-                }
-
-                $this->line("[revoke-role] {$user->email} / sis_id={$sisId} / role_id={$userRole->role_id}" . ($dryRun ? ' (dry-run)' : ''));
-
-                if ($dryRun) {
-                    continue;
-                }
-
-                Log::info('users:process-deactivation - rôle retiré (sapeur inactif)', [
-                    'user_id' => $user->id,
-                    'email' => $user->email,
-                    'role_id' => $userRole->role_id,
-                    'sis_id' => $sisId,
-                ]);
-                $userRole->delete();
-                $revoked++;
+        foreach ($disabledUsers as $user) {
+            if ($user->userRoles->isEmpty() && !$this->hasActiveSapeur($user, $actifsParSisId)) {
+                continue;
             }
+
+            $this->announce('reactivate', $user->email, $dryRun);
+
+            if ($dryRun) {
+                continue;
+            }
+
+            $user->disabled_at = null;
+            $user->pending_deactivation_at = null;
+            $user->save();
+            $reactivated++;
         }
 
-        return $revoked;
+        return $reactivated;
     }
+
+    // Liens sapeur
 
     /**
      * Coupe, par SIS, l'accès d'un sapeur qui n'y est plus actif (claim `sapeurs`
@@ -163,7 +266,7 @@ class ProcessAccountDeactivation extends Command
      * rester pleinement actif via un autre SIS.
      *
      * @param array<int, array<int, int>> $actifsParSisId
-     * @return array{flagged: int, cut: int, reinstated: int}
+     * @return array{flagged: int, cut: int, reinstated: int, reactivated: int}
      */
     private function processSapeurLinks(array $actifsParSisId, bool $dryRun, bool $notify): array
     {
@@ -196,13 +299,15 @@ class ProcessAccountDeactivation extends Command
             }
         }
 
-        return compact('flagged', 'cut', 'reinstated');
+        $reactivated = $this->reactivateCutLinks($links, $actifsParSisId, $dryRun);
+
+        return compact('flagged', 'cut', 'reinstated', 'reactivated');
     }
 
     private function flagLinkForDeactivation(Sapeur $link, bool $dryRun, bool $notify): void
     {
-        $deactivateAt = now()->addDays((int) config('gestsis.deactivation_grace_days', 30));
-        $this->line("[flag-sapeur] {$link->user->email} / {$link->sis->nom} -> coupure prévue le {$deactivateAt->format('Y-m-d')}" . ($dryRun ? ' (dry-run)' : ''));
+        $deactivateAt = $this->gracePeriodDeadline();
+        $this->announce('flag-sapeur', "{$link->user->email} / {$link->sis->nom} -> coupure prévue le {$deactivateAt->format('Y-m-d')}", $dryRun);
 
         if ($dryRun) {
             return;
@@ -218,7 +323,7 @@ class ProcessAccountDeactivation extends Command
 
     private function cutLinkAccess(Sapeur $link, bool $dryRun): void
     {
-        $this->line("[cut-sapeur] {$link->user->email} / {$link->sis->nom}" . ($dryRun ? ' (dry-run)' : ''));
+        $this->announce('cut-sapeur', "{$link->user->email} / {$link->sis->nom}", $dryRun);
 
         if ($dryRun) {
             return;
@@ -230,7 +335,7 @@ class ProcessAccountDeactivation extends Command
 
     private function reinstateLink(Sapeur $link, bool $dryRun): void
     {
-        $this->line("[reinstate-sapeur] {$link->user->email} / {$link->sis->nom}" . ($dryRun ? ' (dry-run)' : ''));
+        $this->announce('reinstate-sapeur', "{$link->user->email} / {$link->sis->nom}", $dryRun);
 
         if ($dryRun) {
             return;
@@ -239,6 +344,58 @@ class ProcessAccountDeactivation extends Command
         $link->pending_deactivation_at = null;
         $link->save();
     }
+
+    /**
+     * Contrairement au stade "pending" (couvert par reinstateLink()), un lien déjà
+     * coupé (deactivated_at posé) ne repassait jamais par ce pipeline : sans ce
+     * passage, un sapeur redevenu actif après coupure ne récupérait jamais
+     * automatiquement le SIS dans le claim `sapeurs` du JWT.
+     *
+     * @param Collection<int, Sapeur> $links Liens vivants déjà chargés par processSapeurLinks(),
+     *        pour ne pas relancer la même requête ici.
+     * @param array<int, array<int, int>> $actifsParSisId
+     */
+    private function reactivateCutLinks(Collection $links, array $actifsParSisId, bool $dryRun): int
+    {
+        $reactivated = 0;
+
+        // Plusieurs lignes historiques peuvent exister pour un même user/sapeur
+        // (aucune contrainte unique en base ne l'empêche plus, cf. migration
+        // drop_unique_constraints_from_sapeurs_table) : avant de réactiver une
+        // ligne coupée, vérifier qu'aucune autre ligne vivante n'occupe déjà
+        // cette identité (ex. déjà recréée entre-temps par users:sync-sapeurs).
+        [$aliveByUserSis, $aliveBySapeurSis] = Sapeur::indexAliveByIdentity($links->whereNull('deactivated_at'));
+
+        $cutLinks = Sapeur::with('user', 'sis')->whereNotNull('deactivated_at')->get();
+
+        foreach ($cutLinks as $link) {
+            if (!in_array($link->sapeur_id, $actifsParSisId[$link->sis_id] ?? [], true)) {
+                continue;
+            }
+
+            if ($aliveByUserSis->has("{$link->user_id}:{$link->sis_id}") || $aliveBySapeurSis->has("{$link->sapeur_id}:{$link->sis_id}")) {
+                continue;
+            }
+
+            $this->announce('reactivate-sapeur', "{$link->user->email} / {$link->sis->nom}", $dryRun);
+
+            if ($dryRun) {
+                continue;
+            }
+
+            $link->deactivated_at = null;
+            $link->pending_deactivation_at = null;
+            $link->save();
+            $reactivated++;
+
+            $aliveByUserSis->put("{$link->user_id}:{$link->sis_id}", $link->sapeur_id);
+            $aliveBySapeurSis->put("{$link->sapeur_id}:{$link->sis_id}", $link->user_id);
+        }
+
+        return $reactivated;
+    }
+
+    // Partagé
 
     /**
      * Récupère, pour chaque SIS (identifié par son id local), la liste des
@@ -257,9 +414,9 @@ class ProcessAccountDeactivation extends Command
             // Un échec de sync ici signifie que l'API est injoignable ou en erreur :
             // remonté à Sentry/Bugsink, pas seulement loggé.
             report(new RuntimeException(
-                "users:process-deactivation - échec de récupération des sapeurs actifs (status {$response->status()})"
+                $this->getName() . " - échec de récupération des sapeurs actifs (status {$response->status()})"
             ));
-            Log::error('users:process-deactivation - échec de récupération des sapeurs actifs', [
+            Log::error($this->getName() . ' - échec de récupération des sapeurs actifs', [
                 'status' => $response->status(),
             ]);
             return null;
@@ -269,7 +426,7 @@ class ProcessAccountDeactivation extends Command
         $actifsParSisId = [];
         foreach ($response->json('data', []) as $sisKey => $sapeurIds) {
             if (!isset($sisByApiKey[$sisKey])) {
-                Log::warning('users:process-deactivation - SIS inconnu localement', ['sis_key' => $sisKey]);
+                Log::warning($this->getName() . ' - SIS inconnu localement', ['sis_key' => $sisKey]);
                 continue;
             }
             $actifsParSisId[$sisByApiKey[$sisKey]->id] = $sapeurIds;
@@ -292,47 +449,8 @@ class ProcessAccountDeactivation extends Command
         return false;
     }
 
-    private function flagForDeactivation(User $user, bool $dryRun, bool $notify): void
+    private function gracePeriodDeadline(): Carbon
     {
-        $deactivateAt = now()->addDays((int) config('gestsis.deactivation_grace_days', 30));
-        $this->line("[flag] {$user->email} -> désactivation prévue le {$deactivateAt->format('Y-m-d')}" . ($dryRun ? ' (dry-run)' : ''));
-
-        if ($dryRun) {
-            return;
-        }
-
-        $user->pending_deactivation_at = $deactivateAt;
-        $user->save();
-
-        if ($notify) {
-            Mail::to($user->email)->send(new AccountPendingDeactivationMail($user));
-        }
-    }
-
-    private function disableAccount(User $user, bool $dryRun): void
-    {
-        $this->line("[disable] {$user->email}" . ($dryRun ? ' (dry-run)' : ''));
-
-        if ($dryRun) {
-            return;
-        }
-
-        $user->disabled_at = now();
-        $user->save();
-
-        $user->refreshTokens()->delete();
-        ApiToken::where('user_id', $user->id)->delete();
-    }
-
-    private function reinstate(User $user, bool $dryRun): void
-    {
-        $this->line("[reinstate] {$user->email}" . ($dryRun ? ' (dry-run)' : ''));
-
-        if ($dryRun) {
-            return;
-        }
-
-        $user->pending_deactivation_at = null;
-        $user->save();
+        return now()->addDays((int) config('gestsis.deactivation_grace_days', 30));
     }
 }

@@ -133,6 +133,85 @@ class ProcessAccountDeactivationTest extends TestCase
         Mail::assertNothingSent();
     }
 
+    public function testReactivatesAccountThatRegainedARoleAfterBeingDisabled(): void
+    {
+        Mail::fake();
+        $this->fakeSapeursActifs(['test' => []]);
+        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+
+        $user = User::factory()->create([
+            'admin' => false,
+            'pending_deactivation_at' => now()->subDays(31),
+            'disabled_at' => now()->subDay(),
+        ]);
+        $role = Role::create(['nom' => 'Role réattribué', 'sis_id' => $sis->id]);
+        UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);
+
+        $this->artisan('users:process-deactivation')->assertExitCode(0);
+
+        $user->refresh();
+        $this->assertNull($user->disabled_at);
+        $this->assertNull($user->pending_deactivation_at);
+        Mail::assertNothingSent();
+    }
+
+    public function testReactivatesAccountThatBecameActiveSapeurAgainAfterBeingDisabled(): void
+    {
+        Mail::fake();
+        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $this->fakeSapeursActifs(['test' => [1]]);
+
+        $user = User::factory()->create([
+            'admin' => false,
+            'pending_deactivation_at' => now()->subDays(31),
+            'disabled_at' => now()->subDay(),
+        ]);
+        $this->linkSapeur($user, $sis, 1);
+
+        $this->artisan('users:process-deactivation')->assertExitCode(0);
+
+        $user->refresh();
+        $this->assertNull($user->disabled_at);
+        Mail::assertNothingSent();
+    }
+
+    public function testDoesNotReactivateAccountStillWithoutRoleOrActiveSapeur(): void
+    {
+        Mail::fake();
+        $this->fakeSapeursActifs(['test' => []]);
+
+        $user = User::factory()->create([
+            'admin' => false,
+            'pending_deactivation_at' => now()->subDays(31),
+            'disabled_at' => now()->subDay(),
+        ]);
+
+        $this->artisan('users:process-deactivation')->assertExitCode(0);
+
+        $user->refresh();
+        $this->assertNotNull($user->disabled_at);
+    }
+
+    public function testDryRunDoesNotReactivateAccount(): void
+    {
+        Mail::fake();
+        $this->fakeSapeursActifs(['test' => []]);
+        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+
+        $user = User::factory()->create([
+            'admin' => false,
+            'pending_deactivation_at' => now()->subDays(31),
+            'disabled_at' => now()->subDay(),
+        ]);
+        $role = Role::create(['nom' => 'Role', 'sis_id' => $sis->id]);
+        UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);
+
+        $this->artisan('users:process-deactivation', ['--dry-run' => true])->assertExitCode(0);
+
+        $user->refresh();
+        $this->assertNotNull($user->disabled_at);
+    }
+
     public function testDryRunDoesNotWriteAnythingOrSendEmail(): void
     {
         Mail::fake();
@@ -221,6 +300,86 @@ class ProcessAccountDeactivationTest extends TestCase
         $this->assertNull($link->pending_deactivation_at);
         $this->assertNull($link->deactivated_at);
         Mail::assertNothingSent();
+    }
+
+    public function testReactivatesSapeurLinkThatBecameActiveAgainAfterBeingCut(): void
+    {
+        Mail::fake();
+        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $this->fakeSapeursActifs(['test' => [1]]);
+
+        $user = User::factory()->create(['admin' => false]);
+        $link = $this->linkSapeur($user, $sis, 1, [
+            'pending_deactivation_at' => now()->subDays(31),
+            'deactivated_at' => now()->subDay(),
+        ]);
+
+        $this->artisan('users:process-deactivation')->assertExitCode(0);
+
+        $link->refresh();
+        $this->assertNull($link->deactivated_at);
+        $this->assertNull($link->pending_deactivation_at);
+        Mail::assertNothingSent();
+    }
+
+    public function testDoesNotReactivateCutLinkWhenAnotherAliveLinkAlreadyOccupiesTheSameSapeurId(): void
+    {
+        Mail::fake();
+        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $this->fakeSapeursActifs(['test' => [1]]);
+
+        $oldUser = User::factory()->create(['admin' => false]);
+        $cutLink = $this->linkSapeur($oldUser, $sis, 1, [
+            'pending_deactivation_at' => now()->subDays(31),
+            'deactivated_at' => now()->subDay(),
+        ]);
+
+        // Sans contrainte unique en base, un autre utilisateur peut déjà occuper
+        // ce même sapeur_id (ex. recréé entre-temps par users:sync-sapeurs).
+        $newUser = User::factory()->create(['admin' => false]);
+        $this->linkSapeur($newUser, $sis, 1);
+
+        $this->artisan('users:process-deactivation')->assertExitCode(0);
+
+        // L'ancien lien coupé n'est pas réactivé en doublon.
+        $cutLink->refresh();
+        $this->assertNotNull($cutLink->deactivated_at);
+    }
+
+    public function testDoesNotReactivateSapeurLinkStillInactive(): void
+    {
+        Mail::fake();
+        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $this->fakeSapeursActifs(['test' => []]);
+
+        $user = User::factory()->create(['admin' => false]);
+        $link = $this->linkSapeur($user, $sis, 1, [
+            'pending_deactivation_at' => now()->subDays(31),
+            'deactivated_at' => now()->subDay(),
+        ]);
+
+        $this->artisan('users:process-deactivation')->assertExitCode(0);
+
+        $link->refresh();
+        $this->assertNotNull($link->deactivated_at);
+    }
+
+    public function testDryRunDoesNotReactivateSapeurLink(): void
+    {
+        Mail::fake();
+        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $this->fakeSapeursActifs(['test' => [1]]);
+
+        $user = User::factory()->create(['admin' => false]);
+        $link = $this->linkSapeur($user, $sis, 1, [
+            'pending_deactivation_at' => now()->subDays(31),
+            'deactivated_at' => now()->subDay(),
+        ]);
+
+        $this->artisan('users:process-deactivation', ['--dry-run' => true])->assertExitCode(0);
+
+        $link->refresh();
+        $this->assertNotNull($link->deactivated_at);
     }
 
     public function testNoNotifyFlagsAccountsAndLinksWithoutSendingAnyEmail(): void

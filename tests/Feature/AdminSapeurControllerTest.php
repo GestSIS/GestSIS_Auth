@@ -45,4 +45,22 @@ class AdminSapeurControllerTest extends TestCase
         $response->assertStatus(401);
         $this->assertDatabaseHas('sapeurs', ['id' => $link->id]);
     }
+
+    public function testDisabledAdminCannotUseAdminEndpointsEvenWithAValidToken(): void
+    {
+        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $user = User::factory()->create();
+        Sapeur::insert(['sapeur_id' => 42, 'sis_id' => $sis->id, 'user_id' => $user->id]);
+        $link = Sapeur::where('user_id', $user->id)->first();
+
+        $admin = User::factory()->create(['disabled_at' => now()]);
+        $token = TokenTools::createAccessToken($admin, [], [], [], true);
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+        ])->deleteJson("/api/v1/admin/sapeurs/{$link->id}");
+
+        $response->assertStatus(401);
+        $this->assertDatabaseHas('sapeurs', ['id' => $link->id]);
+    }
 }

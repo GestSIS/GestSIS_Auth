@@ -87,6 +87,18 @@ class User extends Authenticatable
     }
 
     /**
+     * Recharge l'utilisateur depuis la DB et retourne null s'il n'existe plus
+     * ou a été désactivé — pour ne pas se fier uniquement au JWT, qui reste
+     * valide jusqu'à expiration naturelle même après désactivation du compte.
+     */
+    public static function findActive(int|string $userId): ?self
+    {
+        $user = self::find($userId);
+
+        return ($user === null || $user->disabled_at !== null) ? null : $user;
+    }
+
+    /**
      * Summary of getSapeurs
      * @param int|string $userId
      * @return array<int, int>

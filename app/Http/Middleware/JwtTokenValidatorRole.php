@@ -28,8 +28,8 @@ class JwtTokenValidatorRole
 
         // Set authenticated user from token
         if (isset($token->data->id)) {
-            $user = User::find($token->data->id);
-            if ($user === null || $user->disabled_at !== null) {
+            $user = User::findActive($token->data->id);
+            if ($user === null) {
                 return response()->json(["error" => "Accès refusé"], 401);
             }
             Auth::setUser($user);

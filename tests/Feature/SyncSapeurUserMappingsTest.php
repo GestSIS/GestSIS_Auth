@@ -19,13 +19,15 @@ class SyncSapeurUserMappingsTest extends TestCase
         ]);
     }
 
-    protected function linkSapeur(User $user, Sis $sis, int $sapeurId): void
+    protected function linkSapeur(User $user, Sis $sis, int $sapeurId, array $attributes = []): Sapeur
     {
-        Sapeur::insert([
+        Sapeur::insert(array_merge([
             'sapeur_id' => $sapeurId,
             'sis_id' => $sis->id,
             'user_id' => $user->id,
-        ]);
+        ], $attributes));
+
+        return Sapeur::where('sapeur_id', $sapeurId)->where('sis_id', $sis->id)->firstOrFail();
     }
 
     public function testCreatesMissingMappingWhenEmailMatchesAndNoExistingLink(): void
@@ -33,6 +35,22 @@ class SyncSapeurUserMappingsTest extends TestCase
         $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
         $user = User::factory()->create(['email' => 'sapeur@example.com']);
         $this->fakeSapeursEmails(['test' => [42 => 'sapeur@example.com']]);
+
+        $this->artisan('users:sync-sapeurs')->assertExitCode(0);
+
+        $this->assertDatabaseHas('sapeurs', [
+            'user_id' => $user->id,
+            'sis_id' => $sis->id,
+            'sapeur_id' => 42,
+        ]);
+    }
+
+    public function testMatchesEmailCaseInsensitively(): void
+    {
+        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $user = User::factory()->create(['email' => 'Sapeur.Test@Example.com']);
+        // Casse différente côté SIS.
+        $this->fakeSapeursEmails(['test' => [42 => 'sapeur.test@example.com']]);
 
         $this->artisan('users:sync-sapeurs')->assertExitCode(0);
 
@@ -104,6 +122,91 @@ class SyncSapeurUserMappingsTest extends TestCase
 
         $this->assertDatabaseHas('sapeurs', ['user_id' => $oldUser->id, 'sis_id' => $sis->id, 'sapeur_id' => 42]);
         $this->assertDatabaseMissing('sapeurs', ['user_id' => $newUser->id]);
+    }
+
+    public function testCreatesNewLinkAndPreservesOldDeadLinkWhenUserHadADifferentDeactivatedSapeurInSameSis(): void
+    {
+        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $user = User::factory()->create(['email' => 'sapeur@example.com']);
+        $deadLink = $this->linkSapeur($user, $sis, 42, [
+            'deactivated_at' => now()->subDay(),
+            'pending_deactivation_at' => now()->subDays(31),
+        ]);
+        // Le sapeur revient sous un nouvel id (ex. nouvel enregistrement côté SIS).
+        $this->fakeSapeursEmails(['test' => [99 => 'sapeur@example.com']]);
+
+        $this->mock(ExceptionHandler::class, function ($mock) {
+            $mock->shouldNotReceive('report');
+        });
+
+        $this->artisan('users:sync-sapeurs')->assertExitCode(0);
+
+        // L'ancien lien mort reste intact (historique), un nouveau lien actif est créé.
+        $deadLink->refresh();
+        $this->assertSame(42, $deadLink->sapeur_id);
+        $this->assertNotNull($deadLink->deactivated_at);
+        $this->assertDatabaseHas('sapeurs', [
+            'user_id' => $user->id,
+            'sis_id' => $sis->id,
+            'sapeur_id' => 99,
+            'deactivated_at' => null,
+        ]);
+        $this->assertSame(2, Sapeur::where('user_id', $user->id)->where('sis_id', $sis->id)->count());
+    }
+
+    public function testCreatesNewLinkAndPreservesOldDeadLinkWhenSapeurWasLinkedToADifferentDeactivatedUser(): void
+    {
+        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $oldUser = User::factory()->create(['email' => 'ancien@example.com']);
+        $newUser = User::factory()->create(['email' => 'nouveau@example.com']);
+        $deadLink = $this->linkSapeur($oldUser, $sis, 42, [
+            'deactivated_at' => now()->subDay(),
+            'pending_deactivation_at' => now()->subDays(31),
+        ]);
+        // Le sapeur_id=42 a maintenant l'email de newUser (changement d'email côté SIS).
+        $this->fakeSapeursEmails(['test' => [42 => 'nouveau@example.com']]);
+
+        $this->mock(ExceptionHandler::class, function ($mock) {
+            $mock->shouldNotReceive('report');
+        });
+
+        $this->artisan('users:sync-sapeurs')->assertExitCode(0);
+
+        // L'ancien lien mort (ancien utilisateur) reste intact...
+        $deadLink->refresh();
+        $this->assertSame($oldUser->id, $deadLink->user_id);
+        $this->assertNotNull($deadLink->deactivated_at);
+        // ...et un nouveau lien actif relie le nouvel utilisateur au même sapeur_id.
+        $this->assertDatabaseHas('sapeurs', [
+            'user_id' => $newUser->id,
+            'sis_id' => $sis->id,
+            'sapeur_id' => 42,
+            'deactivated_at' => null,
+        ]);
+    }
+
+    public function testReactivatesExactSameDeadLinkWhenItBecomesActiveAgain(): void
+    {
+        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $user = User::factory()->create(['email' => 'sapeur@example.com']);
+        $deadLink = $this->linkSapeur($user, $sis, 42, [
+            'deactivated_at' => now()->subDay(),
+            'pending_deactivation_at' => now()->subDays(31),
+        ]);
+        // Exactement le même sapeur_id redevient actif pour le même utilisateur.
+        $this->fakeSapeursEmails(['test' => [42 => 'sapeur@example.com']]);
+
+        $this->mock(ExceptionHandler::class, function ($mock) {
+            $mock->shouldNotReceive('report');
+        });
+
+        $this->artisan('users:sync-sapeurs')->assertExitCode(0);
+
+        // Même ligne réactivée (id conservé), pas de doublon créé.
+        $deadLink->refresh();
+        $this->assertNull($deadLink->deactivated_at);
+        $this->assertNull($deadLink->pending_deactivation_at);
+        $this->assertSame(1, Sapeur::where('user_id', $user->id)->where('sis_id', $sis->id)->count());
     }
 
     public function testHandlesTwoSapeursSharingEmailInSameSisWithinOneRun(): void
