@@ -57,7 +57,7 @@ Route::group(['prefix' => 'v1'], function () {
 
     Route::group(['prefix' => 'admin', 'middleware' => 'jwtTokenAdmin'], function () {
         Route::get('token', [ApiLoginController::class, 'token']);
-        Route::apiResource('sis', SisController::class, ['as' => 'admin'])->only(['store', 'update']);
+        Route::apiResource('sis', SisController::class, ['as' => 'admin'])->only(['show', 'store', 'update']);
         Route::apiResource('users', AdminUserController::class, ['as' => 'admin'])->only(['index', 'show', 'update', 'destroy']);
         Route::apiResource('roles', AdminRoleController::class, ['as' => 'admin'])->only(['index', 'show', 'update', 'destroy']);
         Route::apiResource('user-roles', AdminUserRoleController::class, ['as' => 'admin'])->only(['store', 'destroy']);

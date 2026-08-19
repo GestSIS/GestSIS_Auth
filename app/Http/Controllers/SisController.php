@@ -8,9 +8,6 @@ use Illuminate\Http\Request;
 
 class SisController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(): JsonResponse
     {
         $sis = Sis::get();
@@ -18,9 +15,16 @@ class SisController extends Controller
         return response()->json(['data' => $sis]);
     }
 
-    /**
-     * Create the specified resource in storage.
-     */
+    public function show(int $sisId): JsonResponse
+    {
+        $sis = Sis::with('roles.userRoles.user')->find($sisId);
+        if ($sis === null) {
+            return response()->json(['error' => "Sis inexistant"]);
+        }
+
+        return response()->json(['data' => $sis]);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
