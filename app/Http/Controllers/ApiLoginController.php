@@ -126,12 +126,12 @@ class ApiLoginController extends Controller
         $user->refreshTokens()->save($refreshToken);
 
         return response()->json(
-            array(
+            [
                 "message" => "Successful login",
                 "accessToken" => $accessToken,
                 "refreshToken" => $token->token, // Send plain token to client
                 "user" => User::where('id', $user->id)->first()
-            )
+            ]
         );
     }
 

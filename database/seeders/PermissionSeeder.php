@@ -14,7 +14,7 @@ class PermissionSeeder extends Seeder
      */
     public function run()
     {
-        $elements = array(
+        $elements = [
             // Effectif : 0
             // Sapeurs : 100
             // Intervention : 200
@@ -86,7 +86,7 @@ class PermissionSeeder extends Seeder
             ['id' => 43, 'tri' => 1230, 'nom' => 'RTA config', 'description' => 'Configuration du RTA', 'api_key' => 'rta.config'],
 
             ['id' => 20, 'tri' => 2000, 'nom' => 'Admin', 'description' => 'Paramètres admin du système', 'api_key' => 'admin.tout'],
-        );
+        ];
 
         foreach ($elements as $element) {
             DB::table('permissions')->insert($element);

@@ -89,10 +89,10 @@ class ApiConfirmerEmailController extends Controller
         $accessToken = TokenTools::createAccessToken($user, $permissions, $mobiles, $sapeurs);
 
         return response()->json(
-            array(
+            [
                 "message" => "Email validé",
                 "accessToken" => $accessToken,
-            )
+            ]
         );
     }
 

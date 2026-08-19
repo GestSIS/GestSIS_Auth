@@ -61,12 +61,12 @@ class ApiRefreshTokenController extends Controller
         $refreshToken->delete();
 
         return response()->json(
-            array(
+            [
                 "message" => "Successful login",
                 "accessToken" => $accessToken,
                 "refreshToken" => $token->token, // Send plain token to client
                 "user" => $refreshToken->user
-            )
+            ]
         );
     }
 

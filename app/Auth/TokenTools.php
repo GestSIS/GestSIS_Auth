@@ -61,7 +61,7 @@ class TokenTools
         $notbefore_claim = $issuedat_claim - 10; //not before in seconds
         $expire_claim = $issuedat_claim + self::ACCESS_TOKEN_DURATION_IN_HOURS * 3600; // expire time in seconds
 
-        $token = array(
+        $token = [
             "iss" => self::ISSUER,
             "aud" => self::AUDIENCE,
             "iat" => $issuedat_claim,
@@ -77,7 +77,7 @@ class TokenTools
                 "mobiles" => $mobiles,
                 "sapeurs" => $sapeurs,
             ]
-        );
+        ];
 
         return JWT::encode($token, $privateKey, 'RS256');
     }
@@ -102,7 +102,7 @@ class TokenTools
         $notbefore_claim = $issuedat_claim - 10; //not before in seconds
         $expire_claim = $issuedat_claim + $durationInDays * 86400; // expire time in seconds (86400 = 24 hours)
 
-        $token = array(
+        $token = [
             "iss" => self::ISSUER,
             "aud" => self::AUDIENCE,
             "iat" => $issuedat_claim,
@@ -118,7 +118,7 @@ class TokenTools
                 "mobiles" => $mobiles,
                 "sapeurs" => $sapeurs,
             ]
-        );
+        ];
 
         return JWT::encode($token, $privateKey, 'RS256');
     }
