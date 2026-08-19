@@ -75,9 +75,7 @@ class UserRoleController extends Controller
 
         // Rôles à ajouter
         $rolesToAdd = array_diff($providedRoles, $roles);
-        $data = array_map(function ($roleId) use ($userId) {
-            return ['role_id' => $roleId, 'user_id' => $userId];
-        }, $rolesToAdd);
+        $data = array_map(fn($roleId) => ['role_id' => $roleId, 'user_id' => $userId], $rolesToAdd);
         UserRole::insert($data);
 
         // $roles

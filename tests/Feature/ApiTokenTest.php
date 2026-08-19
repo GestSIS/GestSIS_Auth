@@ -498,9 +498,7 @@ class ApiTokenTest extends TestCase
         ])->postJson('/api/v1/api-tokens', $params);
 
         $response->assertStatus(403);
-        $response->assertJsonPath('error', function ($error) use ($permission2, $sisB) {
-            return str_contains($error, $permission2->nom) && str_contains($error, $sisB->nom);
-        });
+        $response->assertJsonPath('error', fn($error) => str_contains($error, $permission2->nom) && str_contains($error, $sisB->nom));
     }
 
     /**
