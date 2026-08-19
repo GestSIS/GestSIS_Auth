@@ -59,31 +59,22 @@ class User extends Authenticatable
     public static function getPermissions(int|string $userId): array
     {
         $user = User::find($userId);
-        if ($user && $user->admin) {
-            $sisListe = Sis::all();
-            $groupedPermissions = [];
-            foreach ($sisListe as $element) {
-                $groupedPermissions[$element->api_key][] = "admin";
-            }
-            return $groupedPermissions;
-        } else {
-            // Load permissions
-            $permissions = DB::table('permissions')
-                ->join('permission_roles', 'permissions.id', '=', 'permission_roles.permission_id')
-                ->join('roles', 'roles.id', '=', 'permission_roles.role_id')
-                ->join('user_roles', 'roles.id', '=', 'user_roles.role_id')
-                ->join('sis', 'sis.id', '=', 'roles.sis_id')
-                ->where('user_roles.user_id', '=', $userId)
-                ->select('permissions.api_key as perm_key', 'sis.api_key as sis_key')
-                ->distinct()
-                ->get();
+        // Load permissions
+        $permissions = DB::table('permissions')
+            ->join('permission_roles', 'permissions.id', '=', 'permission_roles.permission_id')
+            ->join('roles', 'roles.id', '=', 'permission_roles.role_id')
+            ->join('user_roles', 'roles.id', '=', 'user_roles.role_id')
+            ->join('sis', 'sis.id', '=', 'roles.sis_id')
+            ->where('user_roles.user_id', '=', $userId)
+            ->select('permissions.api_key as perm_key', 'sis.api_key as sis_key')
+            ->distinct()
+            ->get();
 
-            $groupedPermissions = [];
-            foreach ($permissions as $element) {
-                $groupedPermissions[$element->sis_key][] = $element->perm_key;
-            }
-            return $groupedPermissions;
+        $groupedPermissions = [];
+        foreach ($permissions as $element) {
+            $groupedPermissions[$element->sis_key][] = $element->perm_key;
         }
+        return $groupedPermissions;
     }
 
     /**

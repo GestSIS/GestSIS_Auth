@@ -87,6 +87,7 @@ class ApiTokenController extends Controller
             ], 422);
         }
 
+        // TODO: improve with proper logging
         // Admins can create tokens for any SIS with any permissions
         // Non-admins must have the permissions and SIS access they're assigning
         if (!$user->admin) {
