@@ -24,4 +24,9 @@ class Sis extends Model
     {
         return $this->hasMany(Role::class);
     }
+
+    public function sapeurs(): HasMany
+    {
+        return $this->hasMany(Sapeur::class);
+    }
 }

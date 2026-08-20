@@ -17,7 +17,11 @@ class SisController extends Controller
 
     public function show(int $sisId): JsonResponse
     {
-        $sis = Sis::with('roles.userRoles.user')->find($sisId);
+        $sis = Sis::with([
+            'roles.userRoles.user',
+            'sapeurs' => fn ($query) => $query->whereNull('deactivated_at'),
+            'sapeurs.user',
+        ])->find($sisId);
         if ($sis === null) {
             return response()->json(['error' => "Sis inexistant"]);
         }
