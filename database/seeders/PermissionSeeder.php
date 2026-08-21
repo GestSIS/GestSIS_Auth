@@ -14,7 +14,7 @@ class PermissionSeeder extends Seeder
      */
     public function run()
     {
-        $elements = [
+        DB::table('permissions')->insert([
             // Effectif : 0
             // Sapeurs : 100
             // Intervention : 200
@@ -78,18 +78,15 @@ class PermissionSeeder extends Seeder
             ['id' => 19, 'tri' => 1010, 'nom' => 'Config générale', 'description' => 'Configuration des informations du SIS', 'api_key' => 'sis.config'],
             ['id' => 11, 'tri' => 1000, 'nom' => 'Utilisateur', 'description' => 'Modification des droits des utilisateurs', 'api_key' => 'utilisateur.tout'],
 
-            ['id' => 27, 'tri' => 1100, 'nom' => 'SMS envoie', 'description' => 'Envoie de SMS', 'api_key' => 'sms.envoie'],
-            ['id' => 28, 'tri' => 1110, 'nom' => 'SMS config', 'description' => 'Configuration du des SMS', 'api_key' => 'sms.config'],
+            ['id' => 44, 'tri' => 1100, 'nom' => 'SMS lecture', 'description' => 'Visualisation des SMS envoyés', 'api_key' => 'sms.lecture'],
+            ['id' => 27, 'tri' => 1110, 'nom' => 'SMS envoie', 'description' => 'Envoie de SMS', 'api_key' => 'sms.envoie'],
+            ['id' => 28, 'tri' => 1120, 'nom' => 'SMS config', 'description' => 'Configuration du des SMS', 'api_key' => 'sms.config'],
 
             ['id' => 41, 'tri' => 1200, 'nom' => 'RTA lecture', 'description' => 'Accès aux informations RTA', 'api_key' => 'rta.lecture'],
             ['id' => 42, 'tri' => 1210, 'nom' => 'RTA modification', 'description' => 'Envoie de modifications au RTA', 'api_key' => 'rta.modification'],
             ['id' => 43, 'tri' => 1230, 'nom' => 'RTA config', 'description' => 'Configuration du RTA', 'api_key' => 'rta.config'],
 
             ['id' => 20, 'tri' => 2000, 'nom' => 'Admin', 'description' => 'Paramètres admin du système', 'api_key' => 'admin.tout'],
-        ];
-
-        foreach ($elements as $element) {
-            DB::table('permissions')->insert($element);
-        }
+        ]);
     }
 }

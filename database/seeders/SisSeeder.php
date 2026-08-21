@@ -14,14 +14,10 @@ class SisSeeder extends Seeder
      */
     public function run()
     {
-        $elements = [
+        DB::table('sis')->insert([
             // Permissions de base
             ['id' => 1, 'nom' => 'SIS Haute-Sorne', 'abreviation' => 'SIS-HS', 'api_key' => 'hs', 'mobile' => true],
             ['id' => 2, 'nom' => 'SIS Test', 'abreviation' => 'SIS-Test', 'api_key' => 'test', 'mobile' => true],
-        ];
-
-        foreach ($elements as $element) {
-            DB::table('sis')->insert($element);
-        }
+        ]);
     }
 }

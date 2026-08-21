@@ -90,8 +90,9 @@ class DBCustomSeed extends Command
             ['id' => 19, 'tri' => 1010, 'nom' => 'Config générale', 'description' => 'Configuration des informations du SIS', 'api_key' => 'sis.config'],
             ['id' => 11, 'tri' => 1000, 'nom' => 'Utilisateur', 'description' => 'Modification des droits des utilisateurs', 'api_key' => 'utilisateur.tout'],
 
-            ['id' => 27, 'tri' => 1100, 'nom' => 'SMS envoie', 'description' => 'Envoie de SMS', 'api_key' => 'sms.envoie'],
-            ['id' => 28, 'tri' => 1110, 'nom' => 'SMS config', 'description' => 'Configuration du des SMS', 'api_key' => 'sms.config'],
+            ['id' => 44, 'tri' => 1100, 'nom' => 'SMS lecture', 'description' => 'Visualisation des SMS envoyés', 'api_key' => 'sms.lecture'],
+            ['id' => 27, 'tri' => 1110, 'nom' => 'SMS envoie', 'description' => 'Envoie de SMS', 'api_key' => 'sms.envoie'],
+            ['id' => 28, 'tri' => 1120, 'nom' => 'SMS config', 'description' => 'Configuration du des SMS', 'api_key' => 'sms.config'],
 
             ['id' => 41, 'tri' => 1200, 'nom' => 'RTA lecture', 'description' => 'Accès aux informations RTA', 'api_key' => 'rta.lecture'],
             ['id' => 42, 'tri' => 1210, 'nom' => 'RTA modification', 'description' => 'Envoie de modifications au RTA', 'api_key' => 'rta.modification'],
@@ -104,23 +105,12 @@ class DBCustomSeed extends Command
             Permission::updateOrCreate(['id' => $p['id']], $p);
         }
 
-        $rolesIds = PermissionRole::where(['permission_id' => 9])->get()->pluck('role_id');
-        $temp = array_merge(
-            ...array_map(
-                fn($roleId) => [
-                    ['permission_id' => 41, 'role_id' => $roleId],
-                    ['permission_id' => 42, 'role_id' => $roleId],
-                    ['permission_id' => 43, 'role_id' => $roleId],
-                ],
-                array_unique($rolesIds->toArray())
-            )
-        );
+        $rolesIds = PermissionRole::where(['permission_id' => 27])->get()->pluck('role_id');
+
         PermissionRole::insert(array_merge(
             ...array_map(
                 fn($roleId) => [
-                    ['permission_id' => 41, 'role_id' => $roleId],
-                    ['permission_id' => 42, 'role_id' => $roleId],
-                    ['permission_id' => 43, 'role_id' => $roleId],
+                    ['permission_id' => 44, 'role_id' => $roleId],
                 ],
                 array_unique($rolesIds->toArray())
             )

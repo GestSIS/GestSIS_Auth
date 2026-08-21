@@ -14,17 +14,13 @@ class RoleSeeder extends Seeder
      */
     public function run()
     {
-        $elements = [
+        DB::table('roles')->insert([
             ['id' => 1, 'nom' => 'admin HS', 'description' => 'Temp rôle for tests', 'sis_id' => 1],
             ['id' => 2, 'nom' => 'sapeur', 'description' => 'Temp rôle for tests', 'sis_id' => 1],
             ['id' => 3, 'nom' => 'admin test', 'description' => 'Temp rôle for tests', 'sis_id' => 2],
-        ];
+        ]);
 
-        foreach ($elements as $element) {
-            DB::table('roles')->insert($element);
-        }
-
-        $elements = [
+        DB::table('permission_roles')->insert([
             ['permission_id' => 1, 'role_id' => 1],
             ['permission_id' => 2, 'role_id' => 1],
             ['permission_id' => 3, 'role_id' => 1],
@@ -68,6 +64,7 @@ class RoleSeeder extends Seeder
             ['permission_id' => 41, 'role_id' => 1],
             ['permission_id' => 42, 'role_id' => 1],
             ['permission_id' => 43, 'role_id' => 1],
+            ['permission_id' => 44, 'role_id' => 1],
 
             ['permission_id' => 1, 'role_id' => 2],
 
@@ -114,10 +111,7 @@ class RoleSeeder extends Seeder
             ['permission_id' => 41, 'role_id' => 3],
             ['permission_id' => 42, 'role_id' => 3],
             ['permission_id' => 43, 'role_id' => 3],
-        ];
-
-        foreach ($elements as $element) {
-            DB::table('permission_roles')->insert($element);
-        }
+            ['permission_id' => 44, 'role_id' => 3],
+        ]);
     }
 }
