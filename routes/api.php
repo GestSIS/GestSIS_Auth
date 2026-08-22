@@ -11,6 +11,7 @@ use App\Http\Controllers\ApiRefreshTokenController;
 use App\Http\Controllers\ApiConfirmerEmailController;
 use App\Http\Controllers\ApiTokenAuthController;
 use App\Http\Controllers\ApiTokenController;
+use App\Http\Controllers\MeController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserRoleController;
@@ -65,6 +66,7 @@ Route::group(['prefix' => 'v1'], function () {
     });
 
     Route::group(['middleware' => 'jwtTokenRole'], function () {
+        Route::get('me', [MeController::class, 'show']);
         Route::get('permissions/', [PermissionController::class, 'index']);
         Route::post('resend-confirmation/', [ApiResendConfirmationController::class, 'resend']);
         Route::post('use-token/', [RegisterTokenController::class, 'consume']);

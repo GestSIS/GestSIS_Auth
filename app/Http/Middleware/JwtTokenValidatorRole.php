@@ -22,7 +22,7 @@ class JwtTokenValidatorRole
     {
         try {
             $token = TokenTools::validateToken($request->bearerToken());
-        } catch (Exception $e) {
+        } catch (Exception|\TypeError $e) {
             return response()->json(["error" => "Accès refusé"], 401);
         }
 
