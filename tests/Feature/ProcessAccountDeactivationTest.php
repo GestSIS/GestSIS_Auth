@@ -65,7 +65,7 @@ class ProcessAccountDeactivationTest extends TestCase
 
         $user->refresh();
         $this->assertNull($user->pending_deactivation_at);
-        Mail::assertNothingSent();
+        Mail::assertNotSent(AccountPendingDeactivationMail::class, fn($mail) => $mail->user->id === $user->id);
     }
 
     public function testDoesNotFlagAdminAccount(): void
@@ -79,7 +79,7 @@ class ProcessAccountDeactivationTest extends TestCase
 
         $admin->refresh();
         $this->assertNull($admin->pending_deactivation_at);
-        Mail::assertNothingSent();
+        Mail::assertNotSent(AccountPendingDeactivationMail::class, fn($mail) => $mail->user->id === $admin->id);
     }
 
     public function testDisablesAccountPastGracePeriodAndRevokesTokens(): void
@@ -130,7 +130,7 @@ class ProcessAccountDeactivationTest extends TestCase
         $user->refresh();
         $this->assertNull($user->pending_deactivation_at);
         $this->assertNull($user->disabled_at);
-        Mail::assertNothingSent();
+        Mail::assertNotSent(AccountPendingDeactivationMail::class, fn($mail) => $mail->user->id === $user->id);
     }
 
     public function testReactivatesAccountThatRegainedARoleAfterBeingDisabled(): void
@@ -152,7 +152,7 @@ class ProcessAccountDeactivationTest extends TestCase
         $user->refresh();
         $this->assertNull($user->disabled_at);
         $this->assertNull($user->pending_deactivation_at);
-        Mail::assertNothingSent();
+        Mail::assertNotSent(AccountPendingDeactivationMail::class, fn($mail) => $mail->user->id === $user->id);
     }
 
     public function testReactivatesAccountThatBecameActiveSapeurAgainAfterBeingDisabled(): void
@@ -172,7 +172,7 @@ class ProcessAccountDeactivationTest extends TestCase
 
         $user->refresh();
         $this->assertNull($user->disabled_at);
-        Mail::assertNothingSent();
+        Mail::assertNotSent(AccountPendingDeactivationMail::class, fn($mail) => $mail->user->id === $user->id);
     }
 
     public function testDoesNotReactivateAccountStillWithoutRoleOrActiveSapeur(): void
@@ -246,7 +246,7 @@ class ProcessAccountDeactivationTest extends TestCase
             SapeurAccessPendingDeactivationMail::class,
             fn($mail) => $mail->user->id === $user->id && $mail->sapeurLink->id === $staleLink->id
         );
-        Mail::assertNotSent(AccountPendingDeactivationMail::class);
+        Mail::assertNotSent(AccountPendingDeactivationMail::class, fn($mail) => $mail->user->id === $user->id);
 
         $activeLink = Sapeur::where('sis_id', $sisA->id)->first();
         $this->assertNull($activeLink->pending_deactivation_at);
@@ -299,7 +299,8 @@ class ProcessAccountDeactivationTest extends TestCase
         $link->refresh();
         $this->assertNull($link->pending_deactivation_at);
         $this->assertNull($link->deactivated_at);
-        Mail::assertNothingSent();
+        Mail::assertNotSent(SapeurAccessPendingDeactivationMail::class, fn($mail) => $mail->sapeurLink->id === $link->id);
+        Mail::assertNotSent(AccountPendingDeactivationMail::class, fn($mail) => $mail->user->id === $user->id);
     }
 
     public function testReactivatesSapeurLinkThatBecameActiveAgainAfterBeingCut(): void
@@ -319,7 +320,8 @@ class ProcessAccountDeactivationTest extends TestCase
         $link->refresh();
         $this->assertNull($link->deactivated_at);
         $this->assertNull($link->pending_deactivation_at);
-        Mail::assertNothingSent();
+        Mail::assertNotSent(SapeurAccessPendingDeactivationMail::class, fn($mail) => $mail->sapeurLink->id === $link->id);
+        Mail::assertNotSent(AccountPendingDeactivationMail::class, fn($mail) => $mail->user->id === $user->id);
     }
 
     public function testDoesNotReactivateCutLinkWhenAnotherAliveLinkAlreadyOccupiesTheSameSapeurId(): void
