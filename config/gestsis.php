@@ -33,4 +33,15 @@ return [
     */
   'deactivation_grace_days' => (int) env('GESTSIS_DEACTIVATION_GRACE_DAYS', 30),
 
+  /*
+    |--------------------------------------------------------------------------
+    | Dépôt GitHub de l'application mobile
+    |--------------------------------------------------------------------------
+    |
+    | Utilisé pour déterminer la dernière version publiée (via les releases
+    | GitHub) et proposer une mise à jour dans l'application mobile.
+    |
+    */
+  'mobile_github_repo' => env('GESTSIS_MOBILE_GITHUB_REPO', 'GestSIS/GestSIS_Mobile'),
+
 ];

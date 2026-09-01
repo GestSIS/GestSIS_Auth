@@ -12,6 +12,7 @@ use App\Http\Controllers\ApiConfirmerEmailController;
 use App\Http\Controllers\ApiTokenAuthController;
 use App\Http\Controllers\ApiTokenController;
 use App\Http\Controllers\MeController;
+use App\Http\Controllers\MobileVersionController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserRoleController;
@@ -55,6 +56,7 @@ Route::group(['prefix' => 'v1'], function () {
     });
 
     Route::get('sis', [SisController::class, 'index']);
+    Route::get('mobile/latest-version', [MobileVersionController::class, 'latest']);
 
     Route::group(['prefix' => 'admin', 'middleware' => 'jwtTokenAdmin'], function () {
         Route::get('token', [ApiLoginController::class, 'token']);
