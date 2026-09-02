@@ -10,7 +10,7 @@
     "require": {
         "php": "^8.5",
         "firebase/php-jwt": "^7.0",
-        "guzzlehttp/guzzle": "^7.0.1",
+        "guzzlehttp/guzzle": "^8.0.0",
         "laravel/framework": "^13.0",
         "laravel/tinker": "^3.0",
         "laravel/ui": "^4.5",
