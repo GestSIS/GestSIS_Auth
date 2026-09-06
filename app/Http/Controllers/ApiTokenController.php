@@ -35,6 +35,8 @@ class ApiTokenController extends Controller
                     'created_at' => $token->created_at,
                     'expires_at' => $token->expires_at,
                     'last_used_at' => $token->last_used_at,
+                    'revoked_at' => $token->revoked_at,
+                    'revoked_reason' => $token->revoked_reason,
                     'permissions' => $token->permissions->map(fn($p) => [
                         'id' => $p->id,
                         'nom' => $p->nom,
@@ -80,6 +82,13 @@ class ApiTokenController extends Controller
         $existingToken = ApiToken::where('user_id', $user->id)
             ->where('name', $validated['name'])
             ->first();
+
+        if ($existingToken && $existingToken->isRevoked()) {
+            // Recréer un jeton du même nom est la suite logique d'une révocation :
+            // l'entrée révoquée a rempli son rôle d'information, elle laisse la place.
+            $existingToken->delete();
+            $existingToken = null;
+        }
 
         if ($existingToken) {
             return response()->json([

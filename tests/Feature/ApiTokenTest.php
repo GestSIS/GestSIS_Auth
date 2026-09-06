@@ -117,6 +117,33 @@ class ApiTokenTest extends TestCase
     /**
      * Test exchanging API token for JWT.
      */
+    public function testRevokedTokenDoesNotBlockRecreatingATokenWithTheSameName(): void
+    {
+        $user = User::factory()->create(['admin' => true]);
+        $permission = Permission::first();
+
+        $revoked = ApiToken::create([
+            'user_id' => $user->id,
+            'name' => 'Integration',
+            'token' => TokenTools::hashToken('old-token'),
+            'expires_at' => now()->addDays(30),
+            'revoked_at' => now(),
+            'revoked_reason' => ApiToken::REASON_PASSWORD_RESET,
+        ]);
+
+        $bearerToken = TokenTools::createAccessToken($user, [], [], [], true);
+        $response = $this->withHeaders(['Authorization' => 'Bearer ' . $bearerToken])
+            ->postJson('/api/v1/api-tokens', [
+                'name' => 'Integration',
+                'expires_in_days' => 30,
+                'permission_ids' => [$permission->id],
+            ]);
+
+        $response->assertStatus(201);
+        $this->assertDatabaseMissing('api_tokens', ['id' => $revoked->id]);
+        $this->assertDatabaseHas('api_tokens', ['user_id' => $user->id, 'name' => 'Integration', 'revoked_at' => null]);
+    }
+
     public function testExchangeApiTokenForJwt(): void
     {
         $user = User::factory()->create();

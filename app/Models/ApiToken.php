@@ -21,7 +21,43 @@ class ApiToken extends Model
         'token',
         'expires_at',
         'last_used_at',
+        'revoked_at',
+        'revoked_reason',
     ];
+
+    /**
+     * Raison de révocation : tous les jetons de l'utilisateur sont révoqués
+     * lors d'une réinitialisation de mot de passe (chemin "mot de passe oublié"),
+     * car ce chemin ne prouve que le contrôle de la boîte mail.
+     */
+    public const REASON_PASSWORD_RESET = 'password_reset';
+
+    public function isRevoked(): bool
+    {
+        return $this->revoked_at !== null;
+    }
+
+    /**
+     * Révoque tous les jetons encore actifs d'un utilisateur et retourne leur nom,
+     * pour que l'appelant puisse en informer l'utilisateur.
+     *
+     * @return list<string>
+     */
+    public static function revokeAllForUser(int $userId, string $reason): array
+    {
+        $tokens = self::where('user_id', $userId)->whereNull('revoked_at')->get();
+
+        if ($tokens->isEmpty()) {
+            return [];
+        }
+
+        self::whereIn('id', $tokens->pluck('id'))->update([
+            'revoked_at' => now(),
+            'revoked_reason' => $reason,
+        ]);
+
+        return $tokens->pluck('name')->values()->all();
+    }
 
     /**
      * The attributes that should be hidden for serialization.
@@ -42,6 +78,7 @@ class ApiToken extends Model
         return [
             'expires_at' => 'datetime',
             'last_used_at' => 'datetime',
+            'revoked_at' => 'datetime',
         ];
     }
 

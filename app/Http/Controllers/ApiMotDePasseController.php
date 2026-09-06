@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Auth\TokenTools;
 use App\Mail\ResetPassword;
+use App\Models\ApiToken;
 use App\Models\PasswordResetToken;
 use App\Models\User;
 use Carbon\Carbon;
@@ -127,13 +128,31 @@ class ApiMotDePasseController extends Controller
         // Revoke all refresh tokens (invalidate all sessions)
         $user->refreshTokens()->delete();
 
+        // "Mot de passe oublié" est le chemin de récupération après une compromission
+        // possible et ne prouve que le contrôle de la boîte mail : les jetons API
+        // (potentiellement créés par un attaquant) sont révoqués. Ils restent listés
+        // avec la raison pour que l'utilisateur sache quelles intégrations recréer.
+        // Un changement de mot de passe avec l'ancien mot de passe (changer()) ne les
+        // touche pas : l'utilisateur prouve alors qu'il contrôle le compte.
+        $revokedApiTokens = ApiToken::revokeAllForUser($user->id, ApiToken::REASON_PASSWORD_RESET);
+
         Log::info('Password reset successful', [
             'user_id' => $user->id,
             'ip' => request()->ip(),
+            'revoked_api_tokens' => count($revokedApiTokens),
         ]);
 
-        // return success
-        return response()->json(['message' => 'Mot de passe réinitialisé avec succès']);
+        $message = 'Mot de passe réinitialisé avec succès';
+        if (count($revokedApiTokens) > 0) {
+            $message .= '. Par sécurité, vos jetons d\'API ont été révoqués suite à cette réinitialisation : '
+                . implode(', ', $revokedApiTokens)
+                . '. Les applications qui les utilisaient ont perdu leur accès et devront être reconfigurées avec un nouveau jeton.';
+        }
+
+        return response()->json([
+            'message' => $message,
+            'revoked_api_tokens' => $revokedApiTokens,
+        ]);
     }
 
     /**

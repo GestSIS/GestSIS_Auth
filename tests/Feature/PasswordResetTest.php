@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Auth\TokenTools;
 use App\Mail\ResetPassword;
+use App\Models\ApiToken;
 use App\Models\PasswordResetToken;
 use App\Models\RefreshToken;
 use App\Models\User;
@@ -87,8 +88,9 @@ class PasswordResetTest extends TestCase
         // Token must be single-use.
         $this->assertDatabaseMissing('password_reset_tokens', ['user_id' => $user->id]);
 
-        // All existing sessions must be invalidated.
-        $this->assertDatabaseCount('refresh_tokens', 0);
+        // All existing sessions of this user must be invalidated (scoped to the user:
+        // the test DB is shared with the dev stack, which may hold live sessions).
+        $this->assertDatabaseMissing('refresh_tokens', ['user_id' => $user->id]);
     }
 
     public function testResetWithAlreadyUsedTokenIsRejectedOnSecondAttempt(): void
@@ -166,5 +168,93 @@ class PasswordResetTest extends TestCase
 
         // Token must still be usable since it was never consumed.
         $this->assertDatabaseHas('password_reset_tokens', ['user_id' => $user->id]);
+    }
+
+    private function createApiTokenFor(User $user, string $name): string
+    {
+        $tokenData = TokenTools::createApiToken(30);
+        ApiToken::create([
+            'user_id' => $user->id,
+            'name' => $name,
+            'token' => TokenTools::hashToken($tokenData->token),
+            'expires_at' => $tokenData->expire,
+        ]);
+
+        return $tokenData->token;
+    }
+
+    public function testResetRevokesApiTokensAndTellsTheUserWhichOnes(): void
+    {
+        $user = User::factory()->create();
+        $plainApiToken = $this->createApiTokenFor($user, 'Integration comptable');
+        $this->createApiTokenFor($user, 'Export calendrier');
+
+        $plainToken = TokenTools::createResetToken();
+        PasswordResetToken::create([
+            'token' => TokenTools::hashToken($plainToken->token),
+            'user_id' => $user->id,
+            'validite' => $plainToken->expire,
+        ]);
+
+        $response = $this->postJson('/api/v1/reset-password', [
+            'token' => $plainToken->token,
+            'password' => 'un-nouveau-mot-de-passe',
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertEqualsCanonicalizing(
+            ['Integration comptable', 'Export calendrier'],
+            $response->json('revoked_api_tokens')
+        );
+        $this->assertStringContainsString('jetons d\'API ont été révoqués', $response->json('message'));
+        $this->assertStringContainsString('Integration comptable', $response->json('message'));
+
+        // Les jetons restent listés (révocation douce) avec la raison...
+        $this->assertSame(2, ApiToken::where('user_id', $user->id)->whereNotNull('revoked_at')
+            ->where('revoked_reason', ApiToken::REASON_PASSWORD_RESET)->count());
+
+        // ...mais ne sont plus échangeables contre un JWT.
+        $exchange = $this->postJson('/api/v1/token-auth', ['token' => $plainApiToken]);
+        $exchange->assertStatus(401);
+        $this->assertStringContainsString('réinitialisation du mot de passe', $exchange->json('error'));
+    }
+
+    public function testResetWithoutApiTokensReturnsPlainMessage(): void
+    {
+        $user = User::factory()->create();
+        $plainToken = TokenTools::createResetToken();
+        PasswordResetToken::create([
+            'token' => TokenTools::hashToken($plainToken->token),
+            'user_id' => $user->id,
+            'validite' => $plainToken->expire,
+        ]);
+
+        $response = $this->postJson('/api/v1/reset-password', [
+            'token' => $plainToken->token,
+            'password' => 'un-nouveau-mot-de-passe',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('message', 'Mot de passe réinitialisé avec succès');
+        $response->assertJsonPath('revoked_api_tokens', []);
+    }
+
+    public function testChangingPasswordWithOldPasswordKeepsApiTokens(): void
+    {
+        // Admin : l'échange token-auth ne recontrôle pas le sous-ensemble de permissions.
+        $user = User::factory()->create(['admin' => true, 'password' => Hash::make('ancien-mot-de-passe-ok')]);
+        $plainApiToken = $this->createApiTokenFor($user, 'Integration comptable');
+
+        $response = $this->postJson('/api/v1/change-password', [
+            'email' => $user->email,
+            'password' => 'ancien-mot-de-passe-ok',
+            'new_password' => 'nouveau-mot-de-passe-ok',
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertDatabaseHas('api_tokens', ['user_id' => $user->id, 'revoked_at' => null]);
+
+        // L'utilisateur a prouvé qu'il contrôle le compte : ses intégrations continuent de fonctionner.
+        $this->postJson('/api/v1/token-auth', ['token' => $plainApiToken])->assertStatus(200);
     }
 }

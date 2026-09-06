@@ -44,6 +44,20 @@ class ApiTokenAuthController extends Controller
             return response()->json(['error' => 'Jeton API invalide ou expiré'], 401);
         }
 
+        if ($apiToken->isRevoked()) {
+            Log::warning('Revoked API token attempt', [
+                'token_id' => $apiToken->id,
+                'user_id' => $apiToken->user_id,
+                'reason' => $apiToken->revoked_reason,
+                'ip' => $request->ip(),
+            ]);
+            return response()->json([
+                'error' => $apiToken->revoked_reason === ApiToken::REASON_PASSWORD_RESET
+                    ? 'Jeton API révoqué suite à une réinitialisation du mot de passe du compte'
+                    : 'Jeton API révoqué',
+            ], 401);
+        }
+
         // For admin users: allow token exchange without permission validation
         // For non-admin users: strict validation that they still have all permissions
         if ($apiToken->user->admin) {
