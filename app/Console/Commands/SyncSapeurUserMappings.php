@@ -52,10 +52,15 @@ class SyncSapeurUserMappings extends Command
         }
 
         $sisByApiKey = Sis::all()->keyBy('api_key');
+        // Seuls les comptes dont l'email est vérifié peuvent être liés à un sapeur :
+        // l'inscription accepte n'importe quel email connu de l'API, donc un compte
+        // non vérifié n'est qu'une revendication d'identité, pas une preuve.
         // Comparaison en mémoire, donc normalisée en minuscules pour rester cohérente
         // avec la collation MySQL insensible à la casse (utf8mb4_unicode_ci) utilisée
         // partout ailleurs (validateEmail, confirmation d'email) pour ce même matching.
-        $usersByEmail = User::all()->keyBy(fn($u) => mb_strtolower($u->email));
+        $usersByEmail = User::whereNotNull('email_verified_at')
+            ->get()
+            ->keyBy(fn($u) => mb_strtolower($u->email));
 
         [$exactByTriple, $aliveByUserSis, $aliveBySapeurSis] = $this->indexExistingLinks();
 

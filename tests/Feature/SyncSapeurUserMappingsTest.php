@@ -45,6 +45,21 @@ class SyncSapeurUserMappingsTest extends TestCase
         ]);
     }
 
+    public function testIgnoresAccountsWithUnverifiedEmail(): void
+    {
+        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        // Un compte non vérifié n'est qu'une revendication de l'email : ne jamais le lier.
+        $user = User::factory()->unverified()->create(['email' => 'sapeur@example.com']);
+        $this->fakeSapeursEmails(['test' => [42 => 'sapeur@example.com']]);
+
+        $this->artisan('users:sync-sapeurs')->assertExitCode(0);
+
+        $this->assertDatabaseMissing('sapeurs', [
+            'user_id' => $user->id,
+            'sis_id' => $sis->id,
+        ]);
+    }
+
     public function testMatchesEmailCaseInsensitively(): void
     {
         $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);

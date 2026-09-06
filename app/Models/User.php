@@ -96,9 +96,13 @@ class User extends Authenticatable
      */
     public static function getSapeurs(int|string $userId): array
     {
+        // Le claim `sapeurs` n'est émis que pour un compte dont l'email est vérifié :
+        // un lien créé (ou hérité) avant vérification ne doit donner aucun accès.
         $sapeurs = DB::table('sapeurs')
             ->join('sis', 'sis.id', '=', 'sapeurs.sis_id')
+            ->join('users', 'users.id', '=', 'sapeurs.user_id')
             ->where('sapeurs.user_id', '=', $userId)
+            ->whereNotNull('users.email_verified_at')
             ->whereNull('sapeurs.deactivated_at')
             ->select('sis.api_key as sis_key', 'sapeurs.sapeur_id as sapeur_id')
             ->distinct()
