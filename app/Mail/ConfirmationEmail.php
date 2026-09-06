@@ -27,7 +27,7 @@ class ConfirmationEmail extends Mailable
      */
     public function build(): ConfirmationEmail
     {
-        return $this->from('test@gestsis.ch', 'GestSIS')
+        return $this->from('support@gestsis.ch', 'GestSIS')
             ->subject("Inscription à GestSIS")
             ->text('emails.confirmation_email');
     }
