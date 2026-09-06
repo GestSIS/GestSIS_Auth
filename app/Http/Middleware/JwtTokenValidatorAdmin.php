@@ -31,10 +31,10 @@ class JwtTokenValidatorAdmin
         }
 
         // Recharge depuis la DB (contrairement au seul claim JWT) pour ne pas
-        // laisser un compte désactivé garder l'accès admin jusqu'à l'expiration
-        // naturelle du token (8h).
+        // laisser un compte désactivé, ou un admin rétrogradé, garder l'accès
+        // admin jusqu'à l'expiration naturelle du token (8h).
         $user = User::findActive($token->data->id);
-        if ($user === null) {
+        if ($user === null || !$user->admin) {
             return response()->json(["error" => "Accès refusé"], 401);
         }
 

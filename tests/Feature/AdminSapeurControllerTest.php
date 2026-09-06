@@ -17,7 +17,7 @@ class AdminSapeurControllerTest extends TestCase
         Sapeur::insert(['sapeur_id' => 42, 'sis_id' => $sis->id, 'user_id' => $user->id]);
         $link = Sapeur::where('user_id', $user->id)->first();
 
-        $admin = User::factory()->create();
+        $admin = User::factory()->create(['admin' => true]);
         $token = TokenTools::createAccessToken($admin, [], [], [], true);
 
         $response = $this->withHeaders([

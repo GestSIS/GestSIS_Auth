@@ -14,7 +14,7 @@ class SisControllerTest extends TestCase
 {
     protected function adminToken(): string
     {
-        $admin = User::factory()->create();
+        $admin = User::factory()->create(['admin' => true]);
         return TokenTools::createAccessToken($admin, [], [], [], true);
     }
 

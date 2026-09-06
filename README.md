@@ -22,6 +22,8 @@ php artisan migrate --step
 php artisan db:seed
 ```
 
+`db:seed` crée les permissions, SIS et rôles de base. Les comptes de démo (`admin@gestsis.ch` / `demo@gestsis.ch`, mot de passe `apptest`) ne sont créés qu'en `APP_ENV=local` ou `testing`, jamais en production : créer le premier administrateur manuellement.
+
 ### Génération des clés
 
 Créer 2 fichiers dans le dossier `storage\keys`:

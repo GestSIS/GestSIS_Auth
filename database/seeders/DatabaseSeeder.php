@@ -15,7 +15,11 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             SisSeeder::class,
             RoleSeeder::class,
-            UserSeeder::class,
         ]);
+
+        // Comptes de démo à mot de passe connu jamais en production.
+        if (app()->environment(['local', 'testing'])) {
+            $this->call(UserSeeder::class);
+        }
     }
 }

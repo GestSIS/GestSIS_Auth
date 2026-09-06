@@ -35,7 +35,9 @@ class ApiRefreshTokenController extends Controller
             ->with('user')
             ->first();
 
-        if (!$refreshToken) {
+        // Défense en profondeur : disableAccount() supprime les refresh tokens, mais un
+        // compte désactivé ne doit en aucun cas pouvoir se ré-émettre un access token.
+        if (!$refreshToken || $refreshToken->user === null || $refreshToken->user->disabled_at !== null) {
             Log::warning('Invalid or expired refresh token attempt', [
                 'ip' => $request->ip(),
             ]);

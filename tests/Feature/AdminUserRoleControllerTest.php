@@ -13,8 +13,29 @@ class AdminUserRoleControllerTest extends TestCase
 {
     protected function adminToken(): string
     {
-        $admin = User::factory()->create();
+        $admin = User::factory()->create(['admin' => true]);
         return TokenTools::createAccessToken($admin, [], [], [], true);
+    }
+
+    public function testDemotedAdminIsRefusedEvenWithAnAdminClaimInTheToken(): void
+    {
+        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $user = User::factory()->create();
+        $role = Role::create(['nom' => 'Role', 'sis_id' => $sis->id]);
+
+        // Token émis alors que le compte était admin, puis rétrogradé en base.
+        $demoted = User::factory()->create(['admin' => false]);
+        $token = TokenTools::createAccessToken($demoted, [], [], [], true);
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+        ])->postJson('/api/v1/admin/user-roles', [
+            'user_id' => $user->id,
+            'role_id' => $role->id,
+        ]);
+
+        $response->assertStatus(401);
+        $this->assertDatabaseMissing('user_roles', ['user_id' => $user->id, 'role_id' => $role->id]);
     }
 
     public function testAdminCanAddARoleToAUser(): void

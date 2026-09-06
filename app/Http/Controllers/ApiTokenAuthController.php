@@ -35,7 +35,9 @@ class ApiTokenAuthController extends Controller
             ->with(['user', 'permissions', 'allowedSis'])
             ->first();
 
-        if (!$apiToken) {
+        // Défense en profondeur : les jetons API sont supprimés à la désactivation du
+        // compte, mais un compte désactivé ne doit jamais pouvoir s'en servir.
+        if (!$apiToken || $apiToken->user === null || $apiToken->user->disabled_at !== null) {
             Log::warning('Invalid or expired API token attempt', [
                 'ip' => $request->ip(),
             ]);
