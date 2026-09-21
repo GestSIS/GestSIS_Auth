@@ -113,7 +113,7 @@ class PasswordResetTest extends TestCase
         ]);
 
         $secondResponse->assertStatus(401);
-        $secondResponse->assertJsonPath('error.message', 'Jeton invalide ou déjà utilisé');
+        $secondResponse->assertJsonPath('message', 'Jeton invalide ou déjà utilisé');
     }
 
     public function testResetWithExpiredTokenIsRejected(): void
@@ -132,7 +132,7 @@ class PasswordResetTest extends TestCase
         ]);
 
         $response->assertStatus(401);
-        $response->assertJsonPath('error.message', 'Jeton invalide ou déjà utilisé');
+        $response->assertJsonPath('message', 'Jeton invalide ou déjà utilisé');
 
         $user->refresh();
         $this->assertTrue(Hash::check('password', $user->password));
@@ -146,7 +146,7 @@ class PasswordResetTest extends TestCase
         ]);
 
         $response->assertStatus(401);
-        $response->assertJsonPath('error.message', 'Jeton invalide ou déjà utilisé');
+        $response->assertJsonPath('message', 'Jeton invalide ou déjà utilisé');
     }
 
     public function testResetRejectsPasswordShorterThanTwelveCharacters(): void
@@ -216,7 +216,7 @@ class PasswordResetTest extends TestCase
         // ...mais ne sont plus échangeables contre un JWT.
         $exchange = $this->postJson('/api/v1/token-auth', ['token' => $plainApiToken]);
         $exchange->assertStatus(401);
-        $this->assertStringContainsString('réinitialisation du mot de passe', $exchange->json('error.message'));
+        $this->assertStringContainsString('réinitialisation du mot de passe', $exchange->json('message'));
     }
 
     public function testResetWithoutApiTokensReturnsPlainMessage(): void

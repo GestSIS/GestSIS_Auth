@@ -37,7 +37,7 @@ class ApiRefreshTokenController extends Controller
             Log::warning('Invalid or expired refresh token attempt', [
                 'ip' => $request->ip(),
             ]);
-            return response()->json(['error' => ['message' => 'Refresh token expired']], 401);
+            return response()->json(['message' => 'Refresh token expired'], 401);
         }
 
         $permissions = User::getPermissions($refreshToken->user_id);

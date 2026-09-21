@@ -70,7 +70,7 @@ class AdminUserRoleControllerTest extends TestCase
         ]);
 
         $response->assertStatus(422);
-        $response->assertJsonPath('error.role_id.0', 'Cet utilisateur a déjà ce rôle.');
+        $response->assertJsonPath('errors.role_id.0', 'Cet utilisateur a déjà ce rôle.');
         $this->assertSame(1, UserRole::where('user_id', $user->id)->where('role_id', $role->id)->count());
     }
 }

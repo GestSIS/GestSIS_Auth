@@ -37,7 +37,7 @@ class ApiConfirmerEmailController extends Controller
             Log::warning('Invalid or expired email confirmation token attempt', [
                 'ip' => $request->ip(),
             ]);
-            return response()->json(['error' => ['message' => 'Jeton de confirmation invalide, expiré ou déjà utilisé.']], 401);
+            return response()->json(['message' => 'Jeton de confirmation invalide, expiré ou déjà utilisé.'], 401);
         }
 
         // Validation du compte

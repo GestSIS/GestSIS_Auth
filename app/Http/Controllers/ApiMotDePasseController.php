@@ -40,7 +40,7 @@ class ApiMotDePasseController extends Controller
         ]);
 
         if ($validation->fails()) {
-            return response()->json(['error' => ['message' => 'email manquant']], 401);
+            return response()->json(['message' => 'email manquant'], 401);
         }
 
         // Chargement de l'utilisateur
@@ -93,7 +93,7 @@ class ApiMotDePasseController extends Controller
         ]);
 
         if ($validation->fails()) {
-            return response()->json(['error' => ['message' => 'Jeton de réinitialisation manquant ou mot de passe invalide']], 401);
+            return response()->json(['message' => 'Jeton de réinitialisation manquant ou mot de passe invalide'], 401);
         }
 
         $validated = $validation->validated();
@@ -113,7 +113,7 @@ class ApiMotDePasseController extends Controller
                 'ip' => request()->ip(),
             ]);
             
-            return response()->json(['error' => ['message' => 'Jeton invalide ou déjà utilisé']], 401);
+            return response()->json(['message' => 'Jeton invalide ou déjà utilisé'], 401);
         }
 
         // Suppression du jeton dans la DB
@@ -178,7 +178,7 @@ class ApiMotDePasseController extends Controller
 
         $endString = "@gestsis.ch";
         if (substr(strtolower($data[$this->username()]), -strlen($endString)) === $endString) {
-            return response()->json(['error' => ['message' => 'Modification de mot de passe refusée']], 401);
+            return response()->json(['message' => 'Modification de mot de passe refusée'], 401);
         }
 
         if ($this->attemptLogin($request)) {
@@ -201,7 +201,7 @@ class ApiMotDePasseController extends Controller
             'ip' => $request->ip(),
         ]);
 
-        return response()->json(['error' => ['message' => 'Identifiants invalides']], 401);
+        return response()->json(['message' => 'Identifiants invalides'], 401);
     }
 
     /**

@@ -22,7 +22,7 @@ class AdminRoleController extends Controller
     {
         $role = Role::find($roleId);
         if ($role == null) {
-            return response()->json(['error' => ['message' => "Role inexistant"]], 404);
+            return response()->json(['message' => "Role inexistant"], 404);
         }
 
         $data = $request->validate([
@@ -42,7 +42,7 @@ class AdminRoleController extends Controller
     {
         $role = Role::with(['permissions'])->find($roleId);
         if ($role == null) {
-            return response()->json(['error' => ['message' => "Role inexistant"]], 404);
+            return response()->json(['message' => "Role inexistant"], 404);
         }
         return response()->json(['data' => $role]);
     }

@@ -11,10 +11,9 @@ use Tests\TestCase;
  * Les endpoints "message générique" de l'API Auth (login, confirmer-email,
  * refresh-token, token-auth, use-token, change-password) doivent renvoyer
  * leurs erreurs sous une forme homogène selon le type d'échec :
- * - 422 (requête mal formée) : {"error": {champ: [messages]}}, la validation
- *   standard de Laravel (voir le handler de ValidationException dans
- *   bootstrap/app.php).
- * - 401/403 (identifiants ou jeton invalides) : {"error": {"message": "<texte>"}}.
+ * - 422 (requête mal formée) : {"message": "...", "errors": {champ: [messages]}},
+ *   le rendu natif de Laravel pour ValidationException (aucun handler custom).
+ * - 401/403 (identifiants ou jeton invalides) : {"message": "<texte>"}.
  */
 class AuthErrorResponseFormatTest extends TestCase
 {
@@ -23,8 +22,8 @@ class AuthErrorResponseFormatTest extends TestCase
         $response = $this->postJson('/api/v1/login', []);
 
         $response->assertStatus(422);
-        $response->assertJsonPath('error.email.0', 'The email field is required.');
-        $response->assertJsonPath('error.password.0', 'The password field is required.');
+        $response->assertJsonPath('errors.email.0', 'The email field is required.');
+        $response->assertJsonPath('errors.password.0', 'The password field is required.');
     }
 
     public function testLoginWithWrongPasswordReturns401WithMessage(): void
@@ -37,7 +36,7 @@ class AuthErrorResponseFormatTest extends TestCase
         ]);
 
         $response->assertStatus(401);
-        $response->assertJsonPath('error.message', 'Les identifiants fournis sont incorrects');
+        $response->assertJsonPath('message', 'Les identifiants fournis sont incorrects');
     }
 
     public function testConfirmerEmailWithMissingTokenReturns422WithFieldErrors(): void
@@ -45,7 +44,7 @@ class AuthErrorResponseFormatTest extends TestCase
         $response = $this->postJson('/api/v1/confirmer-email', []);
 
         $response->assertStatus(422);
-        $response->assertJsonPath('error.token.0', 'The token field is required.');
+        $response->assertJsonPath('errors.token.0', 'The token field is required.');
     }
 
     public function testConfirmerEmailWithInvalidTokenReturns401WithMessage(): void
@@ -54,7 +53,7 @@ class AuthErrorResponseFormatTest extends TestCase
 
         $response->assertStatus(401);
         $response->assertJsonPath(
-            'error.message',
+            'message',
             'Jeton de confirmation invalide, expiré ou déjà utilisé.'
         );
     }
@@ -64,7 +63,7 @@ class AuthErrorResponseFormatTest extends TestCase
         $response = $this->postJson('/api/v1/refresh-token', []);
 
         $response->assertStatus(422);
-        $response->assertJsonPath('error.token.0', 'The token field is required.');
+        $response->assertJsonPath('errors.token.0', 'The token field is required.');
     }
 
     public function testRefreshTokenWithUnknownTokenReturns401WithMessage(): void
@@ -72,7 +71,7 @@ class AuthErrorResponseFormatTest extends TestCase
         $response = $this->postJson('/api/v1/refresh-token', ['token' => 'un-jeton-inconnu']);
 
         $response->assertStatus(401);
-        $response->assertJsonPath('error.message', 'Refresh token expired');
+        $response->assertJsonPath('message', 'Refresh token expired');
     }
 
     public function testTokenAuthWithMissingTokenReturns422WithFieldErrors(): void
@@ -80,7 +79,7 @@ class AuthErrorResponseFormatTest extends TestCase
         $response = $this->postJson('/api/v1/token-auth', []);
 
         $response->assertStatus(422);
-        $response->assertJsonPath('error.token.0', 'The token field is required.');
+        $response->assertJsonPath('errors.token.0', 'The token field is required.');
     }
 
     public function testTokenAuthWithUnknownTokenReturns401WithMessage(): void
@@ -88,7 +87,7 @@ class AuthErrorResponseFormatTest extends TestCase
         $response = $this->postJson('/api/v1/token-auth', ['token' => 'un-jeton-inconnu']);
 
         $response->assertStatus(401);
-        $response->assertJsonPath('error.message', 'Jeton API invalide ou expiré');
+        $response->assertJsonPath('message', 'Jeton API invalide ou expiré');
     }
 
     public function testUseTokenWithMissingTokenReturns422WithFieldErrors(): void
@@ -100,7 +99,7 @@ class AuthErrorResponseFormatTest extends TestCase
             ->postJson('/api/v1/use-token', []);
 
         $response->assertStatus(422);
-        $response->assertJsonPath('error.token.0', 'The token field is required.');
+        $response->assertJsonPath('errors.token.0', 'The token field is required.');
     }
 
     public function testUseTokenWithInvalidTokenReturns401WithMessage(): void
@@ -112,7 +111,7 @@ class AuthErrorResponseFormatTest extends TestCase
             ->postJson('/api/v1/use-token', ['token' => 'un-jeton-invalide']);
 
         $response->assertStatus(401);
-        $response->assertJsonPath('error.message', 'Token invalide');
+        $response->assertJsonPath('message', 'Token invalide');
     }
 
     public function testChangePasswordWithMissingFieldsReturns422WithFieldErrors(): void
@@ -120,7 +119,7 @@ class AuthErrorResponseFormatTest extends TestCase
         $response = $this->postJson('/api/v1/change-password', []);
 
         $response->assertStatus(422);
-        $response->assertJsonPath('error.email.0', 'The email field is required.');
+        $response->assertJsonPath('errors.email.0', 'The email field is required.');
     }
 
     public function testChangePasswordWithWrongCredentialsReturns401WithMessage(): void
@@ -134,6 +133,6 @@ class AuthErrorResponseFormatTest extends TestCase
         ]);
 
         $response->assertStatus(401);
-        $response->assertJsonPath('error.message', 'Identifiants invalides');
+        $response->assertJsonPath('message', 'Identifiants invalides');
     }
 }

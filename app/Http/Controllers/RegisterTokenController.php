@@ -28,7 +28,7 @@ class RegisterTokenController extends Controller
         try {
             $jwt = TokenTools::validateToken($authToken);
         } catch (Exception $e) {
-            return response()->json(['error' => ['message' => "Invalid bearer token"]], 401);
+            return response()->json(['message' => "Invalid bearer token"], 401);
         }
 
         $permissions = (array) $jwt->data->permissions;
@@ -42,7 +42,7 @@ class RegisterTokenController extends Controller
                 /** @var Sis $sis */
                 $sis = $role->sis;
                 if (!array_key_exists($sis->api_key, $permissions) || !in_array('utilisateur.tout', $permissions[$sis->api_key])) {
-                    return response()->json(['error' => ['message' => "Permissions insuffisantes for " . $sis->api_key]], 403);
+                    return response()->json(['message' => "Permissions insuffisantes for " . $sis->api_key], 403);
                 }
             }
         }
@@ -70,7 +70,7 @@ class RegisterTokenController extends Controller
 
         // Validate register token validité
         if (is_null($registerToken)) {
-            return response()->json(["error" => ["message" => "Token invalide"]], 401);
+            return response()->json(["message" => "Token invalide"], 401);
         }
 
         // Load user from database by using user_id from jwt token
@@ -78,12 +78,12 @@ class RegisterTokenController extends Controller
         try {
             $jwt = TokenTools::validateToken($authToken);
         } catch (Exception $e) {
-            return response()->json(["error" => ["message" => "Invalid bearer token"]], 401);
+            return response()->json(["message" => "Invalid bearer token"], 401);
         }
         $id = (array) $jwt->data->id;
         $user = User::where('id', $id)->first();
         if (is_null($user)) {
-            return response()->json(["error" => ["message" => "Le compte utilisateur actuel n'existe plus"]], 401);
+            return response()->json(["message" => "Le compte utilisateur actuel n'existe plus"], 401);
         }
 
         $roleIds = DB::table('register_token_roles')

@@ -25,7 +25,7 @@ class ApiLoginDisabledAccountTest extends TestCase
         ]);
 
         $response->assertStatus(401);
-        $response->assertJsonPath('error.message', 'Les identifiants fournis sont incorrects');
+        $response->assertJsonPath('message', 'Les identifiants fournis sont incorrects');
         $this->assertArrayNotHasKey('accessToken', $response->json());
     }
 

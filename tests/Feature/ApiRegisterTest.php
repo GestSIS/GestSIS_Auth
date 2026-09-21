@@ -11,9 +11,9 @@ class ApiRegisterTest extends TestCase
 {
     /**
      * Registering with an email that already exists must return a clean,
-     * field-keyed validation error (HTTP 422 with `error.email`) rather than
+     * field-keyed validation error (HTTP 422 with `errors.email`) rather than
      * surfacing the database unique-constraint violation as a 500. The frontend
-     * (PageRegister.vue) relies on `error.email` being set to show its message.
+     * (PageRegister.vue) relies on `errors.email` being set to show its message.
      *
      * Registration without a token checks the email against GestSIS_API before
      * reaching the duplicate-email check, so this test needs that service reachable.
@@ -36,7 +36,7 @@ class ApiRegisterTest extends TestCase
         ]);
 
         $response->assertStatus(422);
-        $response->assertJsonStructure(['error' => ['email']]);
+        $response->assertJsonStructure(['message', 'errors' => ['email']]);
 
         // No second user should have been created for that email.
         $this->assertSame(1, User::where('email', $existing->email)->count());

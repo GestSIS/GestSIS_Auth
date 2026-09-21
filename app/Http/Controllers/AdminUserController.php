@@ -25,7 +25,7 @@ class AdminUserController extends Controller
     {
         $user = User::find($userId);
         if ($user == null) {
-            return response()->json(['error' => ['message' => "Utilisateur inexistant"]], 404);
+            return response()->json(['message' => "Utilisateur inexistant"], 404);
         }
 
         $data = $request->validate([
@@ -45,7 +45,7 @@ class AdminUserController extends Controller
     {
         $user = User::with(['userRoles', 'sapeur'])->find($userId);
         if ($user == null) {
-            return response()->json(['error' => ['message' => "Utilisateur inexistant"]], 404);
+            return response()->json(['message' => "Utilisateur inexistant"], 404);
         }
         return response()->json(['data' => $user]);
     }

@@ -41,7 +41,7 @@ class ApiRegisterController extends Controller
 
             // Validate register token validité
             if (is_null($registerToken)) {
-                return response()->json(['error' => ['message' => "Token invalide"]], 401);
+                return response()->json(['message' => "Token invalide"], 401);
             }
             $rolesId = DB::table('register_token_roles')
                 ->where('register_token_id', '=', $registerToken->id)
@@ -58,7 +58,7 @@ class ApiRegisterController extends Controller
             if (!$response->successful() || !$response['data']) {
                 // Same response as the duplicate-email case below: a caller must not
                 // be able to tell apart "unknown email" from "already registered"
-                return response()->json(['error' => ['email' => ['Email invalide ou déjà utilisé']]], 422);
+                return response()->json(['message' => 'Email invalide ou déjà utilisé', 'errors' => ['email' => ['Email invalide ou déjà utilisé']]], 422);
             }
         }
 
@@ -69,7 +69,7 @@ class ApiRegisterController extends Controller
         try {
             $userData = $this->create($request->all());
         } catch (UniqueConstraintViolationException $e) {
-            return response()->json(['error' => ['email' => ['Email invalide ou déjà utilisé']]], 422);
+            return response()->json(['message' => 'Email invalide ou déjà utilisé', 'errors' => ['email' => ['Email invalide ou déjà utilisé']]], 422);
         }
         $user = $userData['user'];
         $plainEmailToken = $userData['plain_token'];
@@ -84,7 +84,7 @@ class ApiRegisterController extends Controller
             Mail::to($user)->send(new ConfirmationEmail($user, $plainEmailToken));
         } catch (Exception $e) {
             $user->delete();
-            return response()->json(['error' => ['message' => "Une erreur à eu lieu lors de l'envoie de l'email de confirmation"]], 500);
+            return response()->json(['message' => "Une erreur à eu lieu lors de l'envoie de l'email de confirmation"], 500);
         }
 
         $user->refreshTokens()->save($refreshToken);

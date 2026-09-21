@@ -70,7 +70,7 @@ class SisControllerTest extends TestCase
         ])->getJson('/api/v1/admin/sis/999999');
 
         $response->assertStatus(404);
-        $response->assertJsonPath('error.message', 'Sis inexistant');
+        $response->assertJsonPath('message', 'Sis inexistant');
     }
 
     public function testUpdatingAnUnknownSisReturnsACleanErrorInsteadOfCrashing(): void
@@ -83,6 +83,6 @@ class SisControllerTest extends TestCase
         ]);
 
         $response->assertStatus(404);
-        $response->assertJsonPath('error.message', 'Sis inexistant');
+        $response->assertJsonPath('message', 'Sis inexistant');
     }
 }

@@ -23,11 +23,11 @@ class JwtTokenValidatorAdmin
         try {
             $token = TokenTools::validateToken($request->bearerToken());
         } catch (Exception $e) {
-            return response()->json(["error" => "Accès refusé"], 401);
+            return response()->json(["message" => "Accès refusé"], 401);
         }
 
         if ($token->data->admin !== true) {
-            return response()->json(["error" => "Accès refusé"], 401);
+            return response()->json(["message" => "Accès refusé"], 401);
         }
 
         // Recharge depuis la DB (contrairement au seul claim JWT) pour ne pas
@@ -35,7 +35,7 @@ class JwtTokenValidatorAdmin
         // admin jusqu'à l'expiration naturelle du token (8h).
         $user = User::findActive($token->data->id);
         if ($user === null || !$user->admin) {
-            return response()->json(["error" => "Accès refusé"], 401);
+            return response()->json(["message" => "Accès refusé"], 401);
         }
 
         Auth::setUser($user);

@@ -111,7 +111,7 @@ class ApiTokenTest extends TestCase
         ])->postJson('/api/v1/api-tokens', $params);
 
         $response->assertStatus(422);
-        $response->assertJsonPath('error.name.0', 'Un jeton avec ce nom existe déjà.');
+        $response->assertJsonPath('errors.name.0', 'Un jeton avec ce nom existe déjà.');
     }
 
     /**
@@ -230,8 +230,8 @@ class ApiTokenTest extends TestCase
         ]);
 
         $response->assertStatus(403);
-        $this->assertStringContainsString("n'est plus valide", $response->json('error.message'));
-        $this->assertStringContainsString('perdu les permissions', $response->json('error.message'));
+        $this->assertStringContainsString("n'est plus valide", $response->json('message'));
+        $this->assertStringContainsString('perdu les permissions', $response->json('message'));
     }
 
     /**
@@ -258,7 +258,7 @@ class ApiTokenTest extends TestCase
         ]);
 
         $response->assertStatus(401);
-        $response->assertJsonPath('error.message', 'Jeton API invalide ou expiré');
+        $response->assertJsonPath('message', 'Jeton API invalide ou expiré');
     }
 
     /**
@@ -271,7 +271,7 @@ class ApiTokenTest extends TestCase
         ]);
 
         $response->assertStatus(401);
-        $response->assertJsonPath('error.message', 'Jeton API invalide ou expiré');
+        $response->assertJsonPath('message', 'Jeton API invalide ou expiré');
     }
 
     /**
@@ -467,7 +467,7 @@ class ApiTokenTest extends TestCase
 
         $response->assertStatus(422);
         $response->assertJson([
-            'error' => ['message' => 'Vous devez spécifier au moins un SIS pour ce jeton']
+            'message' => 'Vous devez spécifier au moins un SIS pour ce jeton',
         ]);
     }
 
@@ -525,7 +525,7 @@ class ApiTokenTest extends TestCase
 
         $response->assertStatus(403);
         $response->assertJsonPath(
-            'error.message',
+            'message',
             fn($error) => str_contains($error, $permission2->nom) && str_contains($error, $sisB->nom)
         );
     }

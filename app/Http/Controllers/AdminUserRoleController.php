@@ -25,7 +25,8 @@ class AdminUserRoleController extends Controller
 
         if ($existing !== null) {
             return response()->json([
-                'error' => ['role_id' => ['Cet utilisateur a déjà ce rôle.']]
+                'message' => 'Cet utilisateur a déjà ce rôle.',
+                'errors' => ['role_id' => ['Cet utilisateur a déjà ce rôle.']],
             ], 422);
         }
 

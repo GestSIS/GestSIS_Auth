@@ -26,7 +26,7 @@ class MeTest extends TestCase
         $response = $this->getJson('/api/v1/me');
 
         $response->assertStatus(401);
-        $response->assertJsonPath('error', 'Accès refusé');
+        $response->assertJsonPath('message', 'Accès refusé');
     }
 
     public function testInvalidTokenIsRejected(): void
@@ -36,6 +36,6 @@ class MeTest extends TestCase
         ])->getJson('/api/v1/me');
 
         $response->assertStatus(401);
-        $response->assertJsonPath('error', 'Accès refusé');
+        $response->assertJsonPath('message', 'Accès refusé');
     }
 }
