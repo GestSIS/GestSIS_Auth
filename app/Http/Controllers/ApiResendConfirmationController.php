@@ -27,18 +27,18 @@ class ApiResendConfirmationController extends Controller
         try {
             $jwt = TokenTools::validateToken($authToken);
         } catch (Exception $e) {
-            return response()->json(["error" => "Invalid bearer token"], 401);
+            return response()->json(['error' => ['message' => "Invalid bearer token"]], 401);
         }
 
         $id = $jwt->data->id;
 
         $user = User::find($id);
         if ($user === null) {
-            return response()->json(["error" => "Utilisateur invalid !"], 401);
+            return response()->json(['error' => ['message' => "Utilisateur invalid !"]], 401);
         }
 
         if ($user->email_verified_at !== null) {
-            return response()->json(["error" => "Votre email est déjà vérifié !"], 401);
+            return response()->json(['error' => ['message' => "Votre email est déjà vérifié !"]], 422);
         }
 
         // Generate a new confirmation token
@@ -51,7 +51,7 @@ class ApiResendConfirmationController extends Controller
         try {
             Mail::to($user)->send(new ConfirmationEmail($user, $newToken->token));
         } catch (Exception $e) {
-            return response()->json(["error" => "Une erreur à eu lieu lors de l'envoie de l'email de confirmation"], 401);
+            return response()->json(['error' => ['message' => "Une erreur à eu lieu lors de l'envoie de l'email de confirmation"]], 500);
         }
         return response()->json(["message" => "Email réenvoyé avec succès"]);
     }

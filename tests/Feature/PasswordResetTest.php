@@ -216,7 +216,7 @@ class PasswordResetTest extends TestCase
         // ...mais ne sont plus échangeables contre un JWT.
         $exchange = $this->postJson('/api/v1/token-auth', ['token' => $plainApiToken]);
         $exchange->assertStatus(401);
-        $this->assertStringContainsString('réinitialisation du mot de passe', $exchange->json('error'));
+        $this->assertStringContainsString('réinitialisation du mot de passe', $exchange->json('error.message'));
     }
 
     public function testResetWithoutApiTokensReturnsPlainMessage(): void

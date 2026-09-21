@@ -21,11 +21,7 @@ class ApiTokenAuthController extends Controller
     {
         Log::debug("API Token authentication attempt");
 
-        $validation = $this->validator($request->all());
-
-        if ($validation->fails()) {
-            return response()->json(['error' => $validation->errors()], 401);
-        }
+        $this->validator($request->all())->validate();
 
         // Hash the provided token before database lookup
         $hashedToken = TokenTools::hashToken($request->input('token'));
@@ -41,7 +37,7 @@ class ApiTokenAuthController extends Controller
             Log::warning('Invalid or expired API token attempt', [
                 'ip' => $request->ip(),
             ]);
-            return response()->json(['error' => 'Jeton API invalide ou expiré'], 401);
+            return response()->json(['error' => ['message' => 'Jeton API invalide ou expiré']], 401);
         }
 
         if ($apiToken->isRevoked()) {
@@ -52,9 +48,9 @@ class ApiTokenAuthController extends Controller
                 'ip' => $request->ip(),
             ]);
             return response()->json([
-                'error' => $apiToken->revoked_reason === ApiToken::REASON_PASSWORD_RESET
+                'error' => ['message' => $apiToken->revoked_reason === ApiToken::REASON_PASSWORD_RESET
                     ? 'Jeton API révoqué suite à une réinitialisation du mot de passe du compte'
-                    : 'Jeton API révoqué',
+                    : 'Jeton API révoqué'],
             ], 401);
         }
 
@@ -118,7 +114,7 @@ class ApiTokenAuthController extends Controller
                 ]);
 
                 return response()->json([
-                    'error' => "Le jeton n'est plus valide. L'utilisateur a perdu les permissions requises (accès à tous les SIS révoqué). Veuillez révoquer ce jeton et en créer un nouveau."
+                    'error' => ['message' => "Le jeton n'est plus valide. L'utilisateur a perdu les permissions requises (accès à tous les SIS révoqué). Veuillez révoquer ce jeton et en créer un nouveau."]
                 ], 403);
             }
 
@@ -161,7 +157,7 @@ class ApiTokenAuthController extends Controller
                 ]);
 
                 return response()->json([
-                    'error' => "Le jeton n'est plus valide. L'utilisateur a perdu des permissions requises dans certains SIS : {$errorDetails}. Veuillez révoquer ce jeton et en créer un nouveau."
+                    'error' => ['message' => "Le jeton n'est plus valide. L'utilisateur a perdu des permissions requises dans certains SIS : {$errorDetails}. Veuillez révoquer ce jeton et en créer un nouveau."]
                 ], 403);
             }
         }

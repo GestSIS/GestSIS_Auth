@@ -20,11 +20,7 @@ class ApiLoginController extends Controller
     public function login(Request $request): JsonResponse
     {
         Log::debug("login");
-        $validation = $this->validator($request->all());
-
-        if ($validation->fails()) {
-            return response()->json(['error' => $validation->errors()], 401);
-        }
+        $this->validator($request->all())->validate();
 
         if ($this->attemptLogin($request)) {
             $user = Auth::user();
@@ -47,7 +43,7 @@ class ApiLoginController extends Controller
 
         // Même message pour identifiants invalides et compte désactivé :
         // ne pas confirmer à un tiers qu'une paire email/mot de passe est valide.
-        return response()->json(['error' => 'Les identifiants fournis sont incorrects'], 401);
+        return response()->json(['error' => ['message' => 'Les identifiants fournis sont incorrects']], 401);
     }
 
     /**
@@ -58,12 +54,12 @@ class ApiLoginController extends Controller
         Log::debug("ADMIN Request for a user token");
         $userId = $request->input('user_id');
         if (!$userId) {
-            return response()->json(["Missing `user_id` parameter", 400]);
+            return response()->json(['error' => ['message' => "Missing `user_id` parameter"]], 400);
         }
 
         $user = User::find($userId);
         if (!$user) {
-            return response()->json(["Missing `user_id` parameter", 400]);
+            return response()->json(['error' => ['message' => "Utilisateur inexistant"]], 404);
         }
 
         $permissions = User::getPermissions($user->id);

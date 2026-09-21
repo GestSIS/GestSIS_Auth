@@ -17,7 +17,7 @@ class UserController extends Controller
         $sisKey = $request->header('Sis-Key', Null);
         $sis = Sis::where('api_key', $sisKey)->first();
         if (is_null($sis)) {
-            return response()->json(["error" => "Invalid sis key"], 401);
+            return response()->json(['error' => ['message' => "Invalid sis key"]], 401);
         }
 
         // Load users with roles

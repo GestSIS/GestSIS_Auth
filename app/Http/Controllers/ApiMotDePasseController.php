@@ -178,7 +178,7 @@ class ApiMotDePasseController extends Controller
 
         $endString = "@gestsis.ch";
         if (substr(strtolower($data[$this->username()]), -strlen($endString)) === $endString) {
-            return response()->json(['error' => 'Modification de mot de passe refusée'], 401);
+            return response()->json(['error' => ['message' => 'Modification de mot de passe refusée']], 401);
         }
 
         if ($this->attemptLogin($request)) {
@@ -201,7 +201,7 @@ class ApiMotDePasseController extends Controller
             'ip' => $request->ip(),
         ]);
 
-        return response()->json(['error' => 'Identifiants invalides'], 401);
+        return response()->json(['error' => ['message' => 'Identifiants invalides']], 401);
     }
 
     /**

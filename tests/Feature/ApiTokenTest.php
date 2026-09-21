@@ -230,9 +230,8 @@ class ApiTokenTest extends TestCase
         ]);
 
         $response->assertStatus(403);
-        $response->assertJsonFragment(['error' => $response->json('error')]);
-        $this->assertStringContainsString("n'est plus valide", $response->json('error'));
-        $this->assertStringContainsString('perdu les permissions', $response->json('error'));
+        $this->assertStringContainsString("n'est plus valide", $response->json('error.message'));
+        $this->assertStringContainsString('perdu les permissions', $response->json('error.message'));
     }
 
     /**
@@ -259,7 +258,7 @@ class ApiTokenTest extends TestCase
         ]);
 
         $response->assertStatus(401);
-        $response->assertJsonPath('error', 'Jeton API invalide ou expiré');
+        $response->assertJsonPath('error.message', 'Jeton API invalide ou expiré');
     }
 
     /**
@@ -272,7 +271,7 @@ class ApiTokenTest extends TestCase
         ]);
 
         $response->assertStatus(401);
-        $response->assertJsonPath('error', 'Jeton API invalide ou expiré');
+        $response->assertJsonPath('error.message', 'Jeton API invalide ou expiré');
     }
 
     /**
@@ -468,7 +467,7 @@ class ApiTokenTest extends TestCase
 
         $response->assertStatus(422);
         $response->assertJson([
-            'error' => 'Vous devez spécifier au moins un SIS pour ce jeton'
+            'error' => ['message' => 'Vous devez spécifier au moins un SIS pour ce jeton']
         ]);
     }
 
@@ -525,7 +524,10 @@ class ApiTokenTest extends TestCase
         ])->postJson('/api/v1/api-tokens', $params);
 
         $response->assertStatus(403);
-        $response->assertJsonPath('error', fn($error) => str_contains($error, $permission2->nom) && str_contains($error, $sisB->nom));
+        $response->assertJsonPath(
+            'error.message',
+            fn($error) => str_contains($error, $permission2->nom) && str_contains($error, $sisB->nom)
+        );
     }
 
     /**

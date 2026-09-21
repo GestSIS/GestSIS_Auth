@@ -22,7 +22,7 @@ class AdminRoleController extends Controller
     {
         $role = Role::find($roleId);
         if ($role == null) {
-            return response()->json(['error' => "Role inexistant"]);
+            return response()->json(['error' => ['message' => "Role inexistant"]], 404);
         }
 
         $data = $request->validate([
@@ -42,7 +42,7 @@ class AdminRoleController extends Controller
     {
         $role = Role::with(['permissions'])->find($roleId);
         if ($role == null) {
-            return response()->json(['error' => "Role inexistant"]);
+            return response()->json(['error' => ['message' => "Role inexistant"]], 404);
         }
         return response()->json(['data' => $role]);
     }
@@ -54,6 +54,6 @@ class AdminRoleController extends Controller
     {
         UserRole::where('role_id', '=', $roleId)->delete();
         Role::where('id', '=', $roleId)->delete();
-        return response()->json(["data" => 'success']);
+        return response()->json(['message' => 'Role supprimé']);
     }
 }

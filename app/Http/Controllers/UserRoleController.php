@@ -23,7 +23,7 @@ class UserRoleController extends Controller
         $sisKey = $request->header('Sis-Key', Null);
         $sis = Sis::where('api_key', $sisKey)->first();
         if (is_null($sis)) {
-            return response()->json(["error" => "Invalid sis key"], 401);
+            return response()->json(['error' => ['message' => "Invalid sis key"]], 401);
         }
 
         return response()->json([
@@ -40,7 +40,7 @@ class UserRoleController extends Controller
         $sisKey = $request->header('Sis-Key', Null);
         $sis = Sis::where('api_key', $sisKey)->first();
         if (is_null($sis)) {
-            return response()->json(["error" => "Invalid sis key"], 401);
+            return response()->json(['error' => ['message' => "Invalid sis key"]], 401);
         }
 
         $roles = DB::table('user_roles')->join('roles', 'roles.id', '=', 'user_roles.role_id')
@@ -65,7 +65,7 @@ class UserRoleController extends Controller
                 ->where('sis_id', '=', $sis->id)
                 ->count();
             if ($validRoleCount !== count($providedRoles)) {
-                return response()->json(["error" => "One or more roles do not belong to this SIS"], 403);
+                return response()->json(['error' => ['message' => "One or more roles do not belong to this SIS"]], 403);
             }
         }
 
@@ -93,7 +93,7 @@ class UserRoleController extends Controller
         $sisKey = $request->header('Sis-Key', Null);
         $sis = Sis::where('api_key', $sisKey)->first();
         if (is_null($sis)) {
-            return response()->json(["error" => "Invalid sis key"], 401);
+            return response()->json(['error' => ['message' => "Invalid sis key"]], 401);
         }
 
         $data = $request->validate([
@@ -102,10 +102,10 @@ class UserRoleController extends Controller
 
         $role = Role::find($roleId);
         if (is_null($role)) {
-            return response()->json(["error" => "Role not found"], 404);
+            return response()->json(['error' => ['message' => "Role not found"]], 404);
         }
         if ($role->sis_id != $sis->id) {
-            return response()->json(["error" => $role->sis_id], 401);
+            return response()->json(['error' => ['message' => "Ce rôle n'appartient pas à ce SIS"]], 403);
         }
 
         // Ajout
@@ -126,15 +126,15 @@ class UserRoleController extends Controller
         $sisKey = $request->header('Sis-Key', Null);
         $sis = Sis::where('api_key', $sisKey)->first();
         if (is_null($sis)) {
-            return response()->json(["error" => "Invalid sis key"], 401);
+            return response()->json(['error' => ['message' => "Invalid sis key"]], 401);
         }
 
         $role = Role::find($roleId);
         if (is_null($role)) {
-            return response()->json(["error" => "Role not found"], 404);
+            return response()->json(['error' => ['message' => "Role not found"]], 404);
         }
         if ($role->sis_id != $sis->id) {
-            return response()->json(["error" => $role->sis_id], 401);
+            return response()->json(['error' => ['message' => "Ce rôle n'appartient pas à ce SIS"]], 403);
         }
 
         // Modification

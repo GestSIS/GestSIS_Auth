@@ -11,7 +11,7 @@ class ApiRegisterTest extends TestCase
 {
     /**
      * Registering with an email that already exists must return a clean,
-     * field-keyed validation error (HTTP 401 with `error.email`) rather than
+     * field-keyed validation error (HTTP 422 with `error.email`) rather than
      * surfacing the database unique-constraint violation as a 500. The frontend
      * (PageRegister.vue) relies on `error.email` being set to show its message.
      *
@@ -35,7 +35,7 @@ class ApiRegisterTest extends TestCase
             'password_confirmation' => 'a-very-long-password',
         ]);
 
-        $response->assertStatus(401);
+        $response->assertStatus(422);
         $response->assertJsonStructure(['error' => ['email']]);
 
         // No second user should have been created for that email.

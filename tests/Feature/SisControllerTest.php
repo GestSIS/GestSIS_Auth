@@ -69,7 +69,20 @@ class SisControllerTest extends TestCase
             'Authorization' => 'Bearer ' . $this->adminToken(),
         ])->getJson('/api/v1/admin/sis/999999');
 
-        $response->assertStatus(200);
-        $response->assertJsonPath('error', 'Sis inexistant');
+        $response->assertStatus(404);
+        $response->assertJsonPath('error.message', 'Sis inexistant');
+    }
+
+    public function testUpdatingAnUnknownSisReturnsACleanErrorInsteadOfCrashing(): void
+    {
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $this->adminToken(),
+        ])->patchJson('/api/v1/admin/sis/999999', [
+            'nom' => 'Nouveau nom',
+            'mobile' => true,
+        ]);
+
+        $response->assertStatus(404);
+        $response->assertJsonPath('error.message', 'Sis inexistant');
     }
 }

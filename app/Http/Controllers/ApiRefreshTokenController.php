@@ -21,11 +21,7 @@ class ApiRefreshTokenController extends Controller
     {
         Log::debug("Call refresh token");
 
-        $validation = $this->validator($request->all());
-
-        if ($validation->fails()) {
-            return response()->json(['error' => $validation->errors()], 401);
-        }
+        $this->validator($request->all())->validate();
 
         // Hash the provided token before database lookup
         // This prevents timing attacks as the hash is computed in constant time
@@ -41,7 +37,7 @@ class ApiRefreshTokenController extends Controller
             Log::warning('Invalid or expired refresh token attempt', [
                 'ip' => $request->ip(),
             ]);
-            return response()->json(['error' => 'Refresh token expired'], 401);
+            return response()->json(['error' => ['message' => 'Refresh token expired']], 401);
         }
 
         $permissions = User::getPermissions($refreshToken->user_id);

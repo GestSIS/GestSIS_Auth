@@ -62,7 +62,7 @@ class ApiTokenController extends Controller
         $user = Auth::user();
 
         // Validate request
-        $validator = Validator::make($request->all(), [
+        $validated = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
             'expires_in_days' => ['required', 'integer', 'min:1', 'max:365'],
@@ -70,13 +70,7 @@ class ApiTokenController extends Controller
             'permission_ids.*' => ['required', 'integer', 'exists:permissions,id'],
             'sis_ids' => ['nullable', 'array'],
             'sis_ids.*' => ['required', 'integer', 'exists:sis,id'],
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()], 422);
-        }
-
-        $validated = $validator->validated();
+        ])->validate();
 
         // Check for duplicate token name for this user
         $existingToken = ApiToken::where('user_id', $user->id)
@@ -103,7 +97,7 @@ class ApiTokenController extends Controller
             // Non-admins must specify at least one SIS
             if (empty($validated['sis_ids'])) {
                 return response()->json([
-                    'error' => "Vous devez spécifier au moins un SIS pour ce jeton"
+                    'error' => ['message' => "Vous devez spécifier au moins un SIS pour ce jeton"]
                 ], 422);
             }
 
@@ -122,7 +116,7 @@ class ApiTokenController extends Controller
                 // Check if user has access to this SIS
                 if (!isset($userPermissions[$sis->api_key])) {
                     return response()->json([
-                        'error' => "Vous n'avez aucune permission pour le SIS : {$sis->nom}"
+                        'error' => ['message' => "Vous n'avez aucune permission pour le SIS : {$sis->nom}"]
                     ], 403);
                 }
 
@@ -138,7 +132,7 @@ class ApiTokenController extends Controller
                         ->implode(', ');
 
                     return response()->json([
-                        'error' => "Vous ne disposez pas des permissions suivantes pour le SIS {$sis->nom} : {$missingPermissionNames}"
+                        'error' => ['message' => "Vous ne disposez pas des permissions suivantes pour le SIS {$sis->nom} : {$missingPermissionNames}"]
                     ], 403);
                 }
             }
@@ -211,7 +205,7 @@ class ApiTokenController extends Controller
 
         // Verify the token belongs to the authenticated user
         if ($apiToken->user_id !== $user->id) {
-            return response()->json(['error' => 'Jeton introuvable'], 404);
+            return response()->json(['error' => ['message' => 'Jeton introuvable']], 404);
         }
 
         $tokenName = $apiToken->name;

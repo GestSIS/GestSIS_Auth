@@ -40,6 +40,6 @@ class AdminUserRoleController extends Controller
     public function destroy(Request $request, int $userRoleId): JsonResponse
     {
         UserRole::where('id', '=', $userRoleId)->delete();
-        return response()->json(["data" => 'success']);
+        return response()->json(['message' => 'Rôle supprimé']);
     }
 }

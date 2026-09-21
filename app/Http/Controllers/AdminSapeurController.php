@@ -14,6 +14,6 @@ class AdminSapeurController extends Controller
     public function destroy(Request $request, int $sapeurId): JsonResponse
     {
         Sapeur::where('id', '=', $sapeurId)->delete();
-        return response()->json(["data" => 'success']);
+        return response()->json(['message' => 'Lien sapeur supprimé']);
     }
 }

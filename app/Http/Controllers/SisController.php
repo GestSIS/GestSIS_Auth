@@ -23,7 +23,7 @@ class SisController extends Controller
             'sapeurs.user',
         ])->find($sisId);
         if ($sis === null) {
-            return response()->json(['error' => "Sis inexistant"]);
+            return response()->json(['error' => ['message' => "Sis inexistant"]], 404);
         }
 
         return response()->json(['data' => $sis]);
@@ -58,6 +58,9 @@ class SisController extends Controller
         ]);
 
         $sis = Sis::find($sisId);
+        if ($sis === null) {
+            return response()->json(['error' => ['message' => "Sis inexistant"]], 404);
+        }
         $sis->fill($data);
         $sis->save();
 
