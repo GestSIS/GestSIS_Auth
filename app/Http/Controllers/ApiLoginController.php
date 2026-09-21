@@ -121,12 +121,23 @@ class ApiLoginController extends Controller
         $refreshToken->user_id = $user->id;
         $user->refreshTokens()->save($refreshToken);
 
+        $data = [
+            "accessToken" => $accessToken,
+            "refreshToken" => $token->token, // Send plain token to client
+            "user" => User::where('id', $user->id)->first(),
+        ];
+
         return response()->json(
             [
+                "data" => $data,
+                // TODO(rétro-compat temporaire) : le "message" et les champs plats
+                // (accessToken/refreshToken/user) dupliquent `data` pour les anciens builds de
+                // GestSIS_Mobile qui lisent la réponse à plat (ancien format, avant le passage au
+                // wrapper `data`) plutôt que sous `data`. À retirer une fois confirmé qu'aucun build
+                // Mobile antérieur au passage au format enveloppé (2026-09) n'est plus en usage sur
+                // le terrain.
                 "message" => "Successful login",
-                "accessToken" => $accessToken,
-                "refreshToken" => $token->token, // Send plain token to client
-                "user" => User::where('id', $user->id)->first()
+                ...$data,
             ]
         );
     }

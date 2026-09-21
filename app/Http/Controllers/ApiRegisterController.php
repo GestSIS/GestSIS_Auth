@@ -104,11 +104,22 @@ class ApiRegisterController extends Controller
             $registerToken->delete();
         }
 
-        return response()->json([
-            "message" => "Successful login",
+        $data = [
             "accessToken" => $accessToken,
             "refreshToken" => $token->token, // Send plain token to client
-            "user" => $user
+            "user" => $user,
+        ];
+
+        return response()->json([
+            "data" => $data,
+            // TODO(rétro-compat temporaire) : le "message" et les champs plats
+            // (accessToken/refreshToken/user) dupliquent `data` pour les anciens builds de
+            // GestSIS_Mobile qui lisent la réponse à plat (ancien format, avant le passage au
+            // wrapper `data`) plutôt que sous `data`. À retirer une fois confirmé qu'aucun build
+            // Mobile antérieur au passage au format enveloppé (2026-09) n'est plus en usage sur
+            // le terrain.
+            "message" => "Successful login",
+            ...$data,
         ]);
     }
 

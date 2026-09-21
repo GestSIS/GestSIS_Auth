@@ -168,13 +168,16 @@ class ApiTokenController extends Controller
 
         return response()->json([
             'message' => 'Jeton API créé avec succès. Sauvegardez ce jeton en sécurité - il ne sera plus affiché.',
-            'token' => $tokenData->token, // Send plain token to client ONCE
-            'data' => [...($apiToken->toArray()), 'token' => $tokenData->token],
-            'token_info' => [
+            'data' => [
                 'id' => $apiToken->id,
                 'name' => $apiToken->name,
                 'description' => $apiToken->description,
+                'token' => $tokenData->token, // Send plain token to client ONCE
+                'created_at' => $apiToken->created_at,
                 'expires_at' => $apiToken->expires_at,
+                'last_used_at' => $apiToken->last_used_at,
+                'revoked_at' => $apiToken->revoked_at,
+                'revoked_reason' => $apiToken->revoked_reason,
                 'permissions' => $requestedPermissions->map(fn($p) => [
                     'id' => $p->id,
                     'nom' => $p->nom,
@@ -213,6 +216,6 @@ class ApiTokenController extends Controller
             'name' => $tokenName,
         ]);
 
-        return response()->json(['message' => 'Jeton révoqué avec succès']);
+        return response()->json(null, 204);
     }
 }

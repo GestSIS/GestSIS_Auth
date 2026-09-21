@@ -43,7 +43,7 @@ class SisController extends Controller
         $sis->api_key = $data['api_key'];
         $sis->save();
 
-        return response()->json(['data' => $sis]);
+        return response()->json(['data' => $sis], 201);
     }
 
     /**

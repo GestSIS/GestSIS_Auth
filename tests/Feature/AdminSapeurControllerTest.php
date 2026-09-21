@@ -24,7 +24,7 @@ class AdminSapeurControllerTest extends TestCase
             'Authorization' => 'Bearer ' . $token,
         ])->deleteJson("/api/v1/admin/sapeurs/{$link->id}");
 
-        $response->assertStatus(200);
+        $response->assertNoContent();
         $this->assertDatabaseMissing('sapeurs', ['id' => $link->id]);
     }
 

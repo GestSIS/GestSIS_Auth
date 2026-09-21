@@ -55,11 +55,11 @@ class ApiTokenTest extends TestCase
         $response->assertStatus(201);
         $response->assertJsonStructure([
             'message',
-            'token',
-            'token_info' => [
+            'data' => [
                 'id',
                 'name',
                 'description',
+                'token',
                 'expires_at',
                 'permissions',
             ],
@@ -174,9 +174,10 @@ class ApiTokenTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertJsonStructure([
-            'message',
-            'accessToken',
-            'user',
+            'data' => [
+                'accessToken',
+                'user',
+            ],
         ]);
 
         // Verify last_used_at was updated
@@ -376,8 +377,7 @@ class ApiTokenTest extends TestCase
             'Authorization' => 'Bearer ' . $bearerToken,
         ])->deleteJson("/api/v1/api-tokens/{$apiToken->id}");
 
-        $response->assertStatus(200);
-        $response->assertJsonPath('message', 'Jeton révoqué avec succès');
+        $response->assertNoContent();
 
         // Verify token was deleted
         $this->assertDatabaseMissing('api_tokens', [
@@ -583,8 +583,7 @@ class ApiTokenTest extends TestCase
         $response->assertStatus(201);
         $response->assertJsonStructure([
             'message',
-            'token',
-            'token_info' => [
+            'data' => [
                 'id',
                 'name',
                 'expires_at',
@@ -594,7 +593,7 @@ class ApiTokenTest extends TestCase
         ]);
 
         // Verify the token has both SIS in allowed_sis
-        $tokenInfo = $response->json('token_info');
+        $tokenInfo = $response->json('data');
         $this->assertCount(2, $tokenInfo['allowed_sis']);
     }
 }

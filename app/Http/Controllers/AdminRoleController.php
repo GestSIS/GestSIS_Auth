@@ -54,6 +54,6 @@ class AdminRoleController extends Controller
     {
         UserRole::where('role_id', '=', $roleId)->delete();
         Role::where('id', '=', $roleId)->delete();
-        return response()->json(['message' => 'Role supprimé']);
+        return response()->json(null, 204);
     }
 }

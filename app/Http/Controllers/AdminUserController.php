@@ -60,6 +60,6 @@ class AdminUserController extends Controller
         Sapeur::where('user_id', '=', $userId)->delete();
         PasswordResetToken::where('user_id', '=', $userId)->delete();
         User::where('id', '=', $userId)->delete();
-        return response()->json(['message' => 'Utilisateur supprimé']);
+        return response()->json(null, 204);
     }
 }

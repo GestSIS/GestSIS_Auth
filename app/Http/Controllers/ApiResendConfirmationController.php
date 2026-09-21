@@ -34,7 +34,7 @@ class ApiResendConfirmationController extends Controller
 
         $user = User::find($id);
         if ($user === null) {
-            return response()->json(['message' => "Utilisateur invalid !"], 401);
+            return response()->json(['message' => "Utilisateur invalid !"], 404);
         }
 
         if ($user->email_verified_at !== null) {

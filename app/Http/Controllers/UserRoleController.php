@@ -23,7 +23,7 @@ class UserRoleController extends Controller
         $sisKey = $request->header('Sis-Key', Null);
         $sis = Sis::where('api_key', $sisKey)->first();
         if (is_null($sis)) {
-            return response()->json(['message' => "Invalid sis key"], 401);
+            return response()->json(['message' => "Invalid sis key"], 403);
         }
 
         return response()->json([
@@ -40,7 +40,7 @@ class UserRoleController extends Controller
         $sisKey = $request->header('Sis-Key', Null);
         $sis = Sis::where('api_key', $sisKey)->first();
         if (is_null($sis)) {
-            return response()->json(['message' => "Invalid sis key"], 401);
+            return response()->json(['message' => "Invalid sis key"], 403);
         }
 
         $roles = DB::table('user_roles')->join('roles', 'roles.id', '=', 'user_roles.role_id')
@@ -93,7 +93,7 @@ class UserRoleController extends Controller
         $sisKey = $request->header('Sis-Key', Null);
         $sis = Sis::where('api_key', $sisKey)->first();
         if (is_null($sis)) {
-            return response()->json(['message' => "Invalid sis key"], 401);
+            return response()->json(['message' => "Invalid sis key"], 403);
         }
 
         $data = $request->validate([
@@ -114,7 +114,7 @@ class UserRoleController extends Controller
         $userRole->role_id = $roleId;
         $userRole->save();
 
-        return response()->json(['data' => $userRole]);
+        return response()->json(['data' => $userRole], 201);
     }
 
     /**
@@ -126,7 +126,7 @@ class UserRoleController extends Controller
         $sisKey = $request->header('Sis-Key', Null);
         $sis = Sis::where('api_key', $sisKey)->first();
         if (is_null($sis)) {
-            return response()->json(['message' => "Invalid sis key"], 401);
+            return response()->json(['message' => "Invalid sis key"], 403);
         }
 
         $role = Role::find($roleId);
@@ -138,8 +138,8 @@ class UserRoleController extends Controller
         }
 
         // Modification
-        $userRole = UserRole::where('role_id', '=', $roleId)->where('id', '=', $userRoleId)->limit(1)->delete();
+        UserRole::where('role_id', '=', $roleId)->where('id', '=', $userRoleId)->limit(1)->delete();
 
-        return response()->json(['data' => $userRole]);
+        return response()->json(null, 204);
     }
 }

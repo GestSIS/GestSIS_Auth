@@ -64,7 +64,7 @@ class UserSapeursClaimTest extends TestCase
         $response = $this->postJson('/api/v1/refresh-token', ['token' => $plain]);
         $response->assertOk();
 
-        $claims = TokenTools::validateToken($response->json('accessToken'));
+        $claims = TokenTools::validateToken($response->json('data.accessToken'));
         $this->assertFalse($claims->data->validated);
         $this->assertSame([], (array) $claims->data->sapeurs);
     }

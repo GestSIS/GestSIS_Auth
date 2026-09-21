@@ -51,7 +51,7 @@ class AdminUserRoleControllerTest extends TestCase
             'role_id' => $role->id,
         ]);
 
-        $response->assertStatus(200);
+        $response->assertStatus(201);
         $this->assertDatabaseHas('user_roles', ['user_id' => $user->id, 'role_id' => $role->id]);
     }
 

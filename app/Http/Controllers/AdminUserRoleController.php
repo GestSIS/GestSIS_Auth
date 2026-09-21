@@ -32,7 +32,7 @@ class AdminUserRoleController extends Controller
 
         $userRole = UserRole::create($data);
 
-        return response()->json(['data' => $userRole]);
+        return response()->json(['data' => $userRole], 201);
     }
 
     /**
@@ -41,6 +41,6 @@ class AdminUserRoleController extends Controller
     public function destroy(Request $request, int $userRoleId): JsonResponse
     {
         UserRole::where('id', '=', $userRoleId)->delete();
-        return response()->json(['message' => 'Rôle supprimé']);
+        return response()->json(null, 204);
     }
 }

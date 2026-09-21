@@ -83,7 +83,7 @@ class RegisterTokenController extends Controller
         $id = (array) $jwt->data->id;
         $user = User::where('id', $id)->first();
         if (is_null($user)) {
-            return response()->json(["message" => "Le compte utilisateur actuel n'existe plus"], 401);
+            return response()->json(["message" => "Le compte utilisateur actuel n'existe plus"], 404);
         }
 
         $roleIds = DB::table('register_token_roles')
