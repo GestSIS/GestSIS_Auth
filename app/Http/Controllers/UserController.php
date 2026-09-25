@@ -43,7 +43,10 @@ class UserController extends Controller
             'sapeur' => function ($query) use ($sis) {
                 $query->where('sapeurs.sis_id', $sis->id);
             }
-        ])->get();
+        ])->get()
+            // Endpoint des responsables SIS (non admin) : l'état 2FA des autres
+            // comptes (qui n'est pas protégé) reste réservé aux admins.
+            ->makeHidden(['two_factor_confirmed_at']);
         return response()->json(["data" => $users]);
     }
 }

@@ -39,22 +39,26 @@ class AuthErrorResponseFormatTest extends TestCase
         $response->assertJsonPath('message', 'Les identifiants fournis sont incorrects');
     }
 
-    public function testConfirmerEmailWithMissingTokenReturns422WithFieldErrors(): void
+    public function testConfirmerEmailWithMissingFieldsReturns422WithFieldErrors(): void
     {
         $response = $this->postJson('/api/v1/confirmer-email', []);
 
         $response->assertStatus(422);
-        $response->assertJsonPath('errors.token.0', 'The token field is required.');
+        $response->assertJsonPath('errors.email.0', 'The email field is required.');
+        $response->assertJsonPath('errors.code.0', 'The code field is required.');
     }
 
-    public function testConfirmerEmailWithInvalidTokenReturns401WithMessage(): void
+    public function testConfirmerEmailWithInvalidCodeReturns401WithMessage(): void
     {
-        $response = $this->postJson('/api/v1/confirmer-email', ['token' => 'un-jeton-invalide']);
+        $response = $this->postJson('/api/v1/confirmer-email', [
+            'email' => 'inconnu@example.com',
+            'code' => '000000',
+        ]);
 
         $response->assertStatus(401);
         $response->assertJsonPath(
             'message',
-            'Jeton de confirmation invalide, expiré ou déjà utilisé.'
+            'Code de confirmation invalide, expiré ou déjà utilisé.'
         );
     }
 

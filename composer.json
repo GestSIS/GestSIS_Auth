@@ -15,7 +15,9 @@
         "laravel/tinker": "^3.0",
         "laravel/ui": "^4.5",
         "paragonie/constant_time_encoding": "^3.0",
-        "sentry/sentry-laravel": "^4.13"
+        "sentry/sentry-laravel": "^4.13",
+        "spomky-labs/otphp": "^11.5",
+        "web-auth/webauthn-lib": "^5.3"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24",

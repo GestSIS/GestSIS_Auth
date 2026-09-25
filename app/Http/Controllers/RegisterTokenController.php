@@ -103,7 +103,8 @@ class RegisterTokenController extends Controller
         $permissions = User::getPermissions($user->id);
         $mobiles = User::getMobile($user->id);
         $sapeurs = User::getSapeurs($user->id);
-        $accessToken = TokenTools::createAccessToken($user, $permissions, $mobiles, $sapeurs);
+        // Même session que le jeton présenté : ce nouvel access token la remplace côté client.
+        $accessToken = TokenTools::createAccessToken($user, $permissions, $mobiles, $sapeurs, sessionId: $request->attributes->get('session_family_id'));
 
         // Suppression du token
         if (!is_null($registerToken)) {

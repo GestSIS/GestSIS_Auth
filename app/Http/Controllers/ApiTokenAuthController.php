@@ -170,7 +170,8 @@ class ApiTokenAuthController extends Controller
             $validPermissions,
             $mobiles,
             $sapeurs,
-            false
+            false,
+            type: TokenTools::TOKEN_TYPE_API,
         );
 
         // Update last_used_at timestamp

@@ -9,11 +9,29 @@ use App\Models\Role;
 use App\Models\Sis;
 use App\Models\User;
 use App\Models\UserRole;
+use App\Models\WebauthnCredential;
 use Carbon\Carbon;
 use Tests\TestCase;
 
 class ApiTokenTest extends TestCase
 {
+    /**
+     * Créer un jeton d'API exige un compte protégé par 2FA (+ mot de passe) :
+     * une clé WebAuthn suffit, sans code TOTP à fournir.
+     */
+    private function twoFactorProtectedUser(array $attributes = []): User
+    {
+        $user = User::factory()->create($attributes);
+        WebauthnCredential::create([
+            'user_id' => $user->id,
+            'credential_id' => base64_encode('cred-api-token-' . $user->id),
+            'public_key' => base64_encode('pk-api-token-' . $user->id),
+            'aaguid' => '00000000-0000-0000-0000-000000000000',
+            'name' => 'Clé',
+        ]);
+
+        return $user;
+    }
 
     /**
      * Test creating an API token with valid permissions.
@@ -21,7 +39,7 @@ class ApiTokenTest extends TestCase
     public function testCreateApiTokenWithValidPermissions(): void
     {
         // Create a user with permissions
-        $user = User::factory()->create();
+        $user = $this->twoFactorProtectedUser();
         $permission = Permission::first();
 
         if (!$permission) {
@@ -42,6 +60,7 @@ class ApiTokenTest extends TestCase
         $params = [
             'name' => 'Test API Token',
             'description' => 'Token for testing purposes',
+            'password' => 'password',
             'expires_in_days' => 90,
             'permission_ids' => [$permission->id],
             'sis_ids' => [$sis->id],
@@ -78,7 +97,7 @@ class ApiTokenTest extends TestCase
      */
     public function testCannotCreateDuplicateTokenName(): void
     {
-        $user = User::factory()->create();
+        $user = $this->twoFactorProtectedUser();
         $permission = Permission::first();
 
         $sis = Sis::firstOrCreate(
@@ -94,6 +113,7 @@ class ApiTokenTest extends TestCase
         // Create first token
         $params = [
             'name' => 'My Token',
+            'password' => 'password',
             'expires_in_days' => 30,
             'permission_ids' => [$permission->id],
             'sis_ids' => [$sis->id],
@@ -119,7 +139,7 @@ class ApiTokenTest extends TestCase
      */
     public function testRevokedTokenDoesNotBlockRecreatingATokenWithTheSameName(): void
     {
-        $user = User::factory()->create(['admin' => true]);
+        $user = $this->twoFactorProtectedUser(['admin' => true]);
         $permission = Permission::first();
 
         $revoked = ApiToken::create([
@@ -135,6 +155,7 @@ class ApiTokenTest extends TestCase
         $response = $this->withHeaders(['Authorization' => 'Bearer ' . $bearerToken])
             ->postJson('/api/v1/api-tokens', [
                 'name' => 'Integration',
+                'password' => 'password',
                 'expires_in_days' => 30,
                 'permission_ids' => [$permission->id],
             ]);
@@ -440,7 +461,7 @@ class ApiTokenTest extends TestCase
      */
     public function testNonAdminsMustSpecifySis(): void
     {
-        $user = User::factory()->create();
+        $user = $this->twoFactorProtectedUser();
         $permission = Permission::first();
 
         $sis = Sis::firstOrCreate(
@@ -456,6 +477,7 @@ class ApiTokenTest extends TestCase
         // Try to create token without sis_ids
         $params = [
             'name' => 'Test Token',
+            'password' => 'password',
             'expires_in_days' => 30,
             'permission_ids' => [$permission->id],
         ];
@@ -476,7 +498,7 @@ class ApiTokenTest extends TestCase
      */
     public function testCannotCreateTokenWithMissingPermissionsInSis(): void
     {
-        $user = User::factory()->create();
+        $user = $this->twoFactorProtectedUser();
         $permission1 = Permission::first();
         $permission2 = Permission::skip(1)->first();
 
@@ -513,6 +535,7 @@ class ApiTokenTest extends TestCase
         // Should fail because user doesn't have permission2 in SIS B
         $params = [
             'name' => 'Test Token',
+            'password' => 'password',
             'expires_in_days' => 30,
             'permission_ids' => [$permission1->id, $permission2->id],
             'sis_ids' => [$sisB->id],
@@ -535,7 +558,7 @@ class ApiTokenTest extends TestCase
      */
     public function testCanCreateTokenWithValidPermissionsInMultipleSis(): void
     {
-        $user = User::factory()->create();
+        $user = $this->twoFactorProtectedUser();
         $permission1 = Permission::first();
         $permission2 = Permission::skip(1)->first();
 
@@ -570,6 +593,7 @@ class ApiTokenTest extends TestCase
         // Create token with both permissions for both SIS - should succeed
         $params = [
             'name' => 'Multi-SIS Token',
+            'password' => 'password',
             'expires_in_days' => 30,
             'permission_ids' => [$permission1->id, $permission2->id],
             'sis_ids' => [$sisA->id, $sisB->id],
@@ -595,5 +619,47 @@ class ApiTokenTest extends TestCase
         // Verify the token has both SIS in allowed_sis
         $tokenInfo = $response->json('data');
         $this->assertCount(2, $tokenInfo['allowed_sis']);
+    }
+
+    /**
+     * Sans 2FA, pas de nouveau jeton d'API (un jeton survit au logout et à la
+     * révocation des sessions) ; les jetons existants ne sont pas touchés.
+     */
+    public function testCreatingAnApiTokenRequiresTwoFactorOnTheAccount(): void
+    {
+        $user = User::factory()->create(['admin' => true]);
+        $existing = ApiToken::create([
+            'user_id' => $user->id,
+            'name' => 'Existant',
+            'token' => TokenTools::hashToken('existing-token'),
+            'expires_at' => now()->addDays(30),
+        ]);
+
+        $response = $this->withHeaders(['Authorization' => 'Bearer ' . TokenTools::createAccessToken($user, [], [], [], true)])
+            ->postJson('/api/v1/api-tokens', [
+                'name' => 'Nouveau',
+                'password' => 'password',
+                'expires_in_days' => 30,
+                'permission_ids' => [Permission::first()->id],
+            ]);
+
+        $response->assertStatus(403);
+        $this->assertDatabaseMissing('api_tokens', ['user_id' => $user->id, 'name' => 'Nouveau']);
+        $this->assertNull($existing->fresh()->revoked_at);
+    }
+
+    public function testCreatingAnApiTokenRequiresThePassword(): void
+    {
+        $user = $this->twoFactorProtectedUser(['admin' => true]);
+        $headers = ['Authorization' => 'Bearer ' . TokenTools::createAccessToken($user, [], [], [], true)];
+        $params = [
+            'name' => 'Nouveau',
+            'expires_in_days' => 30,
+            'permission_ids' => [Permission::first()->id],
+        ];
+
+        $this->withHeaders($headers)->postJson('/api/v1/api-tokens', $params)->assertStatus(422);
+        $this->withHeaders($headers)->postJson('/api/v1/api-tokens', [...$params, 'password' => 'wrong-password'])->assertStatus(401);
+        $this->assertDatabaseMissing('api_tokens', ['user_id' => $user->id, 'name' => 'Nouveau']);
     }
 }

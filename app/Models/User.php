@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -8,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
+use OTPHP\TOTP;
 
 class User extends Authenticatable
 {
@@ -36,7 +38,24 @@ class User extends Authenticatable
         'password',
         'remember_token',
         'validate_email_token',
-        'validate_email_expire'
+        'validate_email_expire',
+        'two_factor_secret',
+        'two_factor_last_used_timestep',
+        ...self::TWO_FACTOR_ADMIN_ATTRIBUTES,
+    ];
+
+    /**
+     * État 2FA réservé au tableau de bord admin (exemptions, rappels) : masqué
+     * par défaut — un responsable SIS listant ses utilisateurs n'a pas à voir
+     * quels comptes sont exemptés ni pourquoi. Rendu visible explicitement par
+     * les endpoints admin (makeVisible).
+     */
+    public const TWO_FACTOR_ADMIN_ATTRIBUTES = [
+        'two_factor_reminder_sent_at',
+        'two_factor_exempt',
+        'two_factor_exempt_until',
+        'two_factor_exempt_reason',
+        'two_factor_exempt_by',
     ];
 
     /**
@@ -53,6 +72,12 @@ class User extends Authenticatable
             'admin' => 'boolean',
             'pending_deactivation_at' => 'datetime',
             'disabled_at' => 'datetime',
+            'two_factor_secret' => 'encrypted',
+            'two_factor_confirmed_at' => 'datetime',
+            'two_factor_last_used_timestep' => 'integer',
+            'two_factor_reminder_sent_at' => 'datetime',
+            'two_factor_exempt' => 'boolean',
+            'two_factor_exempt_until' => 'datetime',
         ];
     }
 
@@ -141,6 +166,125 @@ class User extends Authenticatable
     public function refreshTokens(): HasMany
     {
         return $this->hasMany(RefreshToken::class);
+    }
+
+    /**
+     * @return HasMany<TwoFactorRecoveryCode,$this>
+     */
+    public function twoFactorRecoveryCodes(): HasMany
+    {
+        return $this->hasMany(TwoFactorRecoveryCode::class);
+    }
+
+    public function hasTotpConfirmed(): bool
+    {
+        return $this->two_factor_confirmed_at !== null;
+    }
+
+    /**
+     * Vérifie un code TOTP contre le secret stocké et le consomme : un même
+     * pas de temps (30 s) ne peut servir qu'une seule fois, y compris entre
+     * deux requêtes concurrentes (mise à jour conditionnelle atomique).
+     *
+     * @param bool $allowUnconfirmed true uniquement pour la confirmation
+     *        initiale (le secret vient d'être généré, pas encore confirmé).
+     */
+    public function consumeTotpCode(string $code, bool $allowUnconfirmed = false): bool
+    {
+        if ($this->two_factor_secret === null || (!$allowUnconfirmed && !$this->hasTotpConfirmed())) {
+            return false;
+        }
+
+        $totp = TOTP::createFromSecret($this->two_factor_secret);
+        $timestamp = time();
+        if (!$totp->verify($code, $timestamp)) {
+            return false;
+        }
+
+        $timestep = intdiv($timestamp, $totp->getPeriod());
+        $consumed = self::whereKey($this->getKey())
+            ->where(function (Builder $query) use ($timestep) {
+                $query->whereNull('two_factor_last_used_timestep')
+                    ->orWhere('two_factor_last_used_timestep', '<', $timestep);
+            })
+            ->update(['two_factor_last_used_timestep' => $timestep]);
+
+        if ($consumed === 1) {
+            $this->two_factor_last_used_timestep = $timestep;
+            $this->syncOriginalAttribute('two_factor_last_used_timestep');
+        }
+
+        return $consumed === 1;
+    }
+
+    /**
+     * Comptes ayant au moins une méthode 2FA active (TOTP confirmé ou clé
+     * WebAuthn) — équivalent requête de hasTwoFactorEnabled().
+     *
+     * @param Builder<User> $query
+     */
+    public function scopeWithTwoFactorEnabled(Builder $query): void
+    {
+        $query->where(function (Builder $query) {
+            $query->whereNotNull('two_factor_confirmed_at')
+                ->orWhereHas('webauthnCredentials');
+        });
+    }
+
+    /**
+     * @param Builder<User> $query
+     */
+    public function scopeWithoutTwoFactorEnabled(Builder $query): void
+    {
+        $query->whereNull('two_factor_confirmed_at')
+            ->whereDoesntHave('webauthnCredentials');
+    }
+
+    /**
+     * Umbrella : au moins une méthode 2FA est active, quelle qu'elle soit.
+     * Utilisé partout ailleurs que dans les endpoints TOTP eux-mêmes (login,
+     * bandeau, dashboard admin, suppression de méthode...).
+     */
+    public function hasTwoFactorEnabled(): bool
+    {
+        return $this->hasTotpConfirmed() || $this->webauthnCredentials()->exists();
+    }
+
+    /**
+     * @return HasMany<WebauthnCredential,$this>
+     */
+    public function webauthnCredentials(): HasMany
+    {
+        return $this->hasMany(WebauthnCredential::class);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function twoFactorAvailableMethods(): array
+    {
+        $methods = [];
+        if ($this->hasTotpConfirmed()) {
+            $methods[] = 'totp';
+        }
+        if ($this->webauthnCredentials()->exists()) {
+            $methods[] = 'webauthn';
+        }
+
+        return $methods;
+    }
+
+    /**
+     * Exemption 2FA valide à l'instant présent (accordée par un admin,
+     * potentiellement bornée dans le temps via two_factor_exempt_until).
+     */
+    public function isTwoFactorExempt(): bool
+    {
+        if (!$this->two_factor_exempt) {
+            return false;
+        }
+
+        return $this->two_factor_exempt_until === null || now()->lt($this->two_factor_exempt_until);
     }
 
     /**

@@ -16,7 +16,7 @@ class ConfirmationEmail extends Mailable
      *
      * @return void
      */
-    public function __construct(public User $user, public string $plainToken)
+    public function __construct(public User $user, public string $code)
     {
     }
 

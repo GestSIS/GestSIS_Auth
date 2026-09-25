@@ -8,51 +8,47 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Exception;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
 
 class ApiResendConfirmationController extends Controller
 {
+    public const RESEND_CONFIRMATION_RESPONSE = 'Un nouveau code a été envoyé si cette adresse email existe et n\'est pas encore confirmée.';
 
     /**
-     * Handle a resend confirmation email request for the application.
-     *
-     * @param Request $request
-     * @return JsonResponse
-     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
+     * Renvoie un nouveau code de confirmation par email — identifié par
+     * l'email lui-même, pas un jeton d'accès : depuis que l'inscription
+     * n'émet plus de session tant que l'email n'est pas prouvé, un compte
+     * fraîchement créé n'a justement aucun jeton à présenter ici. Réponse
+     * identique que l'email existe, soit déjà confirmé ou non : ne pas
+     * permettre l'énumération d'adresses.
      */
-    public function resend(Request $request)
+    public function resend(Request $request): JsonResponse
     {
-        // Décode du JWT token
-        $authToken = $request->bearerToken();
-        try {
-            $jwt = TokenTools::validateToken($authToken);
-        } catch (Exception $e) {
-            return response()->json(['message' => "Invalid bearer token"], 401);
+        Validator::make($request->all(), [
+            'email' => ['required', 'string', 'email'],
+        ])->validate();
+
+        $user = User::where('email', $request->input('email'))->first();
+
+        if ($user === null || $user->email_verified_at !== null) {
+            return response()->json(['message' => self::RESEND_CONFIRMATION_RESPONSE]);
         }
 
-        $id = $jwt->data->id;
-
-        $user = User::find($id);
-        if ($user === null) {
-            return response()->json(['message' => "Utilisateur invalid !"], 404);
-        }
-
-        if ($user->email_verified_at !== null) {
-            return response()->json(['message' => "Votre email est déjà vérifié !"], 422);
-        }
-
-        // Generate a new confirmation token
-        $newToken = TokenTools::createConfirmationToken();
-        $user->validate_email_token = TokenTools::hashToken($newToken->token);
-        $user->validate_email_expire = $newToken->expire;
+        $code = TokenTools::createEmailConfirmationCode();
+        $user->validate_email_token = Hash::make($code->token);
+        $user->validate_email_expire = $code->expire;
         $user->save();
+        ApiConfirmerEmailController::clearFailedAttempts($user);
 
-        // Envoie du lien de confirmation par email
         try {
-            Mail::to($user)->send(new ConfirmationEmail($user, $newToken->token));
+            Mail::to($user)->send(new ConfirmationEmail($user, $code->token));
         } catch (Exception $e) {
-            return response()->json(['message' => "Une erreur à eu lieu lors de l'envoie de l'email de confirmation"], 500);
+            Log::error($e);
         }
-        return response()->json(["message" => "Email réenvoyé avec succès"]);
+
+        return response()->json(['message' => self::RESEND_CONFIRMATION_RESPONSE]);
     }
 }

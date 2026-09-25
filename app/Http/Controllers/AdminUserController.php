@@ -8,14 +8,26 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Sapeur;
 use App\Models\UserRole;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 
 class AdminUserController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $users = User::with(['userRoles', 'sapeur'])->get();
+        $users = $this->adminUserQuery()->get()->makeVisible(User::TWO_FACTOR_ADMIN_ATTRIBUTES);
         return response()->json(["data" => $users]);
+    }
+
+    /**
+     * `two_factor_confirmed_at` ne reflète que le TOTP : `webauthn_credentials_exists`
+     * permet au client d'afficher aussi les comptes protégés par WebAuthn seul.
+     *
+     * @return Builder<User>
+     */
+    private function adminUserQuery(): Builder
+    {
+        return User::with(['userRoles', 'sapeur'])->withExists('webauthnCredentials');
     }
 
     /**
@@ -38,16 +50,16 @@ class AdminUserController extends Controller
         $user->admin = $data['admin'];
         $user->save();
 
-        return response()->json(['data' => User::with(['userRoles', 'sapeur'])->find($userId)]);
+        return response()->json(['data' => $this->adminUserQuery()->find($userId)?->makeVisible(User::TWO_FACTOR_ADMIN_ATTRIBUTES)]);
     }
 
     public function show(Request $request, int $userId): JsonResponse
     {
-        $user = User::with(['userRoles', 'sapeur'])->find($userId);
+        $user = $this->adminUserQuery()->find($userId);
         if ($user == null) {
             return response()->json(['message' => "Utilisateur inexistant"], 404);
         }
-        return response()->json(['data' => $user]);
+        return response()->json(['data' => $user->makeVisible(User::TWO_FACTOR_ADMIN_ATTRIBUTES)]);
     }
 
     /**

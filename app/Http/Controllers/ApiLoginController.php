@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Auth\LoginResponder;
 use App\Auth\TokenTools;
-use App\Models\RefreshToken;
 use App\Models\User;
 use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Http\JsonResponse;
@@ -25,7 +25,17 @@ class ApiLoginController extends Controller
         if ($this->attemptLogin($request)) {
             $user = Auth::user();
             if ($user->disabled_at === null) {
-                return $this->sendLoginResponse($user);
+                // Même règle que l'inscription : aucune session tant que
+                // l'email n'est pas prouvé (le client renvoie vers la saisie
+                // du code, avec possibilité d'en redemander un).
+                if ($user->email_verified_at === null) {
+                    return response()->json([
+                        'message' => "Votre adresse email n'est pas encore confirmée.",
+                        'requiresEmailConfirmation' => true,
+                    ], 403);
+                }
+
+                return LoginResponder::respondAfterAuthentication($user, $request);
             }
 
             Log::warning('Login attempt on disabled account', [
@@ -65,7 +75,7 @@ class ApiLoginController extends Controller
         $permissions = User::getPermissions($user->id);
         $mobiles = User::getMobile($user->id);
         $sapeurs = User::getSapeurs($user->id);
-        $accessToken = TokenTools::createAccessToken($user, $permissions, $mobiles, $sapeurs);
+        $accessToken = TokenTools::createAccessToken($user, $permissions, $mobiles, $sapeurs, type: TokenTools::TOKEN_TYPE_IMPERSONATION);
 
         return response()->json([
             "accessToken" => $accessToken,
@@ -99,47 +109,6 @@ class ApiLoginController extends Controller
     protected function credentials(Request $request): array
     {
         return $request->only($this->username(), 'password');
-    }
-
-    /**
-     * Send the response after the user was authenticated.
-     */
-    protected function sendLoginResponse(User $user): JsonResponse
-    {
-        $permissions = User::getPermissions($user->id);
-        $mobiles = User::getMobile($user->id);
-        $sapeurs = User::getSapeurs($user->id);
-        $accessToken = TokenTools::createAccessToken($user, $permissions, $mobiles, $sapeurs);
-
-        // We create a single use refreshToken
-        // Usable only once, to prevent any one to steal an old token and authenticate using it.
-        // When used, will be deactivated and a new one should be generated
-        $token = TokenTools::createRefreshToken();
-        $refreshToken = new RefreshToken();
-        $refreshToken->token = TokenTools::hashToken($token->token); // Hash before storing
-        $refreshToken->expire = $token->expire;
-        $refreshToken->user_id = $user->id;
-        $user->refreshTokens()->save($refreshToken);
-
-        $data = [
-            "accessToken" => $accessToken,
-            "refreshToken" => $token->token, // Send plain token to client
-            "user" => User::where('id', $user->id)->first(),
-        ];
-
-        return response()->json(
-            [
-                "data" => $data,
-                // TODO(rétro-compat temporaire) : le "message" et les champs plats
-                // (accessToken/refreshToken/user) dupliquent `data` pour les anciens builds de
-                // GestSIS_Mobile qui lisent la réponse à plat (ancien format, avant le passage au
-                // wrapper `data`) plutôt que sous `data`. À retirer une fois confirmé qu'aucun build
-                // Mobile antérieur au passage au format enveloppé (2026-09) n'est plus en usage sur
-                // le terrain.
-                "message" => "Successful login",
-                ...$data,
-            ]
-        );
     }
 
     /**

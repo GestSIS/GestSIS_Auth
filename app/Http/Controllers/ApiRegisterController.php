@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Auth\TokenTools;
 use App\Mail\ConfirmationEmail;
-use App\Models\RefreshToken;
 use App\Models\RegisterToken;
 use App\Models\User;
 use Carbon\Carbon;
@@ -52,7 +51,7 @@ class ApiRegisterController extends Controller
 
             $response = Http::withHeaders([
                 'Sis-Key' => '_',
-                'Authorization' => 'Bearer ' . TokenTools::createAccessToken(new User(), ['_' => ['admin']], [], [])
+                'Authorization' => 'Bearer ' . TokenTools::createAccessToken(new User(), ['_' => ['admin']], [], [], type: TokenTools::TOKEN_TYPE_SERVICE)
             ])->acceptJson()->timeout(3)->get(config('gestsis.api_url', '') . '/api/v2/email-validate', ['email' => $email]); //->throw()->json();
 
             if (!$response->successful() || !$response['data']) {
@@ -72,54 +71,34 @@ class ApiRegisterController extends Controller
             return response()->json(['message' => 'Email invalide ou déjà utilisé', 'errors' => ['email' => ['Email invalide ou déjà utilisé']]], 422);
         }
         $user = $userData['user'];
-        $plainEmailToken = $userData['plain_token'];
+        $plainEmailCode = $userData['plain_code'];
 
-        $token = TokenTools::createRefreshToken();
-        $refreshToken = new RefreshToken();
-        $refreshToken->token = TokenTools::hashToken($token->token); // Hash before storing
-        $refreshToken->expire = $token->expire;
-
-        // Envoie du lien de confirmation par email
+        // Envoie du code de confirmation par email
         try {
-            Mail::to($user)->send(new ConfirmationEmail($user, $plainEmailToken));
+            Mail::to($user)->send(new ConfirmationEmail($user, $plainEmailCode));
         } catch (Exception $e) {
             $user->delete();
             return response()->json(['message' => "Une erreur à eu lieu lors de l'envoie de l'email de confirmation"], 500);
         }
 
-        $user->refreshTokens()->save($refreshToken);
-
         // Ajoute des rôles
         $user->roles()->attach($rolesId);
         $user->save();
-
-        // Load permissions
-        $permissions = User::getPermissions($user->id);
-        $mobiles = User::getMobile($user->id);
-        $sapeurs = User::getSapeurs($user->id);
-        $accessToken = TokenTools::createAccessToken($user, $permissions, $mobiles, $sapeurs);
 
         // Suppression du token
         if (!is_null($registerToken)) {
             $registerToken->delete();
         }
 
-        $data = [
-            "accessToken" => $accessToken,
-            "refreshToken" => $token->token, // Send plain token to client
-            "user" => $user,
-        ];
-
+        // Aucune session n'est émise ici : le compte n'a pas encore prouvé la
+        // possession de son email. La session (ou l'étape 2FA si l'enforcement
+        // est actif) n'est émise qu'une fois le code confirmé, voir
+        // ApiConfirmerEmailController::confirmerEmail().
         return response()->json([
-            "data" => $data,
-            // TODO(rétro-compat temporaire) : le "message" et les champs plats
-            // (accessToken/refreshToken/user) dupliquent `data` pour les anciens builds de
-            // GestSIS_Mobile qui lisent la réponse à plat (ancien format, avant le passage au
-            // wrapper `data`) plutôt que sous `data`. À retirer une fois confirmé qu'aucun build
-            // Mobile antérieur au passage au format enveloppé (2026-09) n'est plus en usage sur
-            // le terrain.
-            "message" => "Successful login",
-            ...$data,
+            'data' => [
+                'requiresEmailConfirmation' => true,
+                'email' => $user->email,
+            ],
         ]);
     }
 
@@ -145,22 +124,25 @@ class ApiRegisterController extends Controller
      * Create a new user instance after a valid registration.
      *
      * @param array $data
-     * @return array ['user' => User, 'plain_token' => string]
+     * @return array ['user' => User, 'plain_code' => string]
      */
     protected function create(array $data)
     {
-        $token = TokenTools::createConfirmationToken();
+        $code = TokenTools::createEmailConfirmationCode();
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'validate_email_token' => TokenTools::hashToken($token->token), // Hash before storing
-            'validate_email_expire' => $token->expire,
+            // bcrypt (pas TokenTools::hashToken) : un code court a une
+            // entropie trop faible pour un hash rapide non salé, voir
+            // ApiConfirmerEmailController::confirmerEmail().
+            'validate_email_token' => Hash::make($code->token),
+            'validate_email_expire' => $code->expire,
             'password' => Hash::make($data['password']),
         ]);
 
         return [
             'user' => $user,
-            'plain_token' => $token->token // Return plain token for email
+            'plain_code' => $code->token // Return plain code for email
         ];
     }
 }

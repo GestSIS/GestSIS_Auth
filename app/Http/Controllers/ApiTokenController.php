@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Auth\TokenTools;
+use App\Http\Controllers\Concerns\HandlesTwoFactorConfirmation;
 use App\Models\ApiToken;
 use App\Models\Permission;
 use App\Models\Sis;
@@ -15,6 +16,8 @@ use Illuminate\Support\Facades\Validator;
 
 class ApiTokenController extends Controller
 {
+    use HandlesTwoFactorConfirmation;
+
     /**
      * List all API tokens for the authenticated user.
      * Excludes the actual token value for security.
@@ -71,6 +74,20 @@ class ApiTokenController extends Controller
             'sis_ids' => ['nullable', 'array'],
             'sis_ids.*' => ['required', 'integer', 'exists:sis,id'],
         ])->validate();
+
+        // Un jeton d'API (jusqu'à 365 jours) survit au logout et à la
+        // révocation des sessions : sa création exige un compte protégé par
+        // 2FA et une ré-authentification (mot de passe, + code TOTP si actif),
+        // sinon une session volée suffirait à se ménager un accès durable.
+        // Les jetons existants ne sont pas affectés.
+        if (!$user->hasTwoFactorEnabled()) {
+            return response()->json([
+                'message' => "Activez la double authentification sur votre compte pour créer un jeton d'API.",
+            ], 403);
+        }
+        if ($stepUpError = $this->requireStepUpReauthentication($request, $user)) {
+            return $stepUpError;
+        }
 
         // Check for duplicate token name for this user
         $existingToken = ApiToken::where('user_id', $user->id)
