@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Auth\TokenTools;
+use App\Auth\TwoFactorManager;
 use App\Mail\ResetPassword;
 use App\Models\ApiToken;
 use App\Models\PasswordResetToken;
@@ -23,6 +24,9 @@ use Illuminate\Validation\ValidationException;
 
 class ApiMotDePasseController extends Controller
 {
+    public function __construct(private readonly TwoFactorManager $twoFactor)
+    {
+    }
 
     public const RESET_MDP_CONFIRMATION_RESPONSE = 'Un email a été envoyé si cette adresse email existe.';
     public const RESET_TOKEN_VALIDITE_HEURE = 1;
@@ -125,8 +129,8 @@ class ApiMotDePasseController extends Controller
         $user->password = Hash::make($password);
         $user->save();
 
-        // Revoke all refresh tokens (invalidate all sessions)
-        $user->refreshTokens()->delete();
+        // Déconnecte tous les appareils
+        $user->revokeAllSessions();
 
         // "Mot de passe oublié" est le chemin de récupération après une compromission
         // possible et ne prouve que le contrôle de la boîte mail : les jetons API
@@ -183,10 +187,15 @@ class ApiMotDePasseController extends Controller
 
         if ($this->attemptLogin($request)) {
             $user = Auth::user();
+
+            if ($secondFactorError = $this->requireSecondFactorForPasswordChange($request, $user)) {
+                return $secondFactorError;
+            }
+
             User::find($user->id)->update(['password' => Hash::make($data['new_password'])]);
             
-            // Revoke all refresh tokens (invalidate all sessions)
-            $user->refreshTokens()->delete();
+            // Déconnecte tous les appareils
+            $user->revokeAllSessions();
             
             Log::info('Password changed successfully', [
                 'user_id' => $user->id,
@@ -202,6 +211,44 @@ class ApiMotDePasseController extends Controller
         ]);
 
         return response()->json(['message' => 'Identifiants invalides'], 401);
+    }
+
+    /**
+     * Compte protégé par 2FA : le mot de passe seul (éventuellement hameçonné)
+     * ne doit pas suffire à le changer et à fermer toutes les sessions du
+     * propriétaire. Exige une session de ce compte issue d'une vraie connexion
+     * (claim `sid` — exclut jetons d'API, impersonation, jetons de service),
+     * donc un second facteur déjà passé, plus le code TOTP s'il est actif
+     * (même garde-fou que StepUpVerifier). Comptes sans 2FA :
+     * inchangé.
+     *
+     * @return JsonResponse|null null si autorisé, sinon la réponse d'erreur à retourner telle quelle.
+     */
+    private function requireSecondFactorForPasswordChange(Request $request, User $user): ?JsonResponse
+    {
+        if (!$user->hasTwoFactorEnabled()) {
+            return null;
+        }
+
+        try {
+            $session = TokenTools::validateToken((string) $request->bearerToken());
+        } catch (Exception|\TypeError) {
+            $session = null;
+        }
+        if ($session === null || ($session->data->id ?? null) != $user->id || empty($session->data->sid)) {
+            return response()->json(['message' => 'Connectez-vous pour changer votre mot de passe.'], 401);
+        }
+
+        if (!$this->twoFactor->totp()->isActiveFor($user)) {
+            return null;
+        }
+
+        $code = $request->input('code');
+        if (!is_string($code) || !$this->twoFactor->verifyCode($user, $code)) {
+            return response()->json(['message' => 'Code invalide'], 422);
+        }
+
+        return null;
     }
 
     /**

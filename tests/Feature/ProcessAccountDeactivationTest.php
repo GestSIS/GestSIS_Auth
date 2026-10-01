@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Mail\AccountPendingDeactivationMail;
 use App\Mail\SapeurAccessPendingDeactivationMail;
 use App\Models\ApiToken;
-use App\Models\RefreshToken;
+use App\Models\LegacyRefreshToken;
 use App\Models\Role;
 use App\Models\Sapeur;
 use App\Models\Sis;
@@ -92,10 +92,8 @@ class ProcessAccountDeactivationTest extends TestCase
             'pending_deactivation_at' => now()->subDay(),
         ]);
 
-        $refreshToken = new RefreshToken();
-        $refreshToken->token = 'hashed-token';
-        $refreshToken->expire = now()->addDays(30);
-        $user->refreshTokens()->save($refreshToken);
+        [, $session] = $this->issueSession($user);
+        $legacyToken = LegacyRefreshToken::create(['token' => 'hashed-token', 'expire' => now()->addDays(30), 'user_id' => $user->id]);
 
         $apiToken = ApiToken::create([
             'user_id' => $user->id,
@@ -108,7 +106,8 @@ class ProcessAccountDeactivationTest extends TestCase
 
         $user->refresh();
         $this->assertNotNull($user->disabled_at);
-        $this->assertDatabaseMissing('refresh_tokens', ['id' => $refreshToken->id]);
+        $this->assertDatabaseMissing('auth_sessions', ['id' => $session->id]);
+        $this->assertDatabaseMissing('refresh_tokens', ['id' => $legacyToken->id]);
         $this->assertDatabaseMissing('api_tokens', ['id' => $apiToken->id]);
     }
 

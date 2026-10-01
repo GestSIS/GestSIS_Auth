@@ -6,7 +6,7 @@ use App\Auth\TokenTools;
 use App\Mail\ResetPassword;
 use App\Models\ApiToken;
 use App\Models\PasswordResetToken;
-use App\Models\RefreshToken;
+use App\Models\LegacyRefreshToken;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
@@ -62,10 +62,8 @@ class PasswordResetTest extends TestCase
     public function testResetWithValidTokenUpdatesPasswordAndRevokesSessions(): void
     {
         $user = User::factory()->create();
-        $refreshToken = new RefreshToken();
-        $refreshToken->token = TokenTools::hashToken('some-refresh-token');
-        $refreshToken->expire = Carbon::now()->addDays(30);
-        $user->refreshTokens()->save($refreshToken);
+        $this->issueSession($user);
+        LegacyRefreshToken::create(['token' => TokenTools::hashToken('some-refresh-token'), 'expire' => now()->addDays(30), 'user_id' => $user->id]);
 
         $plainToken = TokenTools::createResetToken();
         PasswordResetToken::create([
@@ -90,6 +88,7 @@ class PasswordResetTest extends TestCase
 
         // All existing sessions of this user must be invalidated (scoped to the user:
         // the test DB is shared with the dev stack, which may hold live sessions).
+        $this->assertDatabaseMissing('auth_sessions', ['user_id' => $user->id]);
         $this->assertDatabaseMissing('refresh_tokens', ['user_id' => $user->id]);
     }
 

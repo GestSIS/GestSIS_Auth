@@ -5,8 +5,12 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Sentry\Laravel\Integration;
 
+use App\Http\Middleware\ImpersonationReadOnly;
 use App\Http\Middleware\JwtTokenValidatorAdmin;
 use App\Http\Middleware\JwtTokenValidatorRole;
+use App\Http\Middleware\JwtTokenValidatorRoleOrApiToken;
+use App\Http\Middleware\JwtTokenValidatorTwoFactorEnrollment;
+use App\Http\Middleware\ThrottleFailedAttempts;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -18,7 +22,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'jwtTokenRole' => JwtTokenValidatorRole::class,
+            'jwtTokenRoleOrApiToken' => JwtTokenValidatorRoleOrApiToken::class,
             'jwtTokenAdmin' => JwtTokenValidatorAdmin::class,
+            'jwtTokenTwoFactorEnrollment' => JwtTokenValidatorTwoFactorEnrollment::class,
+            'impersonationReadOnly' => ImpersonationReadOnly::class,
+            'throttle-failures' => ThrottleFailedAttempts::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

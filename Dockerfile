@@ -5,6 +5,9 @@ RUN apt-get update \
     && docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/ --with-webp=/usr/include/ \
     && apt-get install -y --no-install-recommends libgmp-dev git vim zip unzip \
     && docker-php-ext-install gd gmp pdo_mysql zip \
+    # redis
+    && pecl install --onlyreqdeps --force redis \
+    && docker-php-ext-enable redis \
     # clean up
     && apt-get autoclean -y \
     && rm -rf /var/lib/apt/lists/* \

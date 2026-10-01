@@ -1,9 +1,12 @@
 Bienvenu dans GestSIS,
 
-Merci de confirmer votre email en cliquant sur le lien suivant : 
-- {{ config('gestsis.app_url','') }}/#/confirmation?token={{ $plainToken }}
+Voici votre code de confirmation, à saisir dans la fenêtre d'inscription :
 
-Si vous n'êtes pas à l'origine de cette inscription, ne cliquez PAS sur ce lien et ignorez cet email. Merci de le signaler en répondant à cet email.
+{{ $code }}
+
+Ce code est valable 30 minutes.
+
+Si vous n'êtes pas à l'origine de cette inscription, ignorez cet email. Merci de le signaler en répondant à cet email.
 Cordialement,
 
 L'équipe GestSIS

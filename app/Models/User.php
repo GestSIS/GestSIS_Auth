@@ -1,10 +1,10 @@
 <?php
 
 namespace App\Models;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +36,25 @@ class User extends Authenticatable
         'password',
         'remember_token',
         'validate_email_token',
-        'validate_email_expire'
+        'validate_email_expire',
+        ...self::ADMIN_ONLY_ATTRIBUTES,
+    ];
+
+    /**
+     * Réglages de sécurité réservés au tableau de bord admin (exemptions 2FA,
+     * rappels, durée maximale des sessions) : masqués par défaut — un
+     * responsable SIS listant ses utilisateurs n'a pas à voir quels comptes
+     * sont exemptés ni pourquoi. Rendus visibles explicitement par les
+     * endpoints admin (makeVisible).
+     */
+    public const ADMIN_ONLY_ATTRIBUTES = [
+        'two_factor_reminder_sent_at',
+        'two_factor_exempt',
+        'two_factor_exempt_until',
+        'two_factor_exempt_reason',
+        'two_factor_exempt_by',
+        'session_max_days',
+        'session_max_days_set_by',
     ];
 
     /**
@@ -53,6 +71,10 @@ class User extends Authenticatable
             'admin' => 'boolean',
             'pending_deactivation_at' => 'datetime',
             'disabled_at' => 'datetime',
+            'session_max_days' => 'integer',
+            'two_factor_reminder_sent_at' => 'datetime',
+            'two_factor_exempt' => 'boolean',
+            'two_factor_exempt_until' => 'datetime',
         ];
     }
 
@@ -135,12 +157,106 @@ class User extends Authenticatable
     }
 
     /**
-     * refreshTokens
-     * @return HasMany<RefreshToken,$this>
+     * Sessions (appareils connectés) du compte.
+     *
+     * @return HasMany<AuthSession,$this>
      */
-    public function refreshTokens(): HasMany
+    public function authSessions(): HasMany
     {
-        return $this->hasMany(RefreshToken::class);
+        return $this->hasMany(AuthSession::class);
+    }
+
+    /**
+     * Refresh tokens d'avant les sessions signées (transition, voir LegacyRefreshToken).
+     *
+     * @return HasMany<LegacyRefreshToken,$this>
+     */
+    public function legacyRefreshTokens(): HasMany
+    {
+        return $this->hasMany(LegacyRefreshToken::class);
+    }
+
+    /**
+     * Déconnecte tous les appareils du compte, sauf éventuellement la session
+     * courante. Les access tokens déjà émis expirent d'eux-mêmes (60 min au plus).
+     *
+     * @return int nombre de sessions révoquées
+     */
+    public function revokeAllSessions(?string $exceptSessionId = null): int
+    {
+        $this->legacyRefreshTokens()->delete();
+
+        return $this->authSessions()
+            ->when($exceptSessionId !== null, fn ($query) => $query->whereKeyNot($exceptSessionId))
+            ->delete();
+    }
+
+    /**
+     * @return HasMany<TwoFactorRecoveryCode,$this>
+     */
+    public function twoFactorRecoveryCodes(): HasMany
+    {
+        return $this->hasMany(TwoFactorRecoveryCode::class);
+    }
+
+    /**
+     * Durée maximale d'une session de ce compte, depuis le login : au-delà,
+     * le refresh est refusé et il faut se reconnecter (2FA compris).
+     */
+    public function sessionMaxDays(): int
+    {
+        return $this->session_max_days ?? AuthSession::DEFAULT_MAX_DAYS;
+    }
+
+    /**
+     * Méthodes 2FA du compte (TOTP, clés WebAuthn), confirmées ou en cours
+     * d'enrôlement. La logique 2FA passe par App\Auth\TwoFactorManager.
+     *
+     * @return HasMany<TwoFactorMethod,$this>
+     */
+    public function twoFactorMethods(): HasMany
+    {
+        return $this->hasMany(TwoFactorMethod::class);
+    }
+
+    /**
+     * Le compte a du 2FA : au moins une méthode confirmée. Seule définition,
+     * utilisée partout (login, refresh, rappels, statistiques, admin).
+     */
+    public function hasTwoFactorEnabled(): bool
+    {
+        return $this->twoFactorMethods()->confirmed()->exists();
+    }
+
+    /**
+     * Équivalent requête de hasTwoFactorEnabled().
+     *
+     * @param Builder<User> $query
+     */
+    public function scopeWithTwoFactorEnabled(Builder $query): void
+    {
+        $query->whereHas('twoFactorMethods', fn (Builder $methods) => $methods->whereNotNull('confirmed_at'));
+    }
+
+    /**
+     * @param Builder<User> $query
+     */
+    public function scopeWithoutTwoFactorEnabled(Builder $query): void
+    {
+        $query->whereDoesntHave('twoFactorMethods', fn (Builder $methods) => $methods->whereNotNull('confirmed_at'));
+    }
+
+    /**
+     * Exemption 2FA valide à l'instant présent (accordée par un admin,
+     * potentiellement bornée dans le temps via two_factor_exempt_until).
+     */
+    public function isTwoFactorExempt(): bool
+    {
+        if (!$this->two_factor_exempt) {
+            return false;
+        }
+
+        return $this->two_factor_exempt_until === null || now()->lt($this->two_factor_exempt_until);
     }
 
     /**
@@ -149,14 +265,6 @@ class User extends Authenticatable
     public function userRoles(): HasMany
     {
         return $this->hasMany(UserRole::class);
-    }
-
-    /**
-     * @return ?RefreshToken
-     */
-    public function getActiveRefreshToken(): ?RefreshToken
-    {
-        return $this->refreshTokens()->where('expire', '>', Carbon::now())->first();
     }
 
     public function roles(): BelongsToMany
