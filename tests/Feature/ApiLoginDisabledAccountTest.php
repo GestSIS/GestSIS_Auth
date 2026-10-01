@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Auth\TokenTools;
 use App\Models\ApiToken;
-use App\Models\RefreshToken;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
@@ -33,13 +32,8 @@ class ApiLoginDisabledAccountTest extends TestCase
     {
         $user = User::factory()->create(['disabled_at' => now()]);
 
-        // Refresh token encore présent (ex. désactivation sans purge) : il ne doit rien émettre.
-        $plain = 'refresh-token-disabled';
-        $refreshToken = new RefreshToken();
-        $refreshToken->token = TokenTools::hashToken($plain);
-        $refreshToken->expire = Carbon::now()->addDay();
-        $refreshToken->user_id = $user->id;
-        $refreshToken->save();
+        // Session encore présente (ex. désactivation sans purge) : elle ne doit rien émettre.
+        [$plain] = $this->issueSession($user);
 
         $response = $this->postJson('/api/v1/refresh-token', ['token' => $plain]);
 

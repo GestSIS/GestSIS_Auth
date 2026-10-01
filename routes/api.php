@@ -2,12 +2,21 @@
 
 use App\Http\Controllers\AdminRoleController;
 use App\Http\Controllers\AdminSapeurController;
+use App\Http\Controllers\AdminTwoFactorExemptionController;
+use App\Http\Controllers\AdminTwoFactorPolicyController;
+use App\Http\Controllers\AdminTwoFactorStatsController;
 use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\AdminUserSessionController;
 use App\Http\Controllers\AdminUserRoleController;
+use App\Http\Controllers\TotpController;
+use App\Http\Controllers\TwoFactorStatusController;
+use App\Http\Controllers\WebauthnController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ApiLoginController;
+use App\Http\Controllers\ApiLogoutController;
 use App\Http\Controllers\ApiRegisterController;
 use App\Http\Controllers\ApiRefreshTokenController;
+use App\Http\Controllers\SessionController;
 use App\Http\Controllers\ApiConfirmerEmailController;
 use App\Http\Controllers\ApiTokenAuthController;
 use App\Http\Controllers\ApiTokenController;
@@ -35,23 +44,42 @@ use App\Http\Controllers\RoleController;
 
 Route::group(['prefix' => 'v1'], function () {
 
-    // Auth endpoints with strict rate limiting
-    Route::middleware('throttle:5,1')->group(function () {
+    // Limites d'essais : toutes déclarées dans RateLimitServiceProvider.
+    // `throttle:<nom>` compte chaque requête (par IP) ; `throttle-failures:<nom>`
+    // ne compte que les échecs, par compte.
+    Route::middleware('throttle:auth-by-ip')->group(function () {
         Route::post('login', [ApiLoginController::class, 'login']);
         Route::post('forgotten-password', [ApiMotDePasseController::class, 'request']);
         Route::post('reset-password', [ApiMotDePasseController::class, 'reset']);
-        Route::post('change-password', [ApiMotDePasseController::class, 'changer']);
+        Route::post('change-password', [ApiMotDePasseController::class, 'changer'])
+            ->middleware('throttle-failures:step-up-failures');
+        Route::post('2fa/verify', [TotpController::class, 'verify'])
+            ->middleware('throttle-failures:two-factor-verify-failures');
+        Route::post('2fa/webauthn/challenge', [WebauthnController::class, 'loginChallenge']);
+        Route::post('2fa/webauthn/verify', [WebauthnController::class, 'loginVerify']);
     });
 
-    // Registration with rate limiting
-    Route::middleware('throttle:5,60')->group(function () {
+    // Enrollment 2FA : accepte un accessToken complet (opt-in volontaire) ou un
+    // setup token restreint (parcours forcé par la politique d'enforcement).
+    Route::middleware(['jwtTokenTwoFactorEnrollment', 'impersonationReadOnly', 'throttle:two-factor-enrollment-by-ip'])->group(function () {
+        Route::post('2fa/totp/enable', [TotpController::class, 'enable'])
+            ->middleware('throttle-failures:step-up-failures');
+        Route::post('2fa/totp/confirm', [TotpController::class, 'confirm']);
+        Route::post('2fa/webauthn/register/challenge', [WebauthnController::class, 'registerChallenge'])
+            ->middleware('throttle-failures:step-up-failures');
+        Route::post('2fa/webauthn/register/verify', [WebauthnController::class, 'registerVerify']);
+    });
+
+    Route::middleware('throttle:registration-by-ip')->group(function () {
         Route::post('register', [ApiRegisterController::class, 'register']);
     });
 
-    // Moderate limit
-    Route::middleware('throttle:10,1')->group(function () {
+    Route::middleware('throttle:session-by-ip')->group(function () {
         Route::post('refresh-token', [ApiRefreshTokenController::class, 'refresh']);
-        Route::post('confirmer-email', [ApiConfirmerEmailController::class, 'confirmerEmail']);
+        Route::post('logout', [ApiLogoutController::class, 'logout']);
+        Route::post('confirmer-email', [ApiConfirmerEmailController::class, 'confirmerEmail'])
+            ->middleware('throttle-failures:email-confirmation-failures');
+        Route::post('resend-confirmation', [ApiResendConfirmationController::class, 'resend']);
         Route::post('token-auth', [ApiTokenAuthController::class, 'authenticate']);
     });
 
@@ -65,34 +93,69 @@ Route::group(['prefix' => 'v1'], function () {
         Route::apiResource('roles', AdminRoleController::class, ['as' => 'admin'])->only(['index', 'show', 'update', 'destroy']);
         Route::apiResource('user-roles', AdminUserRoleController::class, ['as' => 'admin'])->only(['store', 'destroy']);
         Route::apiResource('sapeurs', AdminSapeurController::class, ['as' => 'admin'])->only(['destroy']);
+
+        Route::get('2fa/policy', [AdminTwoFactorPolicyController::class, 'show']);
+        Route::put('2fa/policy', [AdminTwoFactorPolicyController::class, 'update']);
+        Route::get('2fa/stats', [AdminTwoFactorStatsController::class, 'show']);
+        Route::post('users/{user_id}/2fa-exemption', [AdminTwoFactorExemptionController::class, 'store']);
+        Route::delete('users/{user_id}/2fa-exemption', [AdminTwoFactorExemptionController::class, 'destroy']);
+        Route::put('users/{user_id}/session-policy', [AdminUserSessionController::class, 'update']);
+        Route::delete('users/{user_id}/sessions', [AdminUserSessionController::class, 'destroy']);
     });
 
-    Route::group(['middleware' => 'jwtTokenRole'], function () {
+    // `jwtTokenRole` refuse les jetons issus d'un jeton d'API : tout ce qui
+    // touche à l'authentification du compte (sessions, 2FA, jetons, jetons de
+    // permissions) est réservé à une vraie session. `jwtTokenRoleOrApiToken`
+    // ouvre explicitement les quelques routes utiles à une intégration.
+    Route::group(['middleware' => 'jwtTokenRoleOrApiToken'], function () {
         Route::get('me', [MeController::class, 'show']);
         Route::get('permissions/', [PermissionController::class, 'index']);
-        Route::post('resend-confirmation/', [ApiResendConfirmationController::class, 'resend']);
+    });
+
+    // `impersonationReadOnly` : en usurpation d'identité, ces réglages se
+    // consultent (support) mais ne se modifient pas.
+    Route::group(['middleware' => ['jwtTokenRole', 'impersonationReadOnly']], function () {
         Route::post('use-token/', [RegisterTokenController::class, 'consume']);
+
+        Route::get('2fa/status', [TwoFactorStatusController::class, 'show']);
+        Route::get('2fa/webauthn/credentials', [WebauthnController::class, 'index']);
+
+        // Actions exigeant mot de passe (+ code) : limite par IP et limite des
+        // échecs par compte.
+        Route::middleware(['throttle:step-up-by-ip', 'throttle-failures:step-up-failures'])->group(function () {
+            Route::post('2fa/totp/disable', [TotpController::class, 'disable']);
+            Route::post('2fa/totp/recovery-codes', [TotpController::class, 'regenerateRecoveryCodes']);
+            Route::delete('2fa/webauthn/credentials/{id}', [WebauthnController::class, 'destroy']);
+        });
 
         // API Token management endpoints
         Route::apiResource('api-tokens', ApiTokenController::class)->only(['index', 'destroy']);
+
+        // Sessions actives (refresh tokens) de l'utilisateur courant
+        Route::apiResource('sessions', SessionController::class)->only(['index', 'destroy']);
     });
 
-    // API Token creation with stricter rate limiting (5 tokens per hour)
-    Route::middleware(['jwtTokenRole', 'throttle:5,60'])->group(function () {
+    // Création de jeton d'API : 5 par heure et par compte, ré-authentification exigée.
+    Route::middleware(['jwtTokenRole', 'impersonationReadOnly', 'throttle:api-token-creation', 'throttle-failures:step-up-failures'])->group(function () {
         Route::apiResource('api-tokens', ApiTokenController::class)->only(['store']);
     });
 
-    Route::group(['middleware' => 'jwtTokenRole:utilisateur.config'], function () {
+    Route::group(['middleware' => 'jwtTokenRoleOrApiToken:utilisateur.config'], function () {
         Route::apiResource('roles', RoleController::class)->only(['store', 'update', 'destroy']);
     });
 
-    Route::group(['middleware' => 'jwtTokenRole:utilisateur.tout'], function () {
+    Route::group(['middleware' => 'jwtTokenRoleOrApiToken:utilisateur.tout'], function () {
         Route::apiResource('roles', RoleController::class)->only(['index']);
         Route::apiResource('roles.users', UserRoleController::class)->only(['index', 'store', 'destroy']);
 
-        Route::post('register-token', [RegisterTokenController::class, 'newToken']);
-
         Route::apiResource('users', UserController::class)->only(['index']); // With roles
         Route::post('users/{user_id}/roles', [UserRoleController::class, 'updateRoles']); // Allow to update all the role of a user for a given SIS
+    });
+
+    // Générer un jeton de permissions reste réservé à une vraie session :
+    // combiné à use-token, il permettait à un jeton d'API d'obtenir un access
+    // token avec tous les droits du compte.
+    Route::group(['middleware' => ['jwtTokenRole:utilisateur.tout', 'impersonationReadOnly']], function () {
+        Route::post('register-token', [RegisterTokenController::class, 'newToken']);
     });
 });

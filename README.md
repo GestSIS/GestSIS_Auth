@@ -37,6 +37,20 @@ Celles-ci peuvent être facilement générées sur le site suivant.
 
 -   [http://travistidwell.com/jsencrypt/demo/](http://travistidwell.com/jsencrypt/demo/)
 
+### Clé de signature des refresh tokens
+
+Les refresh tokens sont signés en HMAC-SHA256 avec une clé propre à chaque environnement, distincte de `APP_KEY`. Générer une clé de 32 octets et la déclarer dans `.env` :
+
+```bash
+openssl rand -base64 32
+# .env
+REFRESH_TOKEN_HMAC_KEYS=k1:base64:<clé générée>
+```
+
+**Rotation planifiée** : ajouter la nouvelle clé en tête de liste en gardant l'ancienne (`REFRESH_TOKEN_HMAC_KEYS=k2:base64:...,k1:base64:...`). La nouvelle signe, les deux sont acceptées ; chaque refresh fait passer la session sur la nouvelle clé. Retirer l'ancienne après 90 jours (durée maximale d'une session).
+
+**En cas de fuite** : remplacer la clé sans garder l'ancienne. Tous les refresh tokens deviennent invalides et tous les utilisateurs doivent se reconnecter (les access tokens déjà émis restent valables 60 minutes au plus).
+
 ### Démarrage du serveur de développement
 
 ```sh
@@ -107,6 +121,12 @@ php artisan users:sync-sapeurs
 
 # Traitement de la désactivation des comptes/rôles/accès devenus obsolètes
 php artisan users:process-deactivation
+
+# Rappels d'activation du 2FA (J-30, J-7, J-1 avant l'échéance d'obligation)
+php artisan users:2fa-reminder
+
+# Suppression des sessions terminées (inactivité ou durée maximale dépassée), et avec elles de leur IP et navigateur
+php artisan sessions:prune
 ```
 
 Comme pour `GestSIS_API`, ce script n'est pas branché via Docker/docker-compose : il doit être installé manuellement dans le crontab du serveur de production.

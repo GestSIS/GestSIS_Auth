@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Auth\TokenTools;
-use App\Models\RefreshToken;
 use App\Models\Sapeur;
 use App\Models\Sis;
 use App\Models\User;
@@ -54,12 +53,7 @@ class UserSapeursClaimTest extends TestCase
         $user = User::factory()->unverified()->create();
         $this->linkSapeur($user, $sis, 42);
 
-        $plain = 'refresh-token-unverified';
-        $refreshToken = new RefreshToken();
-        $refreshToken->token = TokenTools::hashToken($plain);
-        $refreshToken->expire = Carbon::now()->addDay();
-        $refreshToken->user_id = $user->id;
-        $refreshToken->save();
+        [$plain] = $this->issueSession($user);
 
         $response = $this->postJson('/api/v1/refresh-token', ['token' => $plain]);
         $response->assertOk();

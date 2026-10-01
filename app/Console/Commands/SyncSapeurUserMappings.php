@@ -239,7 +239,7 @@ class SyncSapeurUserMappings extends Command
     {
         $response = Http::withHeaders([
             'Sis-Key' => '_',
-            'Authorization' => 'Bearer ' . TokenTools::createAccessToken(new User(), ['_' => ['admin']], [], []),
+            'Authorization' => 'Bearer ' . TokenTools::createAccessToken(new User(), ['_' => ['admin']], [], [], type: TokenTools::TOKEN_TYPE_SERVICE),
         ])->acceptJson()->timeout(10)->get(config('gestsis.api_url', '') . '/api/v2/sapeurs-emails');
 
         if (!$response->successful()) {
