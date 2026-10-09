@@ -30,6 +30,22 @@ class RateLimitingTest extends TestCase
     }
 
     /**
+     * Le `throttle:` natif répond « Too Many Attempts. » : le front affiche le
+     * message tel quel, il doit donc être en français et donner le délai.
+     */
+    public function testIpLimitReturnsFrenchMessageWithRetryAfter(): void
+    {
+        for ($attempt = 1; $attempt <= 10; $attempt++) {
+            $this->postJson('/api/v1/login', ['email' => 'inconnu@example.com', 'password' => 'faux']);
+        }
+
+        $this->postJson('/api/v1/login', ['email' => 'inconnu@example.com', 'password' => 'faux'])
+            ->assertStatus(429)
+            ->assertHeader('Retry-After')
+            ->assertJsonPath('message', 'Trop de tentatives. Réessayez dans 1 minute(s).');
+    }
+
+    /**
      * Seuls les échecs comptent : une réussite remet le compteur à zéro, si
      * bien qu'un utilisateur légitime n'est jamais bloqué par ses succès.
      */

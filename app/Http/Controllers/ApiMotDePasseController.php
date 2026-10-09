@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Auth\PasswordPolicy;
 use App\Auth\TokenTools;
 use App\Auth\TwoFactorManager;
 use App\Mail\ResetPassword;
@@ -89,16 +90,13 @@ class ApiMotDePasseController extends Controller
 
         $validation = Validator::make($request->all(), [
             'token' => ['required', 'string'],
-            'password' => [
-                'required',
-                'string',
-                'min:12',
-            ],
-        ]);
+            'password' => ['required', 'string', PasswordPolicy::rule()],
+        ], PasswordPolicy::messages('password'));
 
-        if ($validation->fails()) {
-            return response()->json(['message' => 'Jeton de réinitialisation manquant ou mot de passe invalide'], 401);
-        }
+        // 422 avec le détail par champ plutôt qu'un 401 générique : l'utilisateur
+        // doit savoir pourquoi son mot de passe est refusé. Le jeton n'est pas
+        // consommé, il peut réessayer.
+        $validation->validate();
 
         $validated = $validation->validated();
         $jeton = $validated['token'];
@@ -173,12 +171,8 @@ class ApiMotDePasseController extends Controller
         $data = $request->validate([
             $this->username() => 'required|string',
             'password' => 'required|string',
-            'new_password' => [
-                'required',
-                'string',
-                'min:12',
-            ],
-        ]);
+            'new_password' => ['required', 'string', PasswordPolicy::rule()],
+        ], PasswordPolicy::messages('new_password'));
 
         $endString = "@gestsis.ch";
         if (substr(strtolower($data[$this->username()]), -strlen($endString)) === $endString) {

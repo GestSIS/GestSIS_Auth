@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Sentry\Laravel\Integration;
 
 use App\Http\Middleware\ImpersonationReadOnly;
@@ -34,4 +35,14 @@ return Application::configure(basePath: dirname(__DIR__))
         // ValidationException est rendue nativement par Laravel en
         // {"message": "...", "errors": {champ: [...]}} @ 422 — même forme
         // que le reste de l'API, pas besoin de handler custom.
+
+        // Le middleware `throttle:` natif répond « Too Many Attempts. » : message
+        // en français avec le délai d'attente, comme ThrottleFailedAttempts.
+        $exceptions->render(function (ThrottleRequestsException $e) {
+            $retryAfter = (int) ($e->getHeaders()['Retry-After'] ?? 60);
+
+            return response()->json([
+                'message' => 'Trop de tentatives. Réessayez dans ' . max(1, (int) ceil($retryAfter / 60)) . ' minute(s).',
+            ], 429, $e->getHeaders());
+        });
     })->create();

@@ -163,10 +163,55 @@ class PasswordResetTest extends TestCase
             'password' => 'court',
         ]);
 
-        $response->assertStatus(401);
+        $response->assertStatus(422);
+        $response->assertJsonPath('errors.password.0', 'Le mot de passe doit contenir au moins 12 caractères.');
 
         // Token must still be usable since it was never consumed.
         $this->assertDatabaseHas('password_reset_tokens', ['user_id' => $user->id]);
+    }
+
+    public function testResetRejectsPasswordWithoutLetters(): void
+    {
+        $plainToken = $this->createResetTokenFor(User::factory()->create());
+
+        $response = $this->postJson('/api/v1/reset-password', [
+            'token' => $plainToken,
+            'password' => '123456789012345',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonPath('errors.password.0', 'Le mot de passe doit contenir au moins une lettre.');
+    }
+
+    public function testResetRejectsCompromisedPassword(): void
+    {
+        $user = User::factory()->create();
+        $plainToken = $this->createResetTokenFor($user);
+        $this->markPasswordsAsCompromised();
+
+        $response = $this->postJson('/api/v1/reset-password', [
+            'token' => $plainToken,
+            'password' => 'un-nouveau-mot-de-passe',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonPath(
+            'errors.password.0',
+            'Ce mot de passe apparaît dans une fuite de données connue, veuillez en choisir un autre.'
+        );
+        $this->assertDatabaseHas('password_reset_tokens', ['user_id' => $user->id]);
+    }
+
+    private function createResetTokenFor(User $user): string
+    {
+        $plainToken = TokenTools::createResetToken();
+        PasswordResetToken::create([
+            'token' => TokenTools::hashToken($plainToken->token),
+            'user_id' => $user->id,
+            'validite' => $plainToken->expire,
+        ]);
+
+        return $plainToken->token;
     }
 
     private function createApiTokenFor(User $user, string $name): string

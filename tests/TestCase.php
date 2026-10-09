@@ -8,6 +8,7 @@ use App\Models\AuthSession;
 use App\Models\TwoFactorMethod;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Contracts\Validation\UncompromisedVerifier;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use OTPHP\TOTP;
 
@@ -19,6 +20,26 @@ abstract class TestCase extends BaseTestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Pas d'appel réseau à Have I Been Pwned (règle `uncompromised()` de
+        // PasswordPolicy) : tout mot de passe est considéré comme sain, sauf
+        // test qui appelle markPasswordsAsCompromised().
+        $this->app->instance(UncompromisedVerifier::class, new class implements UncompromisedVerifier {
+            public function verify($data)
+            {
+                return true;
+            }
+        });
+    }
+
+    protected function markPasswordsAsCompromised(): void
+    {
+        $this->app->instance(UncompromisedVerifier::class, new class implements UncompromisedVerifier {
+            public function verify($data)
+            {
+                return false;
+            }
+        });
     }
 
     /**

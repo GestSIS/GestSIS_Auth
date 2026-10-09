@@ -41,4 +41,20 @@ class ApiRegisterTest extends TestCase
         // No second user should have been created for that email.
         $this->assertSame(1, User::where('email', $existing->email)->count());
     }
+
+    public function testRegisterReturnsFrenchPasswordErrors(): void
+    {
+        $response = $this->postJson('/api/v1/register', [
+            'name' => 'Someone',
+            'email' => 'someone@example.com',
+            'password' => 'court',
+            'password_confirmation' => 'autre',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonPath('errors.password', [
+            'Le mot de passe doit contenir au moins 12 caractères.',
+            'La confirmation du mot de passe ne correspond pas.',
+        ]);
+    }
 }
