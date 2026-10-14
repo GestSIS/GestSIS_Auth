@@ -23,8 +23,8 @@ class RegisterTokenTest extends TestCase
         // Create user with necessary permissions
         $user = User::factory()->create();
 
-        // Get or create the 'utilisateur.tout' permission
-        $permission = Permission::where('api_key', 'utilisateur.tout')->first();
+        // Get or create the 'utilisateur.modification' permission
+        $permission = Permission::where('api_key', 'utilisateur.modification')->first();
 
         // Create a SIS
         $sis = Sis::firstOrCreate(
@@ -46,7 +46,7 @@ class RegisterTokenTest extends TestCase
             'sis_id' => $sis->id
         ]);
 
-        $bearerToken = TokenTools::createAccessToken($user, ['test' => ['utilisateur.tout']], [], []);
+        $bearerToken = TokenTools::createAccessToken($user, ['test' => ['utilisateur.modification']], [], []);
         $params = [
             'roles' => [$targetRole->id]
         ];

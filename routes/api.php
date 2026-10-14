@@ -144,18 +144,21 @@ Route::group(['prefix' => 'v1'], function () {
         Route::apiResource('roles', RoleController::class)->only(['store', 'update', 'destroy']);
     });
 
-    Route::group(['middleware' => 'jwtTokenRoleOrApiToken:utilisateur.tout'], function () {
+    Route::group(['middleware' => 'jwtTokenRoleOrApiToken:utilisateur.lecture'], function () {
         Route::apiResource('roles', RoleController::class)->only(['index']);
-        Route::apiResource('roles.users', UserRoleController::class)->only(['index', 'store', 'destroy']);
-
+        Route::apiResource('roles.users', UserRoleController::class)->only(['index']);
         Route::apiResource('users', UserController::class)->only(['index']); // With roles
+    });
+
+    Route::group(['middleware' => 'jwtTokenRoleOrApiToken:utilisateur.modification'], function () {
+        Route::apiResource('roles.users', UserRoleController::class)->only(['store', 'destroy']);
         Route::post('users/{user_id}/roles', [UserRoleController::class, 'updateRoles']); // Allow to update all the role of a user for a given SIS
     });
 
     // Générer un jeton de permissions reste réservé à une vraie session :
     // combiné à use-token, il permettait à un jeton d'API d'obtenir un access
     // token avec tous les droits du compte.
-    Route::group(['middleware' => ['jwtTokenRole:utilisateur.tout', 'impersonationReadOnly']], function () {
+    Route::group(['middleware' => ['jwtTokenRole:utilisateur.modification', 'impersonationReadOnly']], function () {
         Route::post('register-token', [RegisterTokenController::class, 'newToken']);
     });
 });

@@ -68,7 +68,7 @@ class AdminUserControllerTwoFactorSecretExposureTest extends TestCase
 
         $response = $this->withHeaders([
             'Sis-Key' => 'test',
-            'Authorization' => 'Bearer ' . TokenTools::createAccessToken($manager, ['test' => ['utilisateur.tout']], [], []),
+            'Authorization' => 'Bearer ' . TokenTools::createAccessToken($manager, ['test' => ['utilisateur.lecture']], [], []),
         ])->getJson('/api/v1/users');
 
         $response->assertOk();

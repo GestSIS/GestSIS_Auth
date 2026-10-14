@@ -67,16 +67,18 @@ class PermissionSeeder extends Seeder
             ['id' => 38, 'tri' => 760, 'nom' => 'Absences modification', 'description' => 'Modification des absences', 'api_key' => 'absence.modification'],
             ['id' => 39, 'tri' => 770, 'nom' => 'Absences config', 'description' => 'Configuration des absences', 'api_key' => 'absence.config'],
 
-            ['id' => 3, 'tri' => 805, 'nom' => 'Comptabilité modification', 'description' => 'Comptabilité, modification', 'api_key' => 'comptabilite.modification'],
             ['id' => 40, 'tri' => 800, 'nom' => 'Comptabilité lecture', 'description' => 'Comptabilité, lecture', 'api_key' => 'comptabilite.lecture'],
+            ['id' => 3, 'tri' => 805, 'nom' => 'Comptabilité modification', 'description' => 'Comptabilité, modification', 'api_key' => 'comptabilite.modification'],
             ['id' => 16, 'tri' => 810, 'nom' => 'Config pour comptabilite', 'description' => 'Configuration pour module contrôles médicaux', 'api_key' => 'comptabilite.config'],
 
-            ['id' => 10, 'tri' => 900, 'nom' => 'Contrôle médical', 'description' => 'Gestion des contrôles médicaux', 'api_key' => 'controle_medical.tout'],
+            ['id' => 46, 'tri' => 900, 'nom' => 'Contrôle médical lecture', 'description' => 'Affichage des contrôles médicaux', 'api_key' => 'controle_medical.lecture'],
+            ['id' => 10, 'tri' => 905, 'nom' => 'Contrôle médical modification', 'description' => 'Gestion des contrôles médicaux', 'api_key' => 'controle_medical.modification'],
             ['id' => 17, 'tri' => 910, 'nom' => 'Config pour contrôle medical', 'description' => 'Configuration pour module contrôles médicaux', 'api_key' => 'controle_medical.config'],
 
             ['id' => 18, 'tri' => 1010, 'nom' => 'Config pour utilisateur', 'description' => 'Configuration des différents rôles', 'api_key' => 'utilisateur.config'],
             ['id' => 19, 'tri' => 1010, 'nom' => 'Config générale', 'description' => 'Configuration des informations du SIS', 'api_key' => 'sis.config'],
-            ['id' => 11, 'tri' => 1000, 'nom' => 'Utilisateur', 'description' => 'Modification des droits des utilisateurs', 'api_key' => 'utilisateur.tout'],
+            ['id' => 45, 'tri' => 1000, 'nom' => 'Utilisateur lecture', 'description' => 'Affichage des utilisateurs et de leurs rôles', 'api_key' => 'utilisateur.lecture'],
+            ['id' => 11, 'tri' => 1005, 'nom' => 'Utilisateur modification', 'description' => 'Modification des droits des utilisateurs', 'api_key' => 'utilisateur.modification'],
 
             ['id' => 44, 'tri' => 1100, 'nom' => 'SMS lecture', 'description' => 'Visualisation des SMS envoyés', 'api_key' => 'sms.lecture'],
             ['id' => 27, 'tri' => 1110, 'nom' => 'SMS envoie', 'description' => 'Envoie de SMS', 'api_key' => 'sms.envoie'],

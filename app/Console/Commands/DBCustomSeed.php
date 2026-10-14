@@ -83,12 +83,14 @@ class DBCustomSeed extends Command
             ['id' => 40, 'tri' => 800, 'nom' => 'Comptabilité lecture', 'description' => 'Comptabilité, lecture', 'api_key' => 'comptabilite.lecture'],
             ['id' => 16, 'tri' => 810, 'nom' => 'Config pour comptabilite', 'description' => 'Configuration pour module contrôles médicaux', 'api_key' => 'comptabilite.config'],
 
-            ['id' => 10, 'tri' => 900, 'nom' => 'Contrôle médical', 'description' => 'Gestion des contrôles médicaux', 'api_key' => 'controle_medical.tout'],
+            ['id' => 46, 'tri' => 900, 'nom' => 'Contrôle médical lecture', 'description' => 'Affichage des contrôles médicaux', 'api_key' => 'controle_medical.lecture'],
+            ['id' => 10, 'tri' => 905, 'nom' => 'Contrôle médical modification', 'description' => 'Gestion des contrôles médicaux', 'api_key' => 'controle_medical.modification'],
             ['id' => 17, 'tri' => 910, 'nom' => 'Config pour contrôle medical', 'description' => 'Configuration pour module contrôles médicaux', 'api_key' => 'controle_medical.config'],
 
             ['id' => 18, 'tri' => 1010, 'nom' => 'Config pour utilisateur', 'description' => 'Configuration des différents rôles', 'api_key' => 'utilisateur.config'],
             ['id' => 19, 'tri' => 1010, 'nom' => 'Config générale', 'description' => 'Configuration des informations du SIS', 'api_key' => 'sis.config'],
-            ['id' => 11, 'tri' => 1000, 'nom' => 'Utilisateur', 'description' => 'Modification des droits des utilisateurs', 'api_key' => 'utilisateur.tout'],
+            ['id' => 45, 'tri' => 1000, 'nom' => 'Utilisateur lecture', 'description' => 'Affichage des utilisateurs et de leurs rôles', 'api_key' => 'utilisateur.lecture'],
+            ['id' => 11, 'tri' => 1005, 'nom' => 'Utilisateur modification', 'description' => 'Modification des droits des utilisateurs', 'api_key' => 'utilisateur.modification'],
 
             ['id' => 44, 'tri' => 1100, 'nom' => 'SMS lecture', 'description' => 'Visualisation des SMS envoyés', 'api_key' => 'sms.lecture'],
             ['id' => 27, 'tri' => 1110, 'nom' => 'SMS envoie', 'description' => 'Envoie de SMS', 'api_key' => 'sms.envoie'],
@@ -105,16 +107,28 @@ class DBCustomSeed extends Command
             Permission::updateOrCreate(['id' => $p['id']], $p);
         }
 
-        $rolesIds = PermissionRole::where(['permission_id' => 27])->get()->pluck('role_id');
+        // utilisateur.tout (id 11) a été renommé en utilisateur.modification (même id,
+        // mis à jour par le updateOrCreate ci-dessus) ; tout rôle qui avait `tout` a donc
+        // déjà `modification` automatiquement. On attribue en plus la nouvelle permission
+        // utilisateur.lecture (id 45) à ces mêmes rôles pour reproduire le comportement
+        // combiné de l'ancien `tout`. firstOrCreate pour rester idempotent si la commande
+        // est relancée.
+        printf("Seed Permission utilisateur.lecture pour les rôles utilisateur.modification\n");
+        $modificationRoleIds = PermissionRole::where(['permission_id' => 11])->get()->pluck('role_id');
 
-        PermissionRole::insert(array_merge(
-            ...array_map(
-                fn($roleId) => [
-                    ['permission_id' => 44, 'role_id' => $roleId],
-                ],
-                array_unique($rolesIds->toArray())
-            )
-        ));
+        foreach (array_unique($modificationRoleIds->toArray()) as $roleId) {
+            PermissionRole::firstOrCreate(['permission_id' => 45, 'role_id' => $roleId]);
+        }
+
+        // Même principe : controle_medical.tout (id 10) renommé en
+        // controle_medical.modification (même id) ; on attribue en plus la nouvelle
+        // permission controle_medical.lecture (id 46) à ces mêmes rôles.
+        printf("Seed Permission controle_medical.lecture pour les rôles controle_medical.modification\n");
+        $controleMedicalModificationRoleIds = PermissionRole::where(['permission_id' => 10])->get()->pluck('role_id');
+
+        foreach (array_unique($controleMedicalModificationRoleIds->toArray()) as $roleId) {
+            PermissionRole::firstOrCreate(['permission_id' => 46, 'role_id' => $roleId]);
+        }
 
         printf("Migrating done\n");
         return 0;

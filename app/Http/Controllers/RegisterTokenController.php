@@ -41,7 +41,7 @@ class RegisterTokenController extends Controller
             foreach ($roles as $role) {
                 /** @var Sis $sis */
                 $sis = $role->sis;
-                if (!array_key_exists($sis->api_key, $permissions) || !in_array('utilisateur.tout', $permissions[$sis->api_key])) {
+                if (!array_key_exists($sis->api_key, $permissions) || !in_array('utilisateur.modification', $permissions[$sis->api_key])) {
                     return response()->json(['message' => "Permissions insuffisantes for " . $sis->api_key], 403);
                 }
             }

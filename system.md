@@ -7,7 +7,7 @@
 - **Limiter la création de compte** : à l'inscription (`POST /register`), si aucun token n'est fourni, l'email doit correspondre à un sapeur/civil actif d'un SIS. Vérifié via `GET /api/v2/email-validate` sur GestSIS_API (protégé par `JwtTokenValidatorAuth`), appelé depuis `ApiRegisterController`. En cas d'échec, même message d'erreur générique que pour un email déjà utilisé, pour ne pas révéler lequel des deux cas s'est produit.
 - **Lien email ↔ sapeur** : la liaison se fait uniquement lors de la validation de l'email (`ApiConfirmerEmailController`), les droits de base du sapeur ne sont accordés qu'une fois l'email vérifié. Les emails identiques sont rapprochés à ce moment-là.
 - **Comptes non-membres du SIS (ex. caissier externe)** : système de tokens d'inscription plutôt qu'un envoi d'email direct.
-  - `POST /register-token` — génère un token (rôles à attribuer en paramètre), protégé par `jwtTokenRole:utilisateur.tout`.
+  - `POST /register-token` — génère un token (rôles à attribuer en paramètre), protégé par `jwtTokenRole:utilisateur.modification`.
   - `POST /use-token` — consomme un token et attribue les rôles ; le token est invalidé après usage.
   - `POST /register` accepte un champ `token` optionnel dans le body (et non `?token=` en query string comme envisagé initialement) : s'il est fourni et valide, le check email/SIS est sauté et les rôles du token sont attribués directement.
   - Stockage : tables `register_tokens` / `register_token_roles`, token haché avant stockage, avec durée de validité. Couvert par `tests/Unit/RegisterTokenTest.php`.
