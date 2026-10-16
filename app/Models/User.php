@@ -86,9 +86,9 @@ class User extends Authenticatable
             ->join('permission_roles', 'permissions.id', '=', 'permission_roles.permission_id')
             ->join('roles', 'roles.id', '=', 'permission_roles.role_id')
             ->join('user_roles', 'roles.id', '=', 'user_roles.role_id')
-            ->join('sis', 'sis.id', '=', 'roles.sis_id')
+            ->join('organisations', 'organisations.id', '=', 'roles.organisation_id')
             ->where('user_roles.user_id', '=', $userId)
-            ->select('permissions.api_key as perm_key', 'sis.api_key as sis_key')
+            ->select('permissions.api_key as perm_key', 'organisations.org_key as sis_key')
             ->distinct()
             ->get();
 
@@ -139,9 +139,12 @@ class User extends Authenticatable
 
     public static function getMobile(int|string $userId)
     {
+        // `mobile` n'existe que sur `sis` (pas sur `organisations`, générique) ; la
+        // jointure directe organisation_id -> sis.id reste valide car
+        // organisations.id === sis.id pour tout SIS (SisObserver).
         $mobiles = DB::table('roles')
             ->join('user_roles', 'roles.id', '=', 'user_roles.role_id')
-            ->join('sis', 'sis.id', '=', 'roles.sis_id')
+            ->join('sis', 'sis.id', '=', 'roles.organisation_id')
             ->where('user_roles.user_id', '=', $userId)
             ->select('sis.api_key as sis_key', 'sis.mobile as mobile')
             ->distinct()
