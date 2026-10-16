@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Auth\LoginResponder;
 use App\Auth\TokenTools;
 use App\Models\Sapeur;
-use App\Models\Sis;
+use App\Models\Organisation;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -76,7 +76,7 @@ class ApiConfirmerEmailController extends Controller
 
         if ($response->successful() && $response['data']) {
             // Chargement de la liste des SIS
-            $sis = Sis::all()->keyBy('api_key');
+            $sis = Organisation::all()->keyBy('org_key');
 
             // Ajout des liaisons avec Sapeur
             $sapeurs = [];

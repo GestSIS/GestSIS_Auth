@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Auth\TokenTools;
-use App\Models\Sis;
+use App\Models\Organisation;
 use App\Models\User;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -24,12 +24,12 @@ class GenerateLongTermToken extends Command
         $userName = $this->option('user-name');
 
         // Valider le SIS
-        $sis = Sis::where('api_key', $sisKey)->first();
+        $sis = Organisation::where('org_key', $sisKey)->first();
         if (!$sis) {
             $this->error("SIS avec l'api_key '{$sisKey}' introuvable.");
             $this->info("SIS disponibles :");
-            Sis::all()->each(function ($s) {
-                $this->line("  - {$s->api_key} ({$s->nom})");
+            Organisation::all()->each(function ($s) {
+                $this->line("  - {$s->org_key} ({$s->nom})");
             });
             return self::FAILURE;
         }
