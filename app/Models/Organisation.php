@@ -13,11 +13,12 @@ class Organisation extends Model
         'nom',
         'abreviation',
         'org_key',
+        'mobile'
     ];
 
     protected function casts(): array
     {
-        return ['domaine_id' => 'integer'];
+        return ['domaine_id' => 'integer', 'mobile' => 'boolean'];
     }
 
     public function domaine(): BelongsTo
