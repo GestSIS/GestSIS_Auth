@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -17,6 +18,24 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Garde-fou avant un repointage de FK irréversible (côté data) : vérifie que
+        // l'invariant organisations.id === sis.id (sur lequel repose ce repointage,
+        // cf. commentaire de classe) tient réellement, plutôt que de le supposer.
+        $mismatches = DB::table('sis')
+            ->leftJoin('organisations', 'organisations.id', '=', 'sis.id')
+            ->where(function ($query) {
+                $query->whereNull('organisations.id')
+                    ->orWhereColumn('organisations.org_key', '!=', 'sis.api_key');
+            })
+            ->count();
+
+        if ($mismatches > 0) {
+            throw new \RuntimeException(
+                "Invariant organisations.id === sis.id violé pour {$mismatches} ligne(s) sis : ".
+                'repointage de sapeurs.sis_id annulé avant de perdre la correspondance.'
+            );
+        }
+
         Schema::table('sapeurs', function (Blueprint $table) {
             $table->dropForeign(['sis_id']);
             $table->renameColumn('sis_id', 'organisation_id');

@@ -67,4 +67,21 @@ class DomaineAwareMailTest extends TestCase
         $this->assertSame($eca->mail_from, $mail->from[0]['address']);
         $this->assertSame($eca->mail_name, $mail->from[0]['name']);
     }
+
+    public function testSapeurAccessPendingDeactivationMailBodyRendersTheOrganisationName(): void
+    {
+        $sis = Organisation::factory()->create(['nom' => 'SIS Rendu Test']);
+        $user = User::factory()->create();
+        Sapeur::insert([
+            'sapeur_id' => 1,
+            'organisation_id' => $sis->id,
+            'user_id' => $user->id,
+            'pending_deactivation_at' => now()->addDays(14),
+        ]);
+        $link = Sapeur::with('organisation')->where('organisation_id', $sis->id)->where('sapeur_id', 1)->firstOrFail();
+
+        $rendered = (new SapeurAccessPendingDeactivationMail($user, $link))->render();
+
+        $this->assertStringContainsString('SIS Rendu Test', $rendered);
+    }
 }

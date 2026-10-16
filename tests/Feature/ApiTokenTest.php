@@ -689,4 +689,40 @@ class ApiTokenTest extends TestCase
         $this->assertDatabaseHas('api_token_org', ['organisation_id' => $orgA->id]);
         $this->assertDatabaseMissing('api_token_org', ['organisation_id' => $orgB->id]);
     }
+
+    public function testApiTokenRestrictedToOneOrganisationExcludesTheOtherFromTheExchangedJwt(): void
+    {
+        $orgA = Organisation::factory()->create();
+        $orgB = Organisation::factory()->create();
+        $permission = Permission::where('api_key', 'utilisateur.lecture')->firstOrFail();
+        $roleA = Role::create(['nom' => 'RA', 'organisation_id' => $orgA->id]);
+        $roleA->permissions()->attach($permission->id);
+        $roleB = Role::create(['nom' => 'RB', 'organisation_id' => $orgB->id]);
+        $roleB->permissions()->attach($permission->id);
+
+        $user = $this->twoFactorProtectedUser(['admin' => true]);
+        UserRole::create(['user_id' => $user->id, 'role_id' => $roleA->id]);
+        UserRole::create(['user_id' => $user->id, 'role_id' => $roleB->id]);
+        $sessionToken = TokenTools::createAccessToken($user, [], [], [], true);
+
+        $createResponse = $this->withHeaders(['Authorization' => "Bearer $sessionToken"])
+            ->postJson('/api/v1/api-tokens', [
+                'name' => 'Restricted',
+                'password' => 'password',
+                'permission_ids' => [$permission->id],
+                'organisation_ids' => [$orgA->id],
+                'expires_in_days' => 30,
+            ]);
+        $createResponse->assertStatus(201);
+        $plainToken = $createResponse->json('data.token');
+
+        $authResponse = $this->postJson('/api/v1/token-auth', ['token' => $plainToken]);
+        $authResponse->assertOk();
+
+        $claims = TokenTools::validateToken($authResponse->json('data.accessToken'));
+        $permissions = (array) $claims->data->permissions;
+
+        $this->assertArrayHasKey($orgA->org_key, $permissions);
+        $this->assertArrayNotHasKey($orgB->org_key, $permissions);
+    }
 }
