@@ -27,6 +27,14 @@ class SisObserver
             'domaine_id' => $domaineId,
             'nom' => $sis->nom,
             'org_key' => $sis->api_key,
+            // ?? : un Sis créé sans préciser abreviation/mobile (les deux sont
+            // fillable mais pas required) laisse l'attribut PHP à null, alors
+            // que les deux colonnes sont NOT NULL avec un défaut côté SQL que
+            // seule une colonne omise de l'INSERT recevrait -- on retombe sur
+            // les mêmes valeurs par défaut explicitement plutôt que d'y laisser
+            // passer null.
+            'abreviation' => $sis->abreviation ?? '',
+            'mobile' => $sis->mobile ?? false,
         ]);
         $organisation->save();
     }

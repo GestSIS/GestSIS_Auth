@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Domaine;
 use App\Models\Organisation;
+use App\Models\Sis;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -41,6 +41,15 @@ class AdminOrganisationController extends Controller
         return response()->json(['data' => $organisation]);
     }
 
+    /**
+     * Crée via `Sis`, pas `Organisation` directement : `SisObserver` est ce qui
+     * garde `organisations` synchronisé (domaine_id/nom/org_key/abreviation/
+     * mobile), et c'est aussi ce qui fait exister la ligne `sis` dont dépendent
+     * la FK `sapeurs.sis_id` et les jointures de `User::getMobile()`/
+     * `getSapeurs()`. Un `Organisation::create()` direct ici laisserait une
+     * organisation "sis" sans `sis` derrière — aucun sapeur n'y serait liable.
+     * Seul domaine géré par l'admin aujourd'hui (cf. OrganisationController).
+     */
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -50,17 +59,20 @@ class AdminOrganisationController extends Controller
             'mobile' => 'required|boolean',
         ]);
 
-        $organisation = new Organisation();
-        $organisation->fill($data);
-        // Seul domaine géré par l'admin aujourd'hui (cf. OrganisationController)
-        $organisation->domaine_id = Domaine::where('code', 'sis')->firstOrFail()->id;
-        $organisation->save();
+        $sis = new Sis();
+        $sis->fill([
+            'nom' => $data['nom'],
+            'abreviation' => $data['abreviation'] ?? '',
+            'api_key' => $data['org_key'],
+            'mobile' => $data['mobile'],
+        ]);
+        $sis->save();
 
-        return response()->json(['data' => $organisation], 201);
+        return response()->json(['data' => Organisation::findOrFail($sis->id)], 201);
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified resource in storage. Passe par `Sis` (voir store()).
      */
     public function update(Request $request, int $organisationId): JsonResponse
     {
@@ -70,13 +82,17 @@ class AdminOrganisationController extends Controller
             'mobile' => 'required|boolean',
         ]);
 
-        $organisation = Organisation::find($organisationId);
-        if ($organisation === null) {
+        $sis = Sis::find($organisationId);
+        if ($sis === null) {
             return response()->json(['message' => "Organisation inexistant"], 404);
         }
-        $organisation->fill($data);
-        $organisation->save();
+        $sis->fill([
+            'nom' => $data['nom'],
+            'abreviation' => $data['abreviation'] ?? '',
+            'mobile' => $data['mobile'],
+        ]);
+        $sis->save();
 
-        return response()->json(['data' => $organisation]);
+        return response()->json(['data' => Organisation::findOrFail($sis->id)]);
     }
 }
