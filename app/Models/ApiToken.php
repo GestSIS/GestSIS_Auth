@@ -99,12 +99,12 @@ class ApiToken extends Model
     }
 
     /**
-     * Get the SIS allowed for this token.
-     * If empty, the token is valid for all user's SIS.
+     * Get the organisations allowed for this token.
+     * If empty, the token is valid for all user's organisations.
      */
-    public function allowedSis(): BelongsToMany
+    public function allowedOrganisations(): BelongsToMany
     {
-        return $this->belongsToMany(Sis::class, 'api_token_sis');
+        return $this->belongsToMany(Organisation::class, 'api_token_org', 'api_token_id', 'organisation_id');
     }
 
     /**
@@ -139,7 +139,7 @@ class ApiToken extends Model
         $userPermissions = User::getPermissions($this->user_id);
 
         // If token has restricted SIS, filter user permissions to only those SIS
-        $allowedSisKeys = $this->allowedSis()->pluck('api_key')->toArray();
+        $allowedSisKeys = $this->allowedOrganisations()->pluck('org_key')->toArray();
         if (!empty($allowedSisKeys)) {
             $userPermissions = collect($userPermissions)
                 ->filter(fn($perms, $sisKey) => in_array($sisKey, $allowedSisKeys))

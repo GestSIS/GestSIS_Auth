@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Auth\TokenTools;
 use App\Auth\StepUpVerifier;
 use App\Models\ApiToken;
+use App\Models\Organisation;
 use App\Models\Permission;
-use App\Models\Sis;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,7 +29,7 @@ class ApiTokenController extends Controller
         $user = Auth::user();
 
         $tokens = ApiToken::where('user_id', $user->id)
-            ->with(['permissions:id,nom,api_key', 'allowedSis:id,nom,api_key'])
+            ->with(['permissions:id,nom,api_key', 'allowedOrganisations:id,nom,org_key'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($token) {
@@ -47,10 +47,10 @@ class ApiTokenController extends Controller
                         'nom' => $p->nom,
                         'api_key' => $p->api_key,
                     ]),
-                    'allowed_sis' => $token->allowedSis->map(fn($s) => [
+                    'allowed_organisations' => $token->allowedOrganisations->map(fn($s) => [
                         'id' => $s->id,
                         'nom' => $s->nom,
-                        'api_key' => $s->api_key,
+                        'org_key' => $s->org_key,
                     ]),
                 ];
             });
@@ -73,8 +73,8 @@ class ApiTokenController extends Controller
             'expires_in_days' => ['required', 'integer', 'min:1', 'max:365'],
             'permission_ids' => ['required', 'array', 'min:1'],
             'permission_ids.*' => ['required', 'integer', 'exists:permissions,id'],
-            'sis_ids' => ['nullable', 'array'],
-            'sis_ids.*' => ['required', 'integer', 'exists:sis,id'],
+            'organisation_ids' => ['nullable', 'array'],
+            'organisation_ids.*' => ['required', 'integer', 'exists:organisations,id'],
         ])->validate();
 
         // Un jeton d'API (jusqu'à 365 jours) survit au logout et à la
@@ -112,8 +112,8 @@ class ApiTokenController extends Controller
         // Admins can create tokens for any SIS with any permissions
         // Non-admins must have the permissions and SIS access they're assigning
         if (!$user->admin) {
-            // Non-admins must specify at least one SIS
-            if (empty($validated['sis_ids'])) {
+            // Non-admins must specify at least one organisation
+            if (empty($validated['organisation_ids'])) {
                 return response()->json(['message' => "Vous devez spécifier au moins un SIS pour ce jeton"], 422);
             }
 
@@ -124,19 +124,19 @@ class ApiTokenController extends Controller
             $requestedPermissions = Permission::whereIn('id', $validated['permission_ids'])->get();
             $requestedPermissionKeys = $requestedPermissions->pluck('api_key')->toArray();
 
-            // Get requested SIS
-            $requestedSis = Sis::whereIn('id', $validated['sis_ids'])->get();
+            // Get requested organisations
+            $requestedSis = Organisation::whereIn('id', $validated['organisation_ids'])->get();
 
-            // Verify that user has ALL requested permissions in EACH requested SIS
+            // Verify that user has ALL requested permissions in EACH requested organisation
             foreach ($requestedSis as $sis) {
-                // Check if user has access to this SIS
-                if (!isset($userPermissions[$sis->api_key])) {
+                // Check if user has access to this organisation
+                if (!isset($userPermissions[$sis->org_key])) {
                     return response()->json(['message' => "Vous n'avez aucune permission pour le SIS : {$sis->nom}"], 403);
                 }
 
-                $userSisPermissions = $userPermissions[$sis->api_key];
+                $userSisPermissions = $userPermissions[$sis->org_key];
 
-                // Check if user has all requested permissions in this SIS
+                // Check if user has all requested permissions in this organisation
                 $missingPermissions = array_diff($requestedPermissionKeys, $userSisPermissions);
 
                 if (!empty($missingPermissions)) {
@@ -168,9 +168,9 @@ class ApiTokenController extends Controller
         // Attach permissions to token
         $apiToken->permissions()->attach($validated['permission_ids']);
 
-        // Attach SIS restrictions if provided
-        if (!empty($validated['sis_ids'])) {
-            $apiToken->allowedSis()->attach($validated['sis_ids']);
+        // Attach organisation restrictions if provided
+        if (!empty($validated['organisation_ids'])) {
+            $apiToken->allowedOrganisations()->attach($validated['organisation_ids']);
         }
 
         Log::info('API token created', [
@@ -179,8 +179,8 @@ class ApiTokenController extends Controller
             'created_by_admin' => $user->admin,
             'name' => $apiToken->name,
             'permissions_count' => count($validated['permission_ids']),
-            'sis_restriction' => !empty($validated['sis_ids']),
-            'sis_count' => count($validated['sis_ids'] ?? []),
+            'organisation_restriction' => !empty($validated['organisation_ids']),
+            'organisation_count' => count($validated['organisation_ids'] ?? []),
         ]);
 
         return response()->json([
@@ -200,11 +200,11 @@ class ApiTokenController extends Controller
                     'nom' => $p->nom,
                     'api_key' => $p->api_key,
                 ]),
-                'allowed_sis' => !empty($validated['sis_ids'])
-                    ? Sis::whereIn('id', $validated['sis_ids'])->get()->map(fn($s) => [
+                'allowed_organisations' => !empty($validated['organisation_ids'])
+                    ? Organisation::whereIn('id', $validated['organisation_ids'])->get()->map(fn($s) => [
                         'id' => $s->id,
                         'nom' => $s->nom,
-                        'api_key' => $s->api_key,
+                        'org_key' => $s->org_key,
                     ])
                     : [],
             ],

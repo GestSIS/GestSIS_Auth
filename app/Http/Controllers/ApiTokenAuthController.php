@@ -28,7 +28,7 @@ class ApiTokenAuthController extends Controller
 
         $apiToken = ApiToken::where('token', '=', $hashedToken)
             ->where('expires_at', '>', Carbon::now())
-            ->with(['user', 'permissions', 'allowedSis'])
+            ->with(['user', 'permissions', 'allowedOrganisations'])
             ->first();
 
         // Défense en profondeur : les jetons API sont supprimés à la désactivation du
@@ -61,10 +61,10 @@ class ApiTokenAuthController extends Controller
             $tokenPermissions = $apiToken->permissions()->get();
             $tokenPermissionKeys = $tokenPermissions->pluck('api_key')->toArray();
             
-            $allowedSis = $apiToken->allowedSis;
-            
+            $allowedOrganisations = $apiToken->allowedOrganisations;
+
             // Build permissions grouped by SIS
-            if ($allowedSis->isEmpty()) {
+            if ($allowedOrganisations->isEmpty()) {
                 // No SIS restriction: get all user's SIS
                 $allUserPermissions = User::getPermissions($apiToken->user_id);
                 $validPermissions = [];
@@ -74,8 +74,8 @@ class ApiTokenAuthController extends Controller
             } else {
                 // SIS restriction: use only allowed SIS
                 $validPermissions = [];
-                foreach ($allowedSis as $sis) {
-                    $validPermissions[$sis->api_key] = $tokenPermissionKeys;
+                foreach ($allowedOrganisations as $sis) {
+                    $validPermissions[$sis->org_key] = $tokenPermissionKeys;
                 }
             }
 
@@ -83,7 +83,7 @@ class ApiTokenAuthController extends Controller
                 'token_id' => $apiToken->id,
                 'user_id' => $apiToken->user_id,
                 'token_name' => $apiToken->name,
-                'sis_count' => count($validPermissions),
+                'organisation_count' => count($validPermissions),
                 'ip' => $request->ip(),
             ]);
         } else {
@@ -95,14 +95,14 @@ class ApiTokenAuthController extends Controller
             $tokenPermissionKeys = $tokenPermissions->pluck('api_key')->toArray();
 
             // Get allowed SIS for this token (or all user's SIS if no restriction)
-            $allowedSis = $apiToken->allowedSis;
+            $allowedOrganisations = $apiToken->allowedOrganisations;
             $userPermissions = User::getPermissions($apiToken->user_id);
 
             // If token has SIS restrictions, use only those SIS
             // Otherwise, use all user's SIS
-            $sisToCheck = $allowedSis->isEmpty()
+            $sisToCheck = $allowedOrganisations->isEmpty()
                 ? array_keys($userPermissions)
-                : $allowedSis->pluck('api_key')->toArray();
+                : $allowedOrganisations->pluck('org_key')->toArray();
 
             // If no SIS to check, user has lost all access
             if (empty($sisToCheck)) {
@@ -150,7 +150,7 @@ class ApiTokenAuthController extends Controller
                     'token_name' => $apiToken->name,
                     'invalid_for_sis' => array_keys($missingPermissions),
                     'missing_permissions_by_sis' => $missingPermissions,
-                    'allowed_sis' => $sisToCheck,
+                    'allowed_organisations' => $sisToCheck,
                     'ip' => $request->ip(),
                 ]);
 
@@ -182,8 +182,8 @@ class ApiTokenAuthController extends Controller
             'token_id' => $apiToken->id,
             'user_id' => $apiToken->user_id,
             'token_name' => $apiToken->name,
-            'sis_restricted' => $apiToken->allowedSis()->count() > 0,
-            'allowed_sis_count' => $apiToken->allowedSis()->count(),
+            'organisation_restricted' => $apiToken->allowedOrganisations()->count() > 0,
+            'allowed_organisations_count' => $apiToken->allowedOrganisations()->count(),
         ]);
 
         $data = [

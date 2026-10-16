@@ -4,9 +4,10 @@ namespace Tests\Feature;
 
 use App\Auth\TokenTools;
 use App\Models\ApiToken;
+use App\Models\Domaine;
+use App\Models\Organisation;
 use App\Models\Permission;
 use App\Models\Role;
-use App\Models\Sis;
 use App\Models\User;
 use App\Models\UserRole;
 use App\Models\TwoFactorMethod;
@@ -47,9 +48,9 @@ class ApiTokenTest extends TestCase
         }
 
         // Create SIS and assign permission to user
-        $sis = Sis::firstOrCreate(
-            ['api_key' => 'test'],
-            ['nom' => 'Test SIS', 'abreviation' => 'TST']
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
         );
         $role = Role::create(['nom' => 'Test Role', 'organisation_id' => $sis->id]);
         $role->permissions()->attach($permission->id);
@@ -63,7 +64,7 @@ class ApiTokenTest extends TestCase
             'password' => 'password',
             'expires_in_days' => 90,
             'permission_ids' => [$permission->id],
-            'sis_ids' => [$sis->id],
+            'organisation_ids' => [$sis->id],
         ];
 
         $response = $this->withHeaders([
@@ -100,9 +101,9 @@ class ApiTokenTest extends TestCase
         $user = $this->twoFactorProtectedUser();
         $permission = Permission::first();
 
-        $sis = Sis::firstOrCreate(
-            ['api_key' => 'test'],
-            ['nom' => 'Test SIS', 'abreviation' => 'TST']
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
         );
         $role = Role::create(['nom' => 'Test Role', 'organisation_id' => $sis->id]);
         $role->permissions()->attach($permission->id);
@@ -116,7 +117,7 @@ class ApiTokenTest extends TestCase
             'password' => 'password',
             'expires_in_days' => 30,
             'permission_ids' => [$permission->id],
-            'sis_ids' => [$sis->id],
+            'organisation_ids' => [$sis->id],
         ];
 
         $this->withHeaders([
@@ -170,9 +171,9 @@ class ApiTokenTest extends TestCase
         $user = User::factory()->create();
         $permission = Permission::first();
 
-        $sis = Sis::firstOrCreate(
-            ['api_key' => 'test'],
-            ['nom' => 'Test SIS', 'abreviation' => 'TST']
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
         );
         $role = Role::create(['nom' => 'Test Role', 'organisation_id' => $sis->id]);
         $role->permissions()->attach($permission->id);
@@ -219,9 +220,9 @@ class ApiTokenTest extends TestCase
             $this->markTestSkipped('Not enough permissions in database');
         }
 
-        $sis = Sis::firstOrCreate(
-            ['api_key' => 'test'],
-            ['nom' => 'Test SIS', 'abreviation' => 'TST']
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
         );
         $role = Role::create(['nom' => 'Test Role', 'organisation_id' => $sis->id]);
         $role->permissions()->attach([$permission1->id, $permission2->id]);
@@ -304,9 +305,9 @@ class ApiTokenTest extends TestCase
         $user = User::factory()->create();
         $permission = Permission::first();
 
-        $sis = Sis::firstOrCreate(
-            ['api_key' => 'test'],
-            ['nom' => 'Test SIS', 'abreviation' => 'TST']
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
         );
         $role = Role::create(['nom' => 'Test Role', 'organisation_id' => $sis->id]);
         $role->permissions()->attach($permission->id);
@@ -372,9 +373,9 @@ class ApiTokenTest extends TestCase
         $user = User::factory()->create();
         $permission = Permission::first();
 
-        $sis = Sis::firstOrCreate(
-            ['api_key' => 'test'],
-            ['nom' => 'Test SIS', 'abreviation' => 'TST']
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
         );
         $role = Role::create(['nom' => 'Test Role', 'organisation_id' => $sis->id]);
         $role->permissions()->attach($permission->id);
@@ -422,9 +423,9 @@ class ApiTokenTest extends TestCase
         $user2 = User::factory()->create();
         $permission = Permission::first();
 
-        $sis = Sis::firstOrCreate(
-            ['api_key' => 'test'],
-            ['nom' => 'Test SIS', 'abreviation' => 'TST']
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
         );
         $role = Role::create(['nom' => 'Test Role', 'organisation_id' => $sis->id]);
         $role->permissions()->attach($permission->id);
@@ -464,9 +465,9 @@ class ApiTokenTest extends TestCase
         $user = $this->twoFactorProtectedUser();
         $permission = Permission::first();
 
-        $sis = Sis::firstOrCreate(
-            ['api_key' => 'test'],
-            ['nom' => 'Test SIS', 'abreviation' => 'TST']
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
         );
         $role = Role::create(['nom' => 'Test Role', 'organisation_id' => $sis->id]);
         $role->permissions()->attach($permission->id);
@@ -474,7 +475,7 @@ class ApiTokenTest extends TestCase
 
         $bearerToken = TokenTools::createAccessToken($user, ['test' => [$permission->api_key]], [], []);
 
-        // Try to create token without sis_ids
+        // Try to create token without organisation_ids
         $params = [
             'name' => 'Test Token',
             'password' => 'password',
@@ -507,13 +508,13 @@ class ApiTokenTest extends TestCase
         }
 
         // Create two SIS
-        $sisA = Sis::firstOrCreate(
-            ['api_key' => 'sis_a'],
-            ['nom' => 'SIS A', 'abreviation' => 'SA']
+        $sisA = Organisation::firstOrCreate(
+            ['org_key' => 'sis_a'],
+            ['nom' => 'SIS A', 'abreviation' => 'SA', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
         );
-        $sisB = Sis::firstOrCreate(
-            ['api_key' => 'sis_b'],
-            ['nom' => 'SIS B', 'abreviation' => 'SB']
+        $sisB = Organisation::firstOrCreate(
+            ['org_key' => 'sis_b'],
+            ['nom' => 'SIS B', 'abreviation' => 'SB', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
         );
 
         // User has permission1 in SIS A
@@ -538,7 +539,7 @@ class ApiTokenTest extends TestCase
             'password' => 'password',
             'expires_in_days' => 30,
             'permission_ids' => [$permission1->id, $permission2->id],
-            'sis_ids' => [$sisB->id],
+            'organisation_ids' => [$sisB->id],
         ];
 
         $response = $this->withHeaders([
@@ -567,13 +568,13 @@ class ApiTokenTest extends TestCase
         }
 
         // Create two SIS
-        $sisA = Sis::firstOrCreate(
-            ['api_key' => 'sis_a'],
-            ['nom' => 'SIS A', 'abreviation' => 'SA']
+        $sisA = Organisation::firstOrCreate(
+            ['org_key' => 'sis_a'],
+            ['nom' => 'SIS A', 'abreviation' => 'SA', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
         );
-        $sisB = Sis::firstOrCreate(
-            ['api_key' => 'sis_b'],
-            ['nom' => 'SIS B', 'abreviation' => 'SB']
+        $sisB = Organisation::firstOrCreate(
+            ['org_key' => 'sis_b'],
+            ['nom' => 'SIS B', 'abreviation' => 'SB', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
         );
 
         // User has both permissions in both SIS
@@ -596,7 +597,7 @@ class ApiTokenTest extends TestCase
             'password' => 'password',
             'expires_in_days' => 30,
             'permission_ids' => [$permission1->id, $permission2->id],
-            'sis_ids' => [$sisA->id, $sisB->id],
+            'organisation_ids' => [$sisA->id, $sisB->id],
         ];
 
         $response = $this->withHeaders([
@@ -612,13 +613,13 @@ class ApiTokenTest extends TestCase
                 'name',
                 'expires_at',
                 'permissions',
-                'allowed_sis',
+                'allowed_organisations',
             ],
         ]);
 
-        // Verify the token has both SIS in allowed_sis
+        // Verify the token has both SIS in allowed_organisations
         $tokenInfo = $response->json('data');
-        $this->assertCount(2, $tokenInfo['allowed_sis']);
+        $this->assertCount(2, $tokenInfo['allowed_organisations']);
     }
 
     /**
@@ -661,5 +662,31 @@ class ApiTokenTest extends TestCase
         $this->withHeaders($headers)->postJson('/api/v1/api-tokens', $params)->assertStatus(422);
         $this->withHeaders($headers)->postJson('/api/v1/api-tokens', [...$params, 'password' => 'wrong-password'])->assertStatus(401);
         $this->assertDatabaseMissing('api_tokens', ['user_id' => $user->id, 'name' => 'Nouveau']);
+    }
+
+    public function testApiTokenRestrictedToOneOrganisationCannotBeUsedForAnother(): void
+    {
+        $orgA = Organisation::factory()->create();
+        $orgB = Organisation::factory()->create();
+        $permission = Permission::where('api_key', 'utilisateur.lecture')->firstOrFail();
+        $roleA = Role::create(['nom' => 'RA', 'organisation_id' => $orgA->id]);
+        $roleA->permissions()->attach($permission->id);
+        $user = $this->twoFactorProtectedUser(['admin' => true]);
+        UserRole::create(['user_id' => $user->id, 'role_id' => $roleA->id]);
+        $token = TokenTools::createAccessToken($user, [], [], []);
+
+        $response = $this->withHeaders(['Authorization' => "Bearer $token"])
+            ->postJson('/api/v1/api-tokens', [
+                'name' => 'Restricted',
+                'password' => 'password',
+                'permission_ids' => [$permission->id],
+                'organisation_ids' => [$orgA->id],
+                'expires_in_days' => 30,
+            ]);
+
+        $response->assertStatus(201);
+        $response->assertJsonFragment(['org_key' => $orgA->org_key]);
+        $this->assertDatabaseHas('api_token_org', ['organisation_id' => $orgA->id]);
+        $this->assertDatabaseMissing('api_token_org', ['organisation_id' => $orgB->id]);
     }
 }
