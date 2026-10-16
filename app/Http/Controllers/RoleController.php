@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Role;
-use App\Models\Sis;
+use App\Models\Organisation;
 use Illuminate\Http\JsonResponse;
 
 class RoleController extends Controller
@@ -16,13 +16,13 @@ class RoleController extends Controller
     {
         // Checks pour sisId
         $sisKey = $request->header('Sis-Key', Null);
-        $sis = Sis::where('api_key', $sisKey)->first();
-        if (is_null($sisKey) || is_null($sis)) {
+        $organisation = Organisation::where('org_key', $sisKey)->first();
+        if (is_null($sisKey) || is_null($organisation)) {
             return response()->json(['message' => "Invalid sis key"], 403);
         }
 
         return response()->json([
-            "data" => Role::with(["permissionRoles"])->where("roles.sis_id", '=', $sis->id)->get()
+            "data" => Role::with(["permissionRoles"])->where("roles.organisation_id", '=', $organisation->id)->get()
         ]);
     }
 
@@ -33,25 +33,25 @@ class RoleController extends Controller
     {
         // Checks pour sisId
         $sisKey = $request->header('Sis-Key', Null);
-        $sis = Sis::where('api_key', $sisKey)->first();
-        if (is_null($sisKey) || is_null($sis)) {
+        $organisation = Organisation::where('org_key', $sisKey)->first();
+        if (is_null($sisKey) || is_null($organisation)) {
             return response()->json(['message' => "Invalid sis key"], 403);
         }
 
         $data = $request->validate([
             'nom' => 'required|string|min:1',
             'description' => 'string|required',
-            'sis_id' => 'required|integer|exists:sis,id',
+            'organisation_id' => 'required|integer|exists:organisations,id',
             'permissions.*' => 'integer',
         ]);
 
-        if ($data['sis_id'] != $sis->id) {
+        if ($data['organisation_id'] != $organisation->id) {
             return response()->json(['message' => "Invalid sis id"], 422);
         }
 
         // Ajout
         $role = new Role($data);
-        $role->sis_id = $sis->id;
+        $role->organisation_id = $organisation->id;
         $role->save();
         $role->permissions()->attach($data['permissions'] ?? []);
 
@@ -65,8 +65,8 @@ class RoleController extends Controller
     {
         // Checks pour sisId
         $sisKey = $request->header('Sis-Key', Null);
-        $sis = Sis::where('api_key', $sisKey)->first();
-        if (is_null($sisKey) || is_null($sis)) {
+        $organisation = Organisation::where('org_key', $sisKey)->first();
+        if (is_null($sisKey) || is_null($organisation)) {
             return response()->json(['message' => "Invalid sis key"], 403);
         }
 
@@ -74,11 +74,11 @@ class RoleController extends Controller
             'id' => 'required|integer|min:1|exists:roles,id',
             'nom' => 'required|string',
             'description' => 'string|required',
-            'sis_id' => 'required|integer|exists:sis,id',
+            'organisation_id' => 'required|integer|exists:organisations,id',
             'permissions.*' => 'integer',
         ]);
 
-        if ($data['sis_id'] != $sis->id) {
+        if ($data['organisation_id'] != $organisation->id) {
             return response()->json(['message' => "Invalid sis id"], 422);
         }
         if ($data['id'] != $roleId) {
@@ -86,7 +86,7 @@ class RoleController extends Controller
         }
 
         // Modification
-        $role = Role::where('id', '=', $roleId)->where('sis_id', '=', $sis->id)->first();
+        $role = Role::where('id', '=', $roleId)->where('organisation_id', '=', $organisation->id)->first();
         if (is_null($role)) {
             return response()->json(['message' => "Role not found or does not belong to this SIS"], 404);
         }
@@ -103,13 +103,13 @@ class RoleController extends Controller
     {
         // Checks pour sisId
         $sisKey = $request->header('Sis-Key', Null);
-        $sis = Sis::where('api_key', $sisKey)->first();
-        if (is_null($sisKey) || is_null($sis)) {
+        $organisation = Organisation::where('org_key', $sisKey)->first();
+        if (is_null($sisKey) || is_null($organisation)) {
             return response()->json(['message' => "Invalid sis key"], 403);
         }
 
         // Modification
-        Role::where('id', '=', $roleId)->where('sis_id', '=', $sis->id)->limit(1)->delete();
+        Role::where('id', '=', $roleId)->where('organisation_id', '=', $organisation->id)->limit(1)->delete();
 
         return response()->json(null, 204);
     }
