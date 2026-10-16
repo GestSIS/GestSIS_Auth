@@ -26,6 +26,7 @@ use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\RegisterTokenController;
+use App\Http\Controllers\AdminOrganisationController;
 use App\Http\Controllers\OrganisationController;
 use App\Http\Controllers\SisController;
 use App\Http\Controllers\ApiMotDePasseController;
@@ -94,6 +95,7 @@ Route::group(['prefix' => 'v1'], function () {
         Route::apiResource('roles', AdminRoleController::class, ['as' => 'admin'])->only(['index', 'show', 'update', 'destroy']);
         Route::apiResource('user-roles', AdminUserRoleController::class, ['as' => 'admin'])->only(['store', 'destroy']);
         Route::apiResource('sapeurs', AdminSapeurController::class, ['as' => 'admin'])->only(['destroy']);
+        Route::get('organisations', [AdminOrganisationController::class, 'index']);
 
         Route::get('2fa/policy', [AdminTwoFactorPolicyController::class, 'show']);
         Route::put('2fa/policy', [AdminTwoFactorPolicyController::class, 'update']);
