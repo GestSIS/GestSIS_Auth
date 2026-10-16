@@ -16,7 +16,7 @@ class SyncSapeurUserMappingsTest extends TestCase
     protected function fakeSapeursEmails(array $data): void
     {
         Http::fake([
-            '*/api/v2/sapeurs-emails*' => Http::response(['data' => $data]),
+            '*/api/v2/identites-actives*' => Http::response(['data' => $data]),
         ]);
     }
 
@@ -289,10 +289,25 @@ class SyncSapeurUserMappingsTest extends TestCase
         $this->assertDatabaseMissing('sapeurs', ['user_id' => $user->id]);
     }
 
+    public function testExitsSuccessfullyWhenAtLeastOneConfiguredDomaineSucceeds(): void
+    {
+        $eca = Domaine::where('code', 'eca')->firstOrFail();
+        $eca->update(['active_identities_url' => 'https://eca.test/identites-actives']);
+        Domaine::where('code', 'sis')->update(['active_identities_url' => 'https://sis.test/identites-actives']);
+
+        Http::fake([
+            'https://sis.test/identites-actives' => Http::response(['data' => []]),
+            'https://eca.test/identites-actives' => Http::response(['error' => 'boom'], 500),
+        ]);
+        $this->mock(ExceptionHandler::class, fn($mock) => $mock->shouldReceive('report')->once());
+
+        $this->artisan('users:sync-sapeurs')->assertExitCode(0);
+    }
+
     public function testReportsToSentryWhenApiReturnsAnErrorStatus(): void
     {
         Http::fake([
-            '*/api/v2/sapeurs-emails*' => Http::response(['error' => 'boom'], 500),
+            '*/api/v2/identites-actives*' => Http::response(['error' => 'boom'], 500),
         ]);
 
         $this->mock(ExceptionHandler::class, function ($mock) {

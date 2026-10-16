@@ -2,17 +2,16 @@
 
 namespace App\Console\Commands;
 
-use App\Auth\TokenTools;
 use App\Console\Commands\Concerns\AnnouncesDryRunActions;
 use App\Models\Domaine;
 use App\Models\Sapeur;
 use App\Models\Organisation;
 use App\Models\User;
+use App\Services\ActiveIdentitiesFetcher;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use Throwable;
@@ -46,13 +45,23 @@ class SyncSapeurUserMappings extends Command
     {
         $dryRun = (bool) $this->option('dry-run');
 
-        $emailsParSis = $this->fetchSapeursEmailsParSis();
-        if ($emailsParSis === null) {
+        ['roster' => $roster, 'failedDomaines' => $failedDomaines] = (new ActiveIdentitiesFetcher())->fetch();
+
+        // Un domaine réussi peut légitimement ne contribuer aucune entrée à $roster
+        // (aucun sapeur actif) : ce n'est pas un échec. On compare donc au nombre de
+        // domaines configurés plutôt qu'à $roster->isEmpty(), pour distinguer "tout a
+        // échoué" de "tout a réussi, et il n'y avait rien à synchroniser".
+        $totalConfigured = Domaine::whereNotNull('active_identities_url')->count();
+        if ($totalConfigured > 0 && $failedDomaines->count() === $totalConfigured) {
             $this->error("Impossible de récupérer les emails de sapeurs depuis l'API, abandon.");
             return self::FAILURE;
         }
 
-        $sisByApiKey = Organisation::all()->keyBy('org_key');
+        if ($failedDomaines->isNotEmpty()) {
+            $this->info('Domaines ignorés (échec de récupération) : ' . $failedDomaines->pluck('code')->implode(', '));
+        }
+
+        $organisationsById = Organisation::whereIn('id', $roster->keys())->get()->keyBy('id');
         // Seuls les comptes dont l'email est vérifié peuvent être liés à un sapeur :
         // l'inscription accepte n'importe quel email connu de l'API, donc un compte
         // non vérifié n'est qu'une revendication d'identité, pas une preuve.
@@ -67,12 +76,8 @@ class SyncSapeurUserMappings extends Command
 
         $stats = ['created' => 0, 'reactivated' => 0, 'conflicts' => 0];
 
-        foreach ($emailsParSis as $sisKey => $emailsBySapeurId) {
-            $sis = $sisByApiKey->get($sisKey);
-            if ($sis === null) {
-                Log::warning($this->getName() . ' - SIS inconnu localement', ['sis_key' => $sisKey]);
-                continue;
-            }
+        foreach ($roster as $organisationId => $emailsBySapeurId) {
+            $sis = $organisationsById->get($organisationId);
 
             foreach ($emailsBySapeurId as $sapeurId => $email) {
                 $user = $usersByEmail->get(mb_strtolower($email));
@@ -231,28 +236,5 @@ class SyncSapeurUserMappings extends Command
             $aliveByUserSis,
             $aliveBySapeurSis,
         ];
-    }
-
-    /**
-     * @return ?array<string, array<int, string>>
-     */
-    private function fetchSapeursEmailsParSis(): ?array
-    {
-        $response = Http::withHeaders([
-            'Sis-Key' => '_',
-            'Authorization' => 'Bearer ' . TokenTools::createAccessToken(new User(), ['_' => ['admin']], [], [], type: TokenTools::TOKEN_TYPE_SERVICE),
-        ])->acceptJson()->timeout(10)->get(Domaine::where('code', 'sis')->value('active_identities_url'));
-
-        if (!$response->successful()) {
-            report(new RuntimeException(
-                $this->getName() . " - échec de récupération des emails de sapeurs (status {$response->status()})"
-            ));
-            Log::error($this->getName() . ' - échec de récupération des emails de sapeurs', [
-                'status' => $response->status(),
-            ]);
-            return null;
-        }
-
-        return $response->json('data', []);
     }
 }
