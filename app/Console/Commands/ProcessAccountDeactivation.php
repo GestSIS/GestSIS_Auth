@@ -72,7 +72,7 @@ class ProcessAccountDeactivation extends Command
         $revokedRoles = $this->revokeStaleRoles($actifsParSisId, $skipOrganisationIds, $dryRun);
         $this->info("Rôles retirés (sapeur inactif dans ce SIS) : {$revokedRoles}");
 
-        $accountStats = $this->processAccounts($actifsParSisId, $aliveBySapeurSis, $dryRun, $notify);
+        $accountStats = $this->processAccounts($actifsParSisId, $skipOrganisationIds, $aliveBySapeurSis, $dryRun, $notify);
         $this->info("Comptes marqués à désactiver : {$accountStats['flagged']}");
         $this->info("Comptes désactivés : {$accountStats['disabled']}");
         $this->info("Comptes réhabilités : {$accountStats['reinstated']}");
@@ -151,10 +151,11 @@ class ProcessAccountDeactivation extends Command
 
     /**
      * @param array<int, array<int, int>> $actifsParSisId
+     * @param array<int> $skipOrganisationIds
      * @param Collection<string, int> $aliveBySapeurSis
      * @return array{flagged: int, disabled: int, reinstated: int, reactivated: int}
      */
-    private function processAccounts(array $actifsParSisId, Collection $aliveBySapeurSis, bool $dryRun, bool $notify): array
+    private function processAccounts(array $actifsParSisId, array $skipOrganisationIds, Collection $aliveBySapeurSis, bool $dryRun, bool $notify): array
     {
         $flagged = 0;
         $disabled = 0;
@@ -166,6 +167,10 @@ class ProcessAccountDeactivation extends Command
             ->get();
 
         foreach ($candidates as $user) {
+            if ($this->hasOnlyUnreliableSapeurLinks($user, $skipOrganisationIds)) {
+                continue;
+            }
+
             if ($this->hasActiveSapeur($user, $actifsParSisId, $aliveBySapeurSis)) {
                 continue;
             }
@@ -187,13 +192,17 @@ class ProcessAccountDeactivation extends Command
             ->get();
 
         foreach ($pending as $user) {
+            if ($this->hasOnlyUnreliableSapeurLinks($user, $skipOrganisationIds)) {
+                continue;
+            }
+
             if ($user->userRoles->isNotEmpty() || $this->hasActiveSapeur($user, $actifsParSisId, $aliveBySapeurSis)) {
                 $this->reinstate($user, $dryRun);
                 $reinstated++;
             }
         }
 
-        $reactivated = $this->reactivateDisabledAccounts($actifsParSisId, $aliveBySapeurSis, $dryRun);
+        $reactivated = $this->reactivateDisabledAccounts($actifsParSisId, $skipOrganisationIds, $aliveBySapeurSis, $dryRun);
 
         return compact('flagged', 'disabled', 'reinstated', 'reactivated');
     }
@@ -255,15 +264,20 @@ class ProcessAccountDeactivation extends Command
      * ne rouvrait jamais automatiquement l'accès.
      *
      * @param array<int, array<int, int>> $actifsParSisId
+     * @param array<int> $skipOrganisationIds
      * @param Collection<string, int> $aliveBySapeurSis
      */
-    private function reactivateDisabledAccounts(array $actifsParSisId, Collection $aliveBySapeurSis, bool $dryRun): int
+    private function reactivateDisabledAccounts(array $actifsParSisId, array $skipOrganisationIds, Collection $aliveBySapeurSis, bool $dryRun): int
     {
         $reactivated = 0;
 
         $disabledUsers = User::with('sapeur', 'userRoles')->whereNotNull('disabled_at')->get();
 
         foreach ($disabledUsers as $user) {
+            if ($this->hasOnlyUnreliableSapeurLinks($user, $skipOrganisationIds)) {
+                continue;
+            }
+
             if ($user->userRoles->isEmpty() && !$this->hasActiveSapeur($user, $actifsParSisId, $aliveBySapeurSis)) {
                 continue;
             }
@@ -438,6 +452,15 @@ class ProcessAccountDeactivation extends Command
     }
 
     // Partagé
+
+    /**
+     * @param array<int> $skipOrganisationIds
+     */
+    private function hasOnlyUnreliableSapeurLinks(User $user, array $skipOrganisationIds): bool
+    {
+        return $user->sapeur->isNotEmpty()
+            && $user->sapeur->every(fn($link) => in_array($link->organisation_id, $skipOrganisationIds, true));
+    }
 
     /**
      * @param array<int, array<int, int>> $actifsParSisId

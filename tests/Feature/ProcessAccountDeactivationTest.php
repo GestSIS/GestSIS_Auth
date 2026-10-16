@@ -594,6 +594,26 @@ class ProcessAccountDeactivationTest extends TestCase
         $this->assertDatabaseHas('user_roles', ['id' => $userRole->id]);
     }
 
+    public function testDoesNotFlagAnAccountWhoseOnlySapeurLinkIsInAnOrganisationWithNoConfiguredFeed(): void
+    {
+        // eca has no active_identities_url configured (default seeded state) — the fetcher
+        // never even attempts it, so it's "unreliable" without any HTTP failure at all. This
+        // is deliberately a different domaine than $sis, so the test isolates "never
+        // configured" from "configured but failed this run" (covered separately by Task 5's
+        // testDoesNotRevokeARoleWhenTheOrganisationsDomaineFetchFailed).
+        $eca = Domaine::where('code', 'eca')->firstOrFail();
+        $ecaOrg = Organisation::factory()->create(['domaine_id' => $eca->id]);
+        $user = User::factory()->create(['admin' => false]);
+        $this->linkSapeur($user, $ecaOrg, 1); // user's ONLY sapeur link
+
+        Http::fake(['*/api/v2/identites-actives*' => Http::response(['data' => []])]); // sis succeeds, trivially empty
+
+        $this->artisan('users:process-deactivation')->assertExitCode(0);
+
+        $user->refresh();
+        $this->assertNull($user->pending_deactivation_at, 'A user whose only link has no configured data source must not be flagged.');
+    }
+
     public function testReportsToSentryWhenApiReturnsAnErrorStatus(): void
     {
         Http::fake([
