@@ -21,7 +21,7 @@ class SisControllerTest extends TestCase
     public function testAdminCanShowASisWithItsUsersAndRoles(): void
     {
         $sis = Sis::create(['api_key' => 'sis-test-' . uniqid(), 'nom' => 'Test SIS', 'abreviation' => 'TST']);
-        $role = Role::create(['nom' => 'Role', 'sis_id' => $sis->id]);
+        $role = Role::create(['nom' => 'Role', 'organisation_id' => $sis->id]);
         $user = User::factory()->create();
         UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);
 

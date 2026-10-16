@@ -90,7 +90,7 @@ class ProcessAccountDeactivation extends Command
     private function revokeStaleRoles(array $actifsParSisId, bool $dryRun): int
     {
         $revoked = 0;
-        $sisIdByRoleId = Role::pluck('sis_id', 'id');
+        $sisIdByRoleId = Role::pluck('organisation_id', 'id');
 
         $users = User::with('sapeur', 'userRoles')->whereHas('userRoles')->get();
 

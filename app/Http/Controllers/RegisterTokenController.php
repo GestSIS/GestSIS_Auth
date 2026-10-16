@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Auth\TokenTools;
 use App\Models\Role;
 use App\Models\RegisterToken;
-use App\Models\Sis;
 use App\Models\User;
 use App\Models\UserRole;
 use Illuminate\Http\Request;
@@ -33,16 +32,15 @@ class RegisterTokenController extends Controller
 
         $permissions = (array) $jwt->data->permissions;
         $rolesId = $request->input('roles');
-        $roles = Role::whereIn('id', $rolesId)->with('sis')->get();
+        $roles = Role::whereIn('id', $rolesId)->with('organisation')->get();
 
         // Controle que les rôles à ajouter peuvent l'être par l'utilisateur
         if ($jwt->data->admin !== true) {
             /** @var Role $role */
             foreach ($roles as $role) {
-                /** @var Sis $sis */
-                $sis = $role->sis;
-                if (!array_key_exists($sis->api_key, $permissions) || !in_array('utilisateur.modification', $permissions[$sis->api_key])) {
-                    return response()->json(['message' => "Permissions insuffisantes for " . $sis->api_key], 403);
+                $sis = $role->organisation;
+                if (!array_key_exists($sis->org_key, $permissions) || !in_array('utilisateur.modification', $permissions[$sis->org_key])) {
+                    return response()->json(['message' => "Permissions insuffisantes for " . $sis->org_key], 403);
                 }
             }
         }

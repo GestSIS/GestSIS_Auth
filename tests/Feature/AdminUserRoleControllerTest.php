@@ -21,7 +21,7 @@ class AdminUserRoleControllerTest extends TestCase
     {
         $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
         $user = User::factory()->create();
-        $role = Role::create(['nom' => 'Role', 'sis_id' => $sis->id]);
+        $role = Role::create(['nom' => 'Role', 'organisation_id' => $sis->id]);
 
         // Token émis alors que le compte était admin, puis rétrogradé en base.
         $demoted = User::factory()->create(['admin' => false]);
@@ -42,7 +42,7 @@ class AdminUserRoleControllerTest extends TestCase
     {
         $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
         $user = User::factory()->create();
-        $role = Role::create(['nom' => 'Role', 'sis_id' => $sis->id]);
+        $role = Role::create(['nom' => 'Role', 'organisation_id' => $sis->id]);
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->adminToken(),
@@ -59,7 +59,7 @@ class AdminUserRoleControllerTest extends TestCase
     {
         $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
         $user = User::factory()->create();
-        $role = Role::create(['nom' => 'Role', 'sis_id' => $sis->id]);
+        $role = Role::create(['nom' => 'Role', 'organisation_id' => $sis->id]);
         UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);
 
         $response = $this->withHeaders([

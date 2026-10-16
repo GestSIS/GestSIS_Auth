@@ -51,7 +51,7 @@ class ApiTokenTest extends TestCase
             ['api_key' => 'test'],
             ['nom' => 'Test SIS', 'abreviation' => 'TST']
         );
-        $role = Role::create(['nom' => 'Test Role', 'sis_id' => $sis->id]);
+        $role = Role::create(['nom' => 'Test Role', 'organisation_id' => $sis->id]);
         $role->permissions()->attach($permission->id);
         UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);
 
@@ -104,7 +104,7 @@ class ApiTokenTest extends TestCase
             ['api_key' => 'test'],
             ['nom' => 'Test SIS', 'abreviation' => 'TST']
         );
-        $role = Role::create(['nom' => 'Test Role', 'sis_id' => $sis->id]);
+        $role = Role::create(['nom' => 'Test Role', 'organisation_id' => $sis->id]);
         $role->permissions()->attach($permission->id);
         UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);
 
@@ -174,7 +174,7 @@ class ApiTokenTest extends TestCase
             ['api_key' => 'test'],
             ['nom' => 'Test SIS', 'abreviation' => 'TST']
         );
-        $role = Role::create(['nom' => 'Test Role', 'sis_id' => $sis->id]);
+        $role = Role::create(['nom' => 'Test Role', 'organisation_id' => $sis->id]);
         $role->permissions()->attach($permission->id);
         UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);
 
@@ -223,7 +223,7 @@ class ApiTokenTest extends TestCase
             ['api_key' => 'test'],
             ['nom' => 'Test SIS', 'abreviation' => 'TST']
         );
-        $role = Role::create(['nom' => 'Test Role', 'sis_id' => $sis->id]);
+        $role = Role::create(['nom' => 'Test Role', 'organisation_id' => $sis->id]);
         $role->permissions()->attach([$permission1->id, $permission2->id]);
         $userRole = UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);
 
@@ -308,7 +308,7 @@ class ApiTokenTest extends TestCase
             ['api_key' => 'test'],
             ['nom' => 'Test SIS', 'abreviation' => 'TST']
         );
-        $role = Role::create(['nom' => 'Test Role', 'sis_id' => $sis->id]);
+        $role = Role::create(['nom' => 'Test Role', 'organisation_id' => $sis->id]);
         $role->permissions()->attach($permission->id);
         UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);
 
@@ -376,7 +376,7 @@ class ApiTokenTest extends TestCase
             ['api_key' => 'test'],
             ['nom' => 'Test SIS', 'abreviation' => 'TST']
         );
-        $role = Role::create(['nom' => 'Test Role', 'sis_id' => $sis->id]);
+        $role = Role::create(['nom' => 'Test Role', 'organisation_id' => $sis->id]);
         $role->permissions()->attach($permission->id);
         UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);
 
@@ -426,7 +426,7 @@ class ApiTokenTest extends TestCase
             ['api_key' => 'test'],
             ['nom' => 'Test SIS', 'abreviation' => 'TST']
         );
-        $role = Role::create(['nom' => 'Test Role', 'sis_id' => $sis->id]);
+        $role = Role::create(['nom' => 'Test Role', 'organisation_id' => $sis->id]);
         $role->permissions()->attach($permission->id);
         UserRole::create(['user_id' => $user1->id, 'role_id' => $role->id]);
 
@@ -468,7 +468,7 @@ class ApiTokenTest extends TestCase
             ['api_key' => 'test'],
             ['nom' => 'Test SIS', 'abreviation' => 'TST']
         );
-        $role = Role::create(['nom' => 'Test Role', 'sis_id' => $sis->id]);
+        $role = Role::create(['nom' => 'Test Role', 'organisation_id' => $sis->id]);
         $role->permissions()->attach($permission->id);
         UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);
 
@@ -517,12 +517,12 @@ class ApiTokenTest extends TestCase
         );
 
         // User has permission1 in SIS A
-        $roleA = Role::create(['nom' => 'Role A', 'sis_id' => $sisA->id]);
+        $roleA = Role::create(['nom' => 'Role A', 'organisation_id' => $sisA->id]);
         $roleA->permissions()->attach($permission1->id);
         UserRole::create(['user_id' => $user->id, 'role_id' => $roleA->id]);
 
         // User has permission1 in SIS B, but NOT permission2
-        $roleB = Role::create(['nom' => 'Role B', 'sis_id' => $sisB->id]);
+        $roleB = Role::create(['nom' => 'Role B', 'organisation_id' => $sisB->id]);
         $roleB->permissions()->attach($permission1->id);
         UserRole::create(['user_id' => $user->id, 'role_id' => $roleB->id]);
 
@@ -577,11 +577,11 @@ class ApiTokenTest extends TestCase
         );
 
         // User has both permissions in both SIS
-        $roleA = Role::create(['nom' => 'Role A', 'sis_id' => $sisA->id]);
+        $roleA = Role::create(['nom' => 'Role A', 'organisation_id' => $sisA->id]);
         $roleA->permissions()->attach([$permission1->id, $permission2->id]);
         UserRole::create(['user_id' => $user->id, 'role_id' => $roleA->id]);
 
-        $roleB = Role::create(['nom' => 'Role B', 'sis_id' => $sisB->id]);
+        $roleB = Role::create(['nom' => 'Role B', 'organisation_id' => $sisB->id]);
         $roleB->permissions()->attach([$permission1->id, $permission2->id]);
         UserRole::create(['user_id' => $user->id, 'role_id' => $roleB->id]);
 

@@ -57,7 +57,7 @@ class AdminUserControllerTwoFactorSecretExposureTest extends TestCase
     public function testSisManagerUserListDoesNotExposeTwoFactorState(): void
     {
         $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
-        $role = Role::create(['nom' => 'Rôle test', 'sis_id' => $sis->id]);
+        $role = Role::create(['nom' => 'Rôle test', 'organisation_id' => $sis->id]);
         $member = User::factory()->create([
             'two_factor_exempt' => true,
             'two_factor_exempt_reason' => 'Tablette partagée caserne',

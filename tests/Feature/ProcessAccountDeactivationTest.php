@@ -121,7 +121,7 @@ class ProcessAccountDeactivationTest extends TestCase
             'admin' => false,
             'pending_deactivation_at' => now()->addDays(10),
         ]);
-        $role = Role::create(['nom' => 'Role réhabilité', 'sis_id' => $sis->id]);
+        $role = Role::create(['nom' => 'Role réhabilité', 'organisation_id' => $sis->id]);
         UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);
 
         $this->artisan('users:process-deactivation')->assertExitCode(0);
@@ -143,7 +143,7 @@ class ProcessAccountDeactivationTest extends TestCase
             'pending_deactivation_at' => now()->subDays(31),
             'disabled_at' => now()->subDay(),
         ]);
-        $role = Role::create(['nom' => 'Role réattribué', 'sis_id' => $sis->id]);
+        $role = Role::create(['nom' => 'Role réattribué', 'organisation_id' => $sis->id]);
         UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);
 
         $this->artisan('users:process-deactivation')->assertExitCode(0);
@@ -202,7 +202,7 @@ class ProcessAccountDeactivationTest extends TestCase
             'pending_deactivation_at' => now()->subDays(31),
             'disabled_at' => now()->subDay(),
         ]);
-        $role = Role::create(['nom' => 'Role', 'sis_id' => $sis->id]);
+        $role = Role::create(['nom' => 'Role', 'organisation_id' => $sis->id]);
         UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);
 
         $this->artisan('users:process-deactivation', ['--dry-run' => true])->assertExitCode(0);
@@ -418,8 +418,8 @@ class ProcessAccountDeactivationTest extends TestCase
         $this->linkSapeur($user, $sisA, 1);
         $this->linkSapeur($user, $sisB, 2);
 
-        $roleA = Role::create(['nom' => 'Role A', 'sis_id' => $sisA->id]);
-        $roleB = Role::create(['nom' => 'Role B', 'sis_id' => $sisB->id]);
+        $roleA = Role::create(['nom' => 'Role A', 'organisation_id' => $sisA->id]);
+        $roleB = Role::create(['nom' => 'Role B', 'organisation_id' => $sisB->id]);
         $userRoleA = UserRole::create(['user_id' => $user->id, 'role_id' => $roleA->id]);
         $userRoleB = UserRole::create(['user_id' => $user->id, 'role_id' => $roleB->id]);
 
@@ -440,7 +440,7 @@ class ProcessAccountDeactivationTest extends TestCase
 
         $user = User::factory()->create(['admin' => false]);
         $this->linkSapeur($user, $sis, 1);
-        $role = Role::create(['nom' => 'Role', 'sis_id' => $sis->id]);
+        $role = Role::create(['nom' => 'Role', 'organisation_id' => $sis->id]);
         $userRole = UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);
 
         $this->artisan('users:process-deactivation')->assertExitCode(0);
@@ -457,7 +457,7 @@ class ProcessAccountDeactivationTest extends TestCase
         // Rôle attribué sans lien sapeur connu pour ce SIS (ex. compte technique) :
         // aucun signal d'activité fiable, on ne doit pas toucher au rôle.
         $user = User::factory()->create(['admin' => false]);
-        $role = Role::create(['nom' => 'Role', 'sis_id' => $sis->id]);
+        $role = Role::create(['nom' => 'Role', 'organisation_id' => $sis->id]);
         $userRole = UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);
 
         $this->artisan('users:process-deactivation')->assertExitCode(0);
@@ -473,7 +473,7 @@ class ProcessAccountDeactivationTest extends TestCase
 
         $user = User::factory()->create(['admin' => false]);
         $this->linkSapeur($user, $sis, 1);
-        $role = Role::create(['nom' => 'Seul rôle', 'sis_id' => $sis->id]);
+        $role = Role::create(['nom' => 'Seul rôle', 'organisation_id' => $sis->id]);
         $userRole = UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);
 
         $this->artisan('users:process-deactivation')->assertExitCode(0);
@@ -493,7 +493,7 @@ class ProcessAccountDeactivationTest extends TestCase
 
         $user = User::factory()->create(['admin' => false]);
         $this->linkSapeur($user, $sis, 1);
-        $role = Role::create(['nom' => 'Role', 'sis_id' => $sis->id]);
+        $role = Role::create(['nom' => 'Role', 'organisation_id' => $sis->id]);
         $userRole = UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);
 
         $this->artisan('users:process-deactivation', ['--dry-run' => true])->assertExitCode(0);

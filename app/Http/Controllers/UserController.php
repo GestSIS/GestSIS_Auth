@@ -23,7 +23,7 @@ class UserController extends Controller
         // Load users with roles
         $userIds = DB::table('user_roles')
             ->join('roles', 'roles.id', '=', 'user_roles.role_id')
-            ->where('roles.sis_id', '=', $sis->id)
+            ->where('roles.organisation_id', '=', $sis->id)
             ->select(['user_roles.user_id as user_id'])
             ->union(
                 DB::table('sapeurs')
@@ -34,7 +34,7 @@ class UserController extends Controller
             ->pluck('user_id')
             ->toArray();
 
-        $roleIds = Role::where('roles.sis_id', '=', $sis->id)->pluck('id')->toArray();
+        $roleIds = Role::where('roles.organisation_id', '=', $sis->id)->pluck('id')->toArray();
 
         $users = User::whereIn('users.id', $userIds)->with([
             'userRoles' => function ($query) use ($roleIds) {

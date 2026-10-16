@@ -35,7 +35,7 @@ class RegisterTokenTest extends TestCase
         // Create a role with the necessary permission
         $userRole = Role::create([
             'nom' => 'Admin Role',
-            'sis_id' => $sis->id
+            'organisation_id' => $sis->id
         ]);
         $userRole->permissions()->attach($permission->id);
         UserRole::create(['user_id' => $user->id, 'role_id' => $userRole->id]);
@@ -43,7 +43,7 @@ class RegisterTokenTest extends TestCase
         // Create a role to assign via register token
         $targetRole = Role::create([
             'nom' => 'Target Role',
-            'sis_id' => $sis->id
+            'organisation_id' => $sis->id
         ]);
 
         $bearerToken = TokenTools::createAccessToken($user, ['test' => ['utilisateur.modification']], [], []);
