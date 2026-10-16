@@ -15,6 +15,6 @@ class Permission extends Model
 
     protected function casts(): array
     {
-        return ['sis_id' => 'integer', 'tri' => 'integer'];
+        return ['sis_id' => 'integer', 'tri' => 'integer', 'domaine_id' => 'integer'];
     }
 }

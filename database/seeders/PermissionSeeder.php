@@ -90,5 +90,14 @@ class PermissionSeeder extends Seeder
 
             ['id' => 20, 'tri' => 2000, 'nom' => 'Admin', 'description' => 'Paramètres admin du système', 'api_key' => 'admin.tout'],
         ]);
+
+        // domaine_id n'est pas renseigné dans le tableau ci-dessus : sur une installation
+        // neuve, les migrations (dont le backfill domaine_id) s'exécutent avant les
+        // seeders, donc avant que ces lignes n'existent. On reproduit ici le même backfill
+        // qu'en migration pour qu'une base fraîchement seedée reste cohérente.
+        $sisDomaineId = DB::table('domaines')->where('code', 'sis')->value('id');
+        DB::table('permissions')
+            ->whereNotIn('api_key', ['utilisateur.config', 'utilisateur.lecture', 'utilisateur.modification'])
+            ->update(['domaine_id' => $sisDomaineId]);
     }
 }
