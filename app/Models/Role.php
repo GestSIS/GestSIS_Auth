@@ -12,12 +12,12 @@ class Role extends Model
     protected $fillable = [
         'nom',
         'description',
-        'sis_id'
+        'organisation_id'
     ];
 
     protected function casts(): array
     {
-        return ['sis_id' => 'integer'];
+        return ['organisation_id' => 'integer'];
     }
 
     public function users(): BelongsToMany
@@ -45,8 +45,8 @@ class Role extends Model
         return $this->belongsToMany(Permission::class, 'permission_roles');
     }
 
-    public function sis(): BelongsTo
+    public function organisation(): BelongsTo
     {
-        return $this->belongsTo(Sis::class);
+        return $this->belongsTo(Organisation::class);
     }
 }

@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Sis extends Model
 {
+    use HasFactory;
+
     protected $table = 'sis';
     protected $fillable = [
         'nom',
@@ -22,7 +25,9 @@ class Sis extends Model
 
     public function roles(): HasMany
     {
-        return $this->hasMany(Role::class);
+        // FK explicite : roles.organisation_id (plus roles.sis_id depuis le
+        // renommage), organisations.id = sis.id pour tout SIS (SisObserver).
+        return $this->hasMany(Role::class, 'organisation_id', 'id');
     }
 
     public function sapeurs(): HasMany
