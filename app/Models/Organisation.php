@@ -11,7 +11,7 @@ class Organisation extends Model
     protected $fillable = [
         'domaine_id',
         'nom',
-        'abbreviation',
+        'abreviation',
         'org_key',
     ];
 
