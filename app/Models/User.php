@@ -121,12 +121,12 @@ class User extends Authenticatable
         // Le claim `sapeurs` n'est émis que pour un compte dont l'email est vérifié :
         // un lien créé (ou hérité) avant vérification ne doit donner aucun accès.
         $sapeurs = DB::table('sapeurs')
-            ->join('sis', 'sis.id', '=', 'sapeurs.organisation_id')
+            ->join('organisations', 'organisations.id', '=', 'sapeurs.organisation_id')
             ->join('users', 'users.id', '=', 'sapeurs.user_id')
             ->where('sapeurs.user_id', '=', $userId)
             ->whereNotNull('users.email_verified_at')
             ->whereNull('sapeurs.deactivated_at')
-            ->select('sis.api_key as sis_key', 'sapeurs.sapeur_id as sapeur_id')
+            ->select('organisations.org_key as sis_key', 'sapeurs.sapeur_id as sapeur_id')
             ->distinct()
             ->get();
 
@@ -139,14 +139,11 @@ class User extends Authenticatable
 
     public static function getMobile(int|string $userId)
     {
-        // `mobile` n'existe que sur `sis` (pas sur `organisations`, générique) ; la
-        // jointure directe organisation_id -> sis.id reste valide car
-        // organisations.id === sis.id pour tout SIS (SisObserver).
         $mobiles = DB::table('roles')
             ->join('user_roles', 'roles.id', '=', 'user_roles.role_id')
-            ->join('sis', 'sis.id', '=', 'roles.organisation_id')
+            ->join('organisations', 'organisations.id', '=', 'roles.organisation_id')
             ->where('user_roles.user_id', '=', $userId)
-            ->select('sis.api_key as sis_key', 'sis.mobile as mobile')
+            ->select('organisations.org_key as sis_key', 'organisations.mobile as mobile')
             ->distinct()
             ->get();
 
