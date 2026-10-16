@@ -171,7 +171,7 @@ class SyncSapeurUserMappings extends Command
         Log::info($this->getName() . ' - lien réactivé', [
             'sapeur_link_id' => $exact->id,
             'user_id' => $user->id,
-            'sis_id' => $sis->id,
+            'organisation_id' => $sis->id,
             'sapeur_id' => $sapeurId,
         ]);
         Sapeur::where('id', $exact->id)->update([
@@ -190,7 +190,7 @@ class SyncSapeurUserMappings extends Command
 
         Sapeur::insert([
             'sapeur_id' => $sapeurId,
-            'sis_id' => $sis->id,
+            'organisation_id' => $sis->id,
             'user_id' => $user->id,
         ]);
     }
@@ -207,7 +207,7 @@ class SyncSapeurUserMappings extends Command
 
         report(new RuntimeException(
             $this->getName() . " - conflit de mapping sapeur/utilisateur : user_id={$user->id} ({$user->email}), "
-            . "sis_id={$sis->id} ({$sis->nom}), sapeur_id={$sapeurId} : " . implode(' ; ', $details)
+            . "organisation_id={$sis->id} ({$sis->nom}), sapeur_id={$sapeurId} : " . implode(' ; ', $details)
             . '. Vérification manuelle nécessaire (activation/désactivation/suppression de sapeur, ou changement d\'email).'
         ));
     }
@@ -227,7 +227,7 @@ class SyncSapeurUserMappings extends Command
         [$aliveByUserSis, $aliveBySapeurSis] = Sapeur::indexAliveByIdentity($links->whereNull('deactivated_at'));
 
         return [
-            $links->keyBy(fn($l) => "{$l->user_id}:{$l->sapeur_id}:{$l->sis_id}"),
+            $links->keyBy(fn($l) => "{$l->user_id}:{$l->sapeur_id}:{$l->organisation_id}"),
             $aliveByUserSis,
             $aliveBySapeurSis,
         ];

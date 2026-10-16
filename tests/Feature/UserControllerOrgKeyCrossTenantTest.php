@@ -22,10 +22,10 @@ class UserControllerOrgKeyCrossTenantTest extends TestCase
         $sisB = Sis::factory()->create(['api_key' => 'org-b']);
 
         $userA = User::factory()->create(['email' => 'a@example.com']);
-        Sapeur::insert(['sapeur_id' => 1, 'sis_id' => $sisA->id, 'user_id' => $userA->id]);
+        Sapeur::insert(['sapeur_id' => 1, 'organisation_id' => $sisA->id, 'user_id' => $userA->id]);
 
         $userB = User::factory()->create(['email' => 'b@example.com']);
-        Sapeur::insert(['sapeur_id' => 1, 'sis_id' => $sisB->id, 'user_id' => $userB->id]);
+        Sapeur::insert(['sapeur_id' => 1, 'organisation_id' => $sisB->id, 'user_id' => $userB->id]);
 
         $manager = User::factory()->create();
         $token = TokenTools::createAccessToken($manager, ['org-a' => ['utilisateur.lecture']], [], []);

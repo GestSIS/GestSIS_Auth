@@ -14,7 +14,7 @@ class AdminSapeurControllerTest extends TestCase
     {
         $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
         $user = User::factory()->create();
-        Sapeur::insert(['sapeur_id' => 42, 'sis_id' => $sis->id, 'user_id' => $user->id]);
+        Sapeur::insert(['sapeur_id' => 42, 'organisation_id' => $sis->id, 'user_id' => $user->id]);
         $link = Sapeur::where('user_id', $user->id)->first();
 
         $admin = User::factory()->create(['admin' => true]);
@@ -32,7 +32,7 @@ class AdminSapeurControllerTest extends TestCase
     {
         $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
         $user = User::factory()->create();
-        Sapeur::insert(['sapeur_id' => 42, 'sis_id' => $sis->id, 'user_id' => $user->id]);
+        Sapeur::insert(['sapeur_id' => 42, 'organisation_id' => $sis->id, 'user_id' => $user->id]);
         $link = Sapeur::where('user_id', $user->id)->first();
 
         $regularUser = User::factory()->create();
@@ -50,7 +50,7 @@ class AdminSapeurControllerTest extends TestCase
     {
         $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
         $user = User::factory()->create();
-        Sapeur::insert(['sapeur_id' => 42, 'sis_id' => $sis->id, 'user_id' => $user->id]);
+        Sapeur::insert(['sapeur_id' => 42, 'organisation_id' => $sis->id, 'user_id' => $user->id]);
         $link = Sapeur::where('user_id', $user->id)->first();
 
         $admin = User::factory()->create(['disabled_at' => now()]);

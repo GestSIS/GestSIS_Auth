@@ -23,11 +23,11 @@ class SyncSapeurUserMappingsTest extends TestCase
     {
         Sapeur::insert(array_merge([
             'sapeur_id' => $sapeurId,
-            'sis_id' => $sis->id,
+            'organisation_id' => $sis->id,
             'user_id' => $user->id,
         ], $attributes));
 
-        return Sapeur::where('sapeur_id', $sapeurId)->where('sis_id', $sis->id)->firstOrFail();
+        return Sapeur::where('sapeur_id', $sapeurId)->where('organisation_id', $sis->id)->firstOrFail();
     }
 
     public function testCreatesMissingMappingWhenEmailMatchesAndNoExistingLink(): void
@@ -40,7 +40,7 @@ class SyncSapeurUserMappingsTest extends TestCase
 
         $this->assertDatabaseHas('sapeurs', [
             'user_id' => $user->id,
-            'sis_id' => $sis->id,
+            'organisation_id' => $sis->id,
             'sapeur_id' => 42,
         ]);
     }
@@ -56,7 +56,7 @@ class SyncSapeurUserMappingsTest extends TestCase
 
         $this->assertDatabaseMissing('sapeurs', [
             'user_id' => $user->id,
-            'sis_id' => $sis->id,
+            'organisation_id' => $sis->id,
         ]);
     }
 
@@ -71,7 +71,7 @@ class SyncSapeurUserMappingsTest extends TestCase
 
         $this->assertDatabaseHas('sapeurs', [
             'user_id' => $user->id,
-            'sis_id' => $sis->id,
+            'organisation_id' => $sis->id,
             'sapeur_id' => 42,
         ]);
     }
@@ -89,7 +89,7 @@ class SyncSapeurUserMappingsTest extends TestCase
 
         $this->artisan('users:sync-sapeurs')->assertExitCode(0);
 
-        $this->assertSame(1, Sapeur::where('user_id', $user->id)->where('sis_id', $sis->id)->count());
+        $this->assertSame(1, Sapeur::where('user_id', $user->id)->where('organisation_id', $sis->id)->count());
     }
 
     public function testSkipsWhenNoMatchingUserAccount(): void
@@ -116,7 +116,7 @@ class SyncSapeurUserMappingsTest extends TestCase
         $this->artisan('users:sync-sapeurs')->assertExitCode(0);
 
         // Rien n'a bougé : ni le lien existant, ni de nouveau lien créé.
-        $this->assertDatabaseHas('sapeurs', ['user_id' => $user->id, 'sis_id' => $sis->id, 'sapeur_id' => 42]);
+        $this->assertDatabaseHas('sapeurs', ['user_id' => $user->id, 'organisation_id' => $sis->id, 'sapeur_id' => 42]);
         $this->assertDatabaseMissing('sapeurs', ['sapeur_id' => 99]);
     }
 
@@ -135,7 +135,7 @@ class SyncSapeurUserMappingsTest extends TestCase
 
         $this->artisan('users:sync-sapeurs')->assertExitCode(0);
 
-        $this->assertDatabaseHas('sapeurs', ['user_id' => $oldUser->id, 'sis_id' => $sis->id, 'sapeur_id' => 42]);
+        $this->assertDatabaseHas('sapeurs', ['user_id' => $oldUser->id, 'organisation_id' => $sis->id, 'sapeur_id' => 42]);
         $this->assertDatabaseMissing('sapeurs', ['user_id' => $newUser->id]);
     }
 
@@ -162,11 +162,11 @@ class SyncSapeurUserMappingsTest extends TestCase
         $this->assertNotNull($deadLink->deactivated_at);
         $this->assertDatabaseHas('sapeurs', [
             'user_id' => $user->id,
-            'sis_id' => $sis->id,
+            'organisation_id' => $sis->id,
             'sapeur_id' => 99,
             'deactivated_at' => null,
         ]);
-        $this->assertSame(2, Sapeur::where('user_id', $user->id)->where('sis_id', $sis->id)->count());
+        $this->assertSame(2, Sapeur::where('user_id', $user->id)->where('organisation_id', $sis->id)->count());
     }
 
     public function testCreatesNewLinkAndPreservesOldDeadLinkWhenSapeurWasLinkedToADifferentDeactivatedUser(): void
@@ -194,7 +194,7 @@ class SyncSapeurUserMappingsTest extends TestCase
         // ...et un nouveau lien actif relie le nouvel utilisateur au même sapeur_id.
         $this->assertDatabaseHas('sapeurs', [
             'user_id' => $newUser->id,
-            'sis_id' => $sis->id,
+            'organisation_id' => $sis->id,
             'sapeur_id' => 42,
             'deactivated_at' => null,
         ]);
@@ -221,7 +221,7 @@ class SyncSapeurUserMappingsTest extends TestCase
         $deadLink->refresh();
         $this->assertNull($deadLink->deactivated_at);
         $this->assertNull($deadLink->pending_deactivation_at);
-        $this->assertSame(1, Sapeur::where('user_id', $user->id)->where('sis_id', $sis->id)->count());
+        $this->assertSame(1, Sapeur::where('user_id', $user->id)->where('organisation_id', $sis->id)->count());
     }
 
     public function testHandlesTwoSapeursSharingEmailInSameSisWithinOneRun(): void
@@ -238,7 +238,7 @@ class SyncSapeurUserMappingsTest extends TestCase
         $this->artisan('users:sync-sapeurs')->assertExitCode(0);
 
         // Un seul des deux a pu être lié, l'autre doit être détecté en conflit (pas les deux créés).
-        $this->assertSame(1, Sapeur::where('user_id', $user->id)->where('sis_id', $sis->id)->count());
+        $this->assertSame(1, Sapeur::where('user_id', $user->id)->where('organisation_id', $sis->id)->count());
     }
 
     public function testDryRunDoesNotCreateMapping(): void

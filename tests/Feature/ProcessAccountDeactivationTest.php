@@ -30,11 +30,11 @@ class ProcessAccountDeactivationTest extends TestCase
     {
         Sapeur::insert(array_merge([
             'sapeur_id' => $sapeurId,
-            'sis_id' => $sis->id,
+            'organisation_id' => $sis->id,
             'user_id' => $user->id,
         ], $attributes));
 
-        return Sapeur::where('sapeur_id', $sapeurId)->where('sis_id', $sis->id)->firstOrFail();
+        return Sapeur::where('sapeur_id', $sapeurId)->where('organisation_id', $sis->id)->firstOrFail();
     }
 
     public function testFlagsAccountWithoutRoleAndWithoutActiveSapeur(): void
@@ -247,7 +247,7 @@ class ProcessAccountDeactivationTest extends TestCase
         );
         Mail::assertNotSent(AccountPendingDeactivationMail::class, fn($mail) => $mail->user->id === $user->id);
 
-        $activeLink = Sapeur::where('sis_id', $sisA->id)->first();
+        $activeLink = Sapeur::where('organisation_id', $sisA->id)->first();
         $this->assertNull($activeLink->pending_deactivation_at);
     }
 

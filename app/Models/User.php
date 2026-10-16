@@ -121,7 +121,7 @@ class User extends Authenticatable
         // Le claim `sapeurs` n'est émis que pour un compte dont l'email est vérifié :
         // un lien créé (ou hérité) avant vérification ne doit donner aucun accès.
         $sapeurs = DB::table('sapeurs')
-            ->join('sis', 'sis.id', '=', 'sapeurs.sis_id')
+            ->join('sis', 'sis.id', '=', 'sapeurs.organisation_id')
             ->join('users', 'users.id', '=', 'sapeurs.user_id')
             ->where('sapeurs.user_id', '=', $userId)
             ->whereNotNull('users.email_verified_at')

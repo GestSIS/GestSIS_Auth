@@ -18,7 +18,7 @@ class ProcessAccountDeactivationIdReuseTest extends TestCase
         $user = User::factory()->create(['disabled_at' => now()]);
         Sapeur::insert([
             'sapeur_id' => 5,
-            'sis_id' => $sis->id,
+            'organisation_id' => $sis->id,
             'user_id' => $user->id,
             'deactivated_at' => now()->subDay(),
         ]);
@@ -27,7 +27,7 @@ class ProcessAccountDeactivationIdReuseTest extends TestCase
         $otherUser = User::factory()->create();
         Sapeur::insert([
             'sapeur_id' => 5,
-            'sis_id' => $sis->id,
+            'organisation_id' => $sis->id,
             'user_id' => $otherUser->id,
             'deactivated_at' => null,
         ]);

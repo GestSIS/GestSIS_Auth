@@ -45,7 +45,7 @@ class AdminOrganisationController extends Controller
      * Crée via `Sis`, pas `Organisation` directement : `SisObserver` est ce qui
      * garde `organisations` synchronisé (domaine_id/nom/org_key/abreviation/
      * mobile), et c'est aussi ce qui fait exister la ligne `sis` dont dépendent
-     * la FK `sapeurs.sis_id` et les jointures de `User::getMobile()`/
+     * la FK `sapeurs.organisation_id` et les jointures de `User::getMobile()`/
      * `getSapeurs()`. Un `Organisation::create()` direct ici laisserait une
      * organisation "sis" sans `sis` derrière — aucun sapeur n'y serait liable.
      * Seul domaine géré par l'admin aujourd'hui (cf. OrganisationController).

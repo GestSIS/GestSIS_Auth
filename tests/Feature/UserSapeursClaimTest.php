@@ -21,7 +21,7 @@ class UserSapeursClaimTest extends TestCase
     {
         Sapeur::insert([
             'sapeur_id' => $sapeurId,
-            'sis_id' => $sis->id,
+            'organisation_id' => $sis->id,
             'user_id' => $user->id,
         ]);
     }

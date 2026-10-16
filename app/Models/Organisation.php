@@ -42,6 +42,6 @@ class Organisation extends Model
      */
     public function sapeurs(): HasMany
     {
-        return $this->hasMany(Sapeur::class, 'sis_id', 'id');
+        return $this->hasMany(Sapeur::class, 'organisation_id', 'id');
     }
 }

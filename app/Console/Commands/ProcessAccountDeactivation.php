@@ -58,7 +58,7 @@ class ProcessAccountDeactivation extends Command
             return self::FAILURE;
         }
 
-        // Qui occupe réellement chaque identité (sapeur_id, sis_id) à l'instant
+        // Qui occupe réellement chaque identité (sapeur_id, organisation_id) à l'instant
         // présent, indépendamment de $actifsParSisId (qui ne porte qu'un entier
         // réutilisable) : sert à distinguer "ce sapeur_id est encore à moi" de
         // "le SIS l'a réattribué à quelqu'un d'autre" dans hasActiveSapeur().
@@ -101,7 +101,7 @@ class ProcessAccountDeactivation extends Command
         $users = User::with('sapeur', 'userRoles')->whereHas('userRoles')->get();
 
         foreach ($users as $user) {
-            $sapeurBySisId = $user->sapeur->keyBy('sis_id');
+            $sapeurBySisId = $user->sapeur->keyBy('organisation_id');
 
             foreach ($user->userRoles as $userRole) {
                 $sisId = $sisIdByRoleId[$userRole->role_id] ?? null;
@@ -116,7 +116,7 @@ class ProcessAccountDeactivation extends Command
                     continue;
                 }
 
-                $this->announce('revoke-role', "{$user->email} / sis_id={$sisId} / role_id={$userRole->role_id}", $dryRun);
+                $this->announce('revoke-role', "{$user->email} / organisation_id={$sisId} / role_id={$userRole->role_id}", $dryRun);
 
                 if ($dryRun) {
                     continue;
@@ -126,7 +126,7 @@ class ProcessAccountDeactivation extends Command
                     'user_id' => $user->id,
                     'email' => $user->email,
                     'role_id' => $userRole->role_id,
-                    'sis_id' => $sisId,
+                    'organisation_id' => $sisId,
                 ]);
                 $userRole->delete();
                 $revoked++;
@@ -298,7 +298,7 @@ class ProcessAccountDeactivation extends Command
         $links = Sapeur::with('user.sapeur', 'sis')->whereNull('deactivated_at')->get();
 
         foreach ($links as $link) {
-            $actif = in_array($link->sapeur_id, $actifsParSisId[$link->sis_id] ?? [], true);
+            $actif = in_array($link->sapeur_id, $actifsParSisId[$link->organisation_id] ?? [], true);
 
             if ($actif) {
                 if ($link->pending_deactivation_at !== null) {
@@ -390,11 +390,11 @@ class ProcessAccountDeactivation extends Command
         $cutLinks = Sapeur::with('user', 'sis')->whereNotNull('deactivated_at')->get();
 
         foreach ($cutLinks as $link) {
-            if (!in_array($link->sapeur_id, $actifsParSisId[$link->sis_id] ?? [], true)) {
+            if (!in_array($link->sapeur_id, $actifsParSisId[$link->organisation_id] ?? [], true)) {
                 continue;
             }
 
-            if ($aliveByUserSis->has("{$link->user_id}:{$link->sis_id}") || $aliveBySapeurSis->has("{$link->sapeur_id}:{$link->sis_id}")) {
+            if ($aliveByUserSis->has("{$link->user_id}:{$link->organisation_id}") || $aliveBySapeurSis->has("{$link->sapeur_id}:{$link->organisation_id}")) {
                 continue;
             }
 
@@ -409,8 +409,8 @@ class ProcessAccountDeactivation extends Command
             $link->save();
             $reactivated++;
 
-            $aliveByUserSis->put("{$link->user_id}:{$link->sis_id}", $link->sapeur_id);
-            $aliveBySapeurSis->put("{$link->sapeur_id}:{$link->sis_id}", $link->user_id);
+            $aliveByUserSis->put("{$link->user_id}:{$link->organisation_id}", $link->sapeur_id);
+            $aliveBySapeurSis->put("{$link->sapeur_id}:{$link->organisation_id}", $link->user_id);
         }
 
         return $reactivated;
@@ -458,26 +458,26 @@ class ProcessAccountDeactivation extends Command
 
     /**
      * @param array<int, array<int, int>> $actifsParSisId
-     * @param Collection<string, int> $aliveBySapeurSis clé "sapeur_id:sis_id" -> user_id du
+     * @param Collection<string, int> $aliveBySapeurSis clé "sapeur_id:organisation_id" -> user_id du
      *        lien actuellement vivant pour cette identité (voir Sapeur::indexAliveByIdentity)
      */
     private function hasActiveSapeur(User $user, array $actifsParSisId, Collection $aliveBySapeurSis): bool
     {
         foreach ($user->sapeur as $sapeurLink) {
-            if (!in_array($sapeurLink->sapeur_id, $actifsParSisId[$sapeurLink->sis_id] ?? [], true)) {
+            if (!in_array($sapeurLink->sapeur_id, $actifsParSisId[$sapeurLink->organisation_id] ?? [], true)) {
                 continue;
             }
 
             // Un sapeur_id réutilisé par le SIS pour une autre identité reste
             // présent, sous ce même entier, dans la liste des actifs : il ne
             // compte pour CE compte que si aucun lien vivant d'un AUTRE
-            // utilisateur n'occupe déjà cette identité (sapeur_id, sis_id).
+            // utilisateur n'occupe déjà cette identité (sapeur_id, organisation_id).
             // Un lien de ce user lui-même, encore marqué coupé mais sur le
             // point d'être réactivé ce même run (aucun autre occupant),
             // compte toujours comme actif -- sinon processAccounts(), qui
             // tourne avant la réactivation effective du lien dans
             // processSapeurLinks(), le marquerait à tort à désactiver.
-            $owner = $aliveBySapeurSis->get("{$sapeurLink->sapeur_id}:{$sapeurLink->sis_id}");
+            $owner = $aliveBySapeurSis->get("{$sapeurLink->sapeur_id}:{$sapeurLink->organisation_id}");
             if ($owner === null || $owner === $user->id) {
                 return true;
             }

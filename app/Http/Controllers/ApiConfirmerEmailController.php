@@ -89,7 +89,7 @@ class ApiConfirmerEmailController extends Controller
                     ]);
                     continue;
                 }
-                array_push($sapeurs, ['sapeur_id' => $sapeurId, 'sis_id' => $sis[$sisKey]->id, 'user_id' => $user->id]);
+                array_push($sapeurs, ['sapeur_id' => $sapeurId, 'organisation_id' => $sis[$sisKey]->id, 'user_id' => $user->id]);
             }
             if (!empty($sapeurs)) {
                 Sapeur::insert($sapeurs);

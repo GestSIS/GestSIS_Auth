@@ -28,8 +28,8 @@ class UserSeeder extends Seeder
         ]);
 
         DB::table('sapeurs')->insert([
-            ['user_id' => 1, 'sapeur_id' => 1, 'sis_id' => 1],
-            ['user_id' => 2, 'sapeur_id' => 2, 'sis_id' => 1],
+            ['user_id' => 1, 'sapeur_id' => 1, 'organisation_id' => 1],
+            ['user_id' => 2, 'sapeur_id' => 2, 'organisation_id' => 1],
         ]);
     }
 }

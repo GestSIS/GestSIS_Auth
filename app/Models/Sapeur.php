@@ -12,7 +12,7 @@ class Sapeur extends Model
     {
         return [
             'sapeur_id' => 'integer',
-            'sis_id' => 'integer',
+            'organisation_id' => 'integer',
             'user_id' => 'integer',
             'pending_deactivation_at' => 'datetime',
             'deactivated_at' => 'datetime',
@@ -26,7 +26,11 @@ class Sapeur extends Model
 
     public function sis(): BelongsTo
     {
-        return $this->belongsTo(Sis::class);
+        // FK explicite : la colonne est renommée sis_id -> organisation_id
+        // (Task 2) avant que cette relation elle-même ne soit renommée
+        // sis() -> organisation() (Task 7) ; sans l'argument explicite,
+        // l'inférence par défaut chercherait encore sis_id.
+        return $this->belongsTo(Sis::class, 'organisation_id');
     }
 
     /**
@@ -44,8 +48,8 @@ class Sapeur extends Model
     public static function indexAliveByIdentity(Collection $aliveLinks): array
     {
         return [
-            $aliveLinks->keyBy(fn(self $l) => "{$l->user_id}:{$l->sis_id}")->map->sapeur_id,
-            $aliveLinks->keyBy(fn(self $l) => "{$l->sapeur_id}:{$l->sis_id}")->map->user_id,
+            $aliveLinks->keyBy(fn(self $l) => "{$l->user_id}:{$l->organisation_id}")->map->sapeur_id,
+            $aliveLinks->keyBy(fn(self $l) => "{$l->sapeur_id}:{$l->organisation_id}")->map->user_id,
         ];
     }
 }

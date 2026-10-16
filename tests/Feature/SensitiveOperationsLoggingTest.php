@@ -115,7 +115,7 @@ class SensitiveOperationsLoggingTest extends TestCase
     {
         Sapeur::insert(array_merge([
             'sapeur_id' => $sapeurId,
-            'sis_id' => $sis->id,
+            'organisation_id' => $sis->id,
             'user_id' => $user->id,
         ], $attributes));
     }

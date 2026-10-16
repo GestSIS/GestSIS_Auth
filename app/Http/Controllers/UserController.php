@@ -27,7 +27,7 @@ class UserController extends Controller
             ->select(['user_roles.user_id as user_id'])
             ->union(
                 DB::table('sapeurs')
-                    ->where('sapeurs.sis_id', '=', $organisation->id)
+                    ->where('sapeurs.organisation_id', '=', $organisation->id)
                     ->select(['sapeurs.user_id as user_id'])
             )
             ->distinct()
@@ -41,7 +41,7 @@ class UserController extends Controller
                 $query->whereIn('user_roles.role_id', $roleIds);
             },
             'sapeur' => function ($query) use ($organisation) {
-                $query->where('sapeurs.sis_id', $organisation->id);
+                $query->where('sapeurs.organisation_id', $organisation->id);
             }
         ])->get();
         return response()->json(["data" => $users]);
