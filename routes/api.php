@@ -28,7 +28,6 @@ use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\RegisterTokenController;
 use App\Http\Controllers\AdminOrganisationController;
 use App\Http\Controllers\OrganisationController;
-use App\Http\Controllers\SisController;
 use App\Http\Controllers\ApiMotDePasseController;
 use App\Http\Controllers\ApiResendConfirmationController;
 use App\Http\Controllers\RoleController;
@@ -95,12 +94,10 @@ Route::group(['prefix' => 'v1'], function () {
         Route::get('permissions/', [PermissionController::class, 'index']);
     });
 
-    Route::get('sis', [SisController::class, 'index']);
     Route::get('mobile/latest-version', [MobileVersionController::class, 'latest']);
 
     Route::group(['prefix' => 'admin', 'middleware' => 'jwtTokenAdmin'], function () {
         Route::get('token', [ApiLoginController::class, 'token']);
-        Route::apiResource('sis', SisController::class, ['as' => 'admin'])->only(['show', 'store', 'update']);
         Route::apiResource('users', AdminUserController::class, ['as' => 'admin'])->only(['index', 'show', 'update', 'destroy']);
         Route::apiResource('roles', AdminRoleController::class, ['as' => 'admin'])->only(['index', 'show', 'update', 'destroy']);
         Route::apiResource('user-roles', AdminUserRoleController::class, ['as' => 'admin'])->only(['store', 'destroy']);
