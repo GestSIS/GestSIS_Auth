@@ -4,7 +4,8 @@ namespace Tests\Feature;
 
 use App\Auth\TokenTools;
 use App\Models\Role;
-use App\Models\Sis;
+use App\Models\Organisation;
+use App\Models\Domaine;
 use App\Models\TwoFactorMethod;
 use App\Models\User;
 use App\Models\UserRole;
@@ -56,7 +57,10 @@ class AdminUserControllerTwoFactorSecretExposureTest extends TestCase
      */
     public function testSisManagerUserListDoesNotExposeTwoFactorState(): void
     {
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $role = Role::create(['nom' => 'Rôle test', 'organisation_id' => $sis->id]);
         $member = User::factory()->create([
             'two_factor_exempt' => true,

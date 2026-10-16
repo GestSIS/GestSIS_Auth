@@ -4,7 +4,8 @@ namespace Tests\Feature;
 
 use App\Auth\TokenTools;
 use App\Models\Sapeur;
-use App\Models\Sis;
+use App\Models\Organisation;
+use App\Models\Domaine;
 use App\Models\User;
 use Tests\TestCase;
 
@@ -12,7 +13,10 @@ class AdminSapeurControllerTest extends TestCase
 {
     public function testAdminCanDeleteASapeurMapping(): void
     {
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $user = User::factory()->create();
         Sapeur::insert(['sapeur_id' => 42, 'organisation_id' => $sis->id, 'user_id' => $user->id]);
         $link = Sapeur::where('user_id', $user->id)->first();
@@ -30,7 +34,10 @@ class AdminSapeurControllerTest extends TestCase
 
     public function testNonAdminCannotDeleteASapeurMapping(): void
     {
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $user = User::factory()->create();
         Sapeur::insert(['sapeur_id' => 42, 'organisation_id' => $sis->id, 'user_id' => $user->id]);
         $link = Sapeur::where('user_id', $user->id)->first();
@@ -48,7 +55,10 @@ class AdminSapeurControllerTest extends TestCase
 
     public function testDisabledAdminCannotUseAdminEndpointsEvenWithAValidToken(): void
     {
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $user = User::factory()->create();
         Sapeur::insert(['sapeur_id' => 42, 'organisation_id' => $sis->id, 'user_id' => $user->id]);
         $link = Sapeur::where('user_id', $user->id)->first();

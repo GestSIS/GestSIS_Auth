@@ -8,7 +8,8 @@ use App\Models\ApiToken;
 use App\Models\LegacyRefreshToken;
 use App\Models\Role;
 use App\Models\Sapeur;
-use App\Models\Sis;
+use App\Models\Organisation;
+use App\Models\Domaine;
 use App\Models\User;
 use App\Models\UserRole;
 use Illuminate\Contracts\Debug\ExceptionHandler;
@@ -26,7 +27,7 @@ class ProcessAccountDeactivationTest extends TestCase
         ]);
     }
 
-    protected function linkSapeur(User $user, Sis $sis, int $sapeurId, array $attributes = []): Sapeur
+    protected function linkSapeur(User $user, Organisation $sis, int $sapeurId, array $attributes = []): Sapeur
     {
         Sapeur::insert(array_merge([
             'sapeur_id' => $sapeurId,
@@ -55,7 +56,10 @@ class ProcessAccountDeactivationTest extends TestCase
     public function testDoesNotFlagAccountStillLinkedToAnActiveSapeur(): void
     {
         Mail::fake();
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $this->fakeSapeursActifs(['test' => [123]]);
 
         $user = User::factory()->create(['admin' => false]);
@@ -115,7 +119,10 @@ class ProcessAccountDeactivationTest extends TestCase
     {
         Mail::fake();
         $this->fakeSapeursActifs(['test' => []]);
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
 
         $user = User::factory()->create([
             'admin' => false,
@@ -136,7 +143,10 @@ class ProcessAccountDeactivationTest extends TestCase
     {
         Mail::fake();
         $this->fakeSapeursActifs(['test' => []]);
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
 
         $user = User::factory()->create([
             'admin' => false,
@@ -157,7 +167,10 @@ class ProcessAccountDeactivationTest extends TestCase
     public function testReactivatesAccountThatBecameActiveSapeurAgainAfterBeingDisabled(): void
     {
         Mail::fake();
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $this->fakeSapeursActifs(['test' => [1]]);
 
         $user = User::factory()->create([
@@ -195,7 +208,10 @@ class ProcessAccountDeactivationTest extends TestCase
     {
         Mail::fake();
         $this->fakeSapeursActifs(['test' => []]);
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
 
         $user = User::factory()->create([
             'admin' => false,
@@ -228,8 +244,14 @@ class ProcessAccountDeactivationTest extends TestCase
     public function testFlagsStaleSapeurLinkWithEmailWhenUserStillActiveInAnotherSis(): void
     {
         Mail::fake();
-        $sisA = Sis::firstOrCreate(['api_key' => 'sis_a'], ['nom' => 'SIS A', 'abreviation' => 'SA']);
-        $sisB = Sis::firstOrCreate(['api_key' => 'sis_b'], ['nom' => 'SIS B', 'abreviation' => 'SB']);
+        $sisA = Organisation::firstOrCreate(
+            ['org_key' => 'sis_a'],
+            ['nom' => 'SIS A', 'abreviation' => 'SA', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
+        $sisB = Organisation::firstOrCreate(
+            ['org_key' => 'sis_b'],
+            ['nom' => 'SIS B', 'abreviation' => 'SB', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $this->fakeSapeursActifs(['sis_a' => [1], 'sis_b' => []]);
 
         $user = User::factory()->create(['admin' => false]);
@@ -254,7 +276,10 @@ class ProcessAccountDeactivationTest extends TestCase
     public function testFlagsStaleSapeurLinkWithoutEmailWhenItIsAFullDeparture(): void
     {
         Mail::fake();
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $this->fakeSapeursActifs(['test' => []]);
 
         $user = User::factory()->create(['admin' => false]);
@@ -272,7 +297,10 @@ class ProcessAccountDeactivationTest extends TestCase
     public function testCutsSapeurLinkAccessPastGracePeriod(): void
     {
         Mail::fake();
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $this->fakeSapeursActifs(['test' => []]);
 
         $user = User::factory()->create(['admin' => false]);
@@ -287,7 +315,10 @@ class ProcessAccountDeactivationTest extends TestCase
     public function testReinstatesSapeurLinkThatBecameActiveAgain(): void
     {
         Mail::fake();
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $this->fakeSapeursActifs(['test' => [1]]);
 
         $user = User::factory()->create(['admin' => false]);
@@ -305,7 +336,10 @@ class ProcessAccountDeactivationTest extends TestCase
     public function testReactivatesSapeurLinkThatBecameActiveAgainAfterBeingCut(): void
     {
         Mail::fake();
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $this->fakeSapeursActifs(['test' => [1]]);
 
         $user = User::factory()->create(['admin' => false]);
@@ -326,7 +360,10 @@ class ProcessAccountDeactivationTest extends TestCase
     public function testDoesNotReactivateCutLinkWhenAnotherAliveLinkAlreadyOccupiesTheSameSapeurId(): void
     {
         Mail::fake();
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $this->fakeSapeursActifs(['test' => [1]]);
 
         $oldUser = User::factory()->create(['admin' => false]);
@@ -350,7 +387,10 @@ class ProcessAccountDeactivationTest extends TestCase
     public function testDoesNotReactivateSapeurLinkStillInactive(): void
     {
         Mail::fake();
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $this->fakeSapeursActifs(['test' => []]);
 
         $user = User::factory()->create(['admin' => false]);
@@ -368,7 +408,10 @@ class ProcessAccountDeactivationTest extends TestCase
     public function testDryRunDoesNotReactivateSapeurLink(): void
     {
         Mail::fake();
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $this->fakeSapeursActifs(['test' => [1]]);
 
         $user = User::factory()->create(['admin' => false]);
@@ -386,8 +429,14 @@ class ProcessAccountDeactivationTest extends TestCase
     public function testNoNotifyFlagsAccountsAndLinksWithoutSendingAnyEmail(): void
     {
         Mail::fake();
-        $sisA = Sis::firstOrCreate(['api_key' => 'sis_a'], ['nom' => 'SIS A', 'abreviation' => 'SA']);
-        $sisB = Sis::firstOrCreate(['api_key' => 'sis_b'], ['nom' => 'SIS B', 'abreviation' => 'SB']);
+        $sisA = Organisation::firstOrCreate(
+            ['org_key' => 'sis_a'],
+            ['nom' => 'SIS A', 'abreviation' => 'SA', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
+        $sisB = Organisation::firstOrCreate(
+            ['org_key' => 'sis_b'],
+            ['nom' => 'SIS B', 'abreviation' => 'SB', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $this->fakeSapeursActifs(['sis_a' => [1], 'sis_b' => []]);
 
         // Départ complet : compte sans rôle et sans sapeur actif.
@@ -410,8 +459,14 @@ class ProcessAccountDeactivationTest extends TestCase
     public function testRevokesRoleImmediatelyWhenSapeurBecomesInactiveInThatSis(): void
     {
         Mail::fake();
-        $sisA = Sis::firstOrCreate(['api_key' => 'sis_a'], ['nom' => 'SIS A', 'abreviation' => 'SA']);
-        $sisB = Sis::firstOrCreate(['api_key' => 'sis_b'], ['nom' => 'SIS B', 'abreviation' => 'SB']);
+        $sisA = Organisation::firstOrCreate(
+            ['org_key' => 'sis_a'],
+            ['nom' => 'SIS A', 'abreviation' => 'SA', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
+        $sisB = Organisation::firstOrCreate(
+            ['org_key' => 'sis_b'],
+            ['nom' => 'SIS B', 'abreviation' => 'SB', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $this->fakeSapeursActifs(['sis_a' => [], 'sis_b' => [2]]);
 
         $user = User::factory()->create(['admin' => false]);
@@ -435,7 +490,10 @@ class ProcessAccountDeactivationTest extends TestCase
     public function testDoesNotRevokeRoleWhenSapeurStillActiveInThatSis(): void
     {
         Mail::fake();
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $this->fakeSapeursActifs(['test' => [1]]);
 
         $user = User::factory()->create(['admin' => false]);
@@ -451,7 +509,10 @@ class ProcessAccountDeactivationTest extends TestCase
     public function testDoesNotRevokeRoleWhenNoSapeurLinkExistsForThatSis(): void
     {
         Mail::fake();
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $this->fakeSapeursActifs(['test' => []]);
 
         // Rôle attribué sans lien sapeur connu pour ce SIS (ex. compte technique) :
@@ -468,7 +529,10 @@ class ProcessAccountDeactivationTest extends TestCase
     public function testRevokingLastRoleCascadesToAccountFlagInTheSameRun(): void
     {
         Mail::fake();
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $this->fakeSapeursActifs(['test' => []]);
 
         $user = User::factory()->create(['admin' => false]);
@@ -488,7 +552,10 @@ class ProcessAccountDeactivationTest extends TestCase
     public function testDryRunDoesNotRevokeRole(): void
     {
         Mail::fake();
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $this->fakeSapeursActifs(['test' => []]);
 
         $user = User::factory()->create(['admin' => false]);
@@ -533,8 +600,14 @@ class ProcessAccountDeactivationTest extends TestCase
 
     public function testGetSapeursExcludesDeactivatedLinks(): void
     {
-        $sisA = Sis::firstOrCreate(['api_key' => 'sis_a'], ['nom' => 'SIS A', 'abreviation' => 'SA']);
-        $sisB = Sis::firstOrCreate(['api_key' => 'sis_b'], ['nom' => 'SIS B', 'abreviation' => 'SB']);
+        $sisA = Organisation::firstOrCreate(
+            ['org_key' => 'sis_a'],
+            ['nom' => 'SIS A', 'abreviation' => 'SA', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
+        $sisB = Organisation::firstOrCreate(
+            ['org_key' => 'sis_b'],
+            ['nom' => 'SIS B', 'abreviation' => 'SB', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
 
         $user = User::factory()->create(['admin' => false]);
         $this->linkSapeur($user, $sisA, 1);

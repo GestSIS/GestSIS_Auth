@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Auth\TokenTools;
 use App\Models\Domaine;
 use App\Models\Organisation;
-use App\Models\Sis;
 use App\Models\User;
 use Tests\TestCase;
 
@@ -13,7 +12,7 @@ class AdminOrganisationControllerTest extends TestCase
 {
     public function testAdminCanFilterOrganisationsByDomaine(): void
     {
-        $sis = Sis::factory()->create();
+        $sis = Organisation::factory()->create();
         $admin = User::factory()->create(['admin' => true]);
         $token = TokenTools::createAccessToken($admin, [], [], []);
 
@@ -21,7 +20,7 @@ class AdminOrganisationControllerTest extends TestCase
             ->getJson('/api/v1/admin/organisations?domaine=sis');
 
         $response->assertStatus(200);
-        $response->assertJsonFragment(['id' => $sis->id, 'org_key' => $sis->api_key]);
+        $response->assertJsonFragment(['id' => $sis->id, 'org_key' => $sis->org_key]);
         $response->assertJsonCount(Organisation::whereHas('domaine', fn ($q) => $q->where('code', 'sis'))->count(), 'data');
     }
 
@@ -104,13 +103,13 @@ class AdminOrganisationControllerTest extends TestCase
 
     public function testAdminCannotCreateOrganisationWithExistingOrgKey(): void
     {
-        $sis = Sis::factory()->create();
+        $sis = Organisation::factory()->create();
         $admin = User::factory()->create(['admin' => true]);
         $token = TokenTools::createAccessToken($admin, [], [], []);
 
         $this->withHeaders(['Authorization' => "Bearer $token"])
             ->postJson('/api/v1/admin/organisations', [
-                'org_key' => $sis->api_key,
+                'org_key' => $sis->org_key,
                 'nom' => 'Doublon',
                 'mobile' => false,
             ])

@@ -8,7 +8,7 @@ use App\Mail\SapeurAccessPendingDeactivationMail;
 use App\Mail\TwoFactorReminderMail;
 use App\Models\Domaine;
 use App\Models\Sapeur;
-use App\Models\Sis;
+use App\Models\Organisation;
 use App\Models\User;
 use Tests\TestCase;
 
@@ -56,7 +56,7 @@ class DomaineAwareMailTest extends TestCase
 
     public function testSapeurAccessPendingDeactivationMailUsesEcaBranding(): void
     {
-        $sis = Sis::factory()->create();
+        $sis = Organisation::factory()->create();
         $user = User::factory()->create();
         Sapeur::insert(['sapeur_id' => 1, 'organisation_id' => $sis->id, 'user_id' => $user->id]);
         $link = Sapeur::with('organisation')->where('organisation_id', $sis->id)->where('sapeur_id', 1)->firstOrFail();

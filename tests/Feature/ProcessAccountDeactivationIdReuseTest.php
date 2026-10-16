@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Sapeur;
-use App\Models\Sis;
+use App\Models\Organisation;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
@@ -14,7 +14,7 @@ class ProcessAccountDeactivationIdReuseTest extends TestCase
     public function testReactivationIsNotTriggeredWhenAReusedSapeurIdBelongsToADifferentPerson(): void
     {
         // Sapeur A, désactivé, id 5 dans le SIS X
-        $sis = Sis::factory()->create();
+        $sis = Organisation::factory()->create();
         $user = User::factory()->create(['disabled_at' => now()]);
         Sapeur::insert([
             'sapeur_id' => 5,
@@ -33,7 +33,7 @@ class ProcessAccountDeactivationIdReuseTest extends TestCase
         ]);
 
         Http::fake([
-            '*/api/v2/sapeurs-actifs*' => Http::response(['data' => [$sis->api_key => [5]]]),
+            '*/api/v2/sapeurs-actifs*' => Http::response(['data' => [$sis->org_key => [5]]]),
         ]);
 
         $exitCode = Artisan::call('users:process-deactivation');

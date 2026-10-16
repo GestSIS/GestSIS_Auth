@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Auth\TokenTools;
 use App\Models\Role;
-use App\Models\Sis;
+use App\Models\Organisation;
 use App\Models\User;
 use Tests\TestCase;
 
@@ -12,7 +12,7 @@ class UserRoleControllerOrganisationTest extends TestCase
 {
     public function testAssignRoleToUserStillWorksWithSisKeyHeaderUnchanged(): void
     {
-        $sis = Sis::factory()->create(['api_key' => 'test-userrole-ctrl']);
+        $sis = Organisation::factory()->create(['org_key' => 'test-userrole-ctrl']);
         $role = Role::create(['nom' => 'Rôle', 'organisation_id' => $sis->id]);
         $targetUser = User::factory()->create();
         $manager = User::factory()->create();

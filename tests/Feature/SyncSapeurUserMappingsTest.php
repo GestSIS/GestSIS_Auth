@@ -3,7 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Sapeur;
-use App\Models\Sis;
+use App\Models\Organisation;
+use App\Models\Domaine;
 use App\Models\User;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Http\Client\ConnectionException;
@@ -19,7 +20,7 @@ class SyncSapeurUserMappingsTest extends TestCase
         ]);
     }
 
-    protected function linkSapeur(User $user, Sis $sis, int $sapeurId, array $attributes = []): Sapeur
+    protected function linkSapeur(User $user, Organisation $sis, int $sapeurId, array $attributes = []): Sapeur
     {
         Sapeur::insert(array_merge([
             'sapeur_id' => $sapeurId,
@@ -32,7 +33,10 @@ class SyncSapeurUserMappingsTest extends TestCase
 
     public function testCreatesMissingMappingWhenEmailMatchesAndNoExistingLink(): void
     {
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $user = User::factory()->create(['email' => 'sapeur@example.com']);
         $this->fakeSapeursEmails(['test' => [42 => 'sapeur@example.com']]);
 
@@ -47,7 +51,10 @@ class SyncSapeurUserMappingsTest extends TestCase
 
     public function testIgnoresAccountsWithUnverifiedEmail(): void
     {
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         // Un compte non vérifié n'est qu'une revendication de l'email : ne jamais le lier.
         $user = User::factory()->unverified()->create(['email' => 'sapeur@example.com']);
         $this->fakeSapeursEmails(['test' => [42 => 'sapeur@example.com']]);
@@ -62,7 +69,10 @@ class SyncSapeurUserMappingsTest extends TestCase
 
     public function testMatchesEmailCaseInsensitively(): void
     {
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $user = User::factory()->create(['email' => 'Sapeur.Test@Example.com']);
         // Casse différente côté SIS.
         $this->fakeSapeursEmails(['test' => [42 => 'sapeur.test@example.com']]);
@@ -78,7 +88,10 @@ class SyncSapeurUserMappingsTest extends TestCase
 
     public function testNoOpWhenMappingAlreadyMatches(): void
     {
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $user = User::factory()->create(['email' => 'sapeur@example.com']);
         $this->linkSapeur($user, $sis, 42);
         $this->fakeSapeursEmails(['test' => [42 => 'sapeur@example.com']]);
@@ -94,7 +107,10 @@ class SyncSapeurUserMappingsTest extends TestCase
 
     public function testSkipsWhenNoMatchingUserAccount(): void
     {
-        Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $this->fakeSapeursEmails(['test' => [42 => 'inconnu@example.com']]);
 
         $this->artisan('users:sync-sapeurs')->assertExitCode(0);
@@ -104,7 +120,10 @@ class SyncSapeurUserMappingsTest extends TestCase
 
     public function testReportsConflictWhenUserAlreadyLinkedToDifferentSapeurInSameSis(): void
     {
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $user = User::factory()->create(['email' => 'sapeur@example.com']);
         $this->linkSapeur($user, $sis, 42);
         $this->fakeSapeursEmails(['test' => [99 => 'sapeur@example.com']]);
@@ -122,7 +141,10 @@ class SyncSapeurUserMappingsTest extends TestCase
 
     public function testReportsConflictWhenSapeurAlreadyLinkedToDifferentUser(): void
     {
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $oldUser = User::factory()->create(['email' => 'ancien@example.com']);
         $newUser = User::factory()->create(['email' => 'nouveau@example.com']);
         $this->linkSapeur($oldUser, $sis, 42);
@@ -141,7 +163,10 @@ class SyncSapeurUserMappingsTest extends TestCase
 
     public function testCreatesNewLinkAndPreservesOldDeadLinkWhenUserHadADifferentDeactivatedSapeurInSameSis(): void
     {
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $user = User::factory()->create(['email' => 'sapeur@example.com']);
         $deadLink = $this->linkSapeur($user, $sis, 42, [
             'deactivated_at' => now()->subDay(),
@@ -171,7 +196,10 @@ class SyncSapeurUserMappingsTest extends TestCase
 
     public function testCreatesNewLinkAndPreservesOldDeadLinkWhenSapeurWasLinkedToADifferentDeactivatedUser(): void
     {
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $oldUser = User::factory()->create(['email' => 'ancien@example.com']);
         $newUser = User::factory()->create(['email' => 'nouveau@example.com']);
         $deadLink = $this->linkSapeur($oldUser, $sis, 42, [
@@ -202,7 +230,10 @@ class SyncSapeurUserMappingsTest extends TestCase
 
     public function testReactivatesExactSameDeadLinkWhenItBecomesActiveAgain(): void
     {
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $user = User::factory()->create(['email' => 'sapeur@example.com']);
         $deadLink = $this->linkSapeur($user, $sis, 42, [
             'deactivated_at' => now()->subDay(),
@@ -226,7 +257,10 @@ class SyncSapeurUserMappingsTest extends TestCase
 
     public function testHandlesTwoSapeursSharingEmailInSameSisWithinOneRun(): void
     {
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $user = User::factory()->create(['email' => 'partage@example.com']);
         // Deux sapeur_id distincts partagent le même email dans le même SIS.
         $this->fakeSapeursEmails(['test' => [10 => 'partage@example.com', 20 => 'partage@example.com']]);
@@ -243,7 +277,10 @@ class SyncSapeurUserMappingsTest extends TestCase
 
     public function testDryRunDoesNotCreateMapping(): void
     {
-        Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $user = User::factory()->create(['email' => 'sapeur@example.com']);
         $this->fakeSapeursEmails(['test' => [42 => 'sapeur@example.com']]);
 

@@ -5,7 +5,8 @@ namespace Tests\Unit;
 use App\Auth\TokenTools;
 use App\Models\Permission;
 use App\Models\Role;
-use App\Models\Sis;
+use App\Models\Organisation;
+use App\Models\Domaine;
 use App\Models\User;
 use App\Models\UserRole;
 use Tests\TestCase;
@@ -27,9 +28,9 @@ class RegisterTokenTest extends TestCase
         $permission = Permission::where('api_key', 'utilisateur.modification')->first();
 
         // Create a SIS
-        $sis = Sis::firstOrCreate(
-            ['api_key' => 'test'],
-            ['nom' => 'Test SIS', 'abreviation' => 'TST']
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
         );
 
         // Create a role with the necessary permission
@@ -62,7 +63,7 @@ class RegisterTokenTest extends TestCase
 
     public function testRegisterTokenPermissionCheckUsesOrganisationOrgKey(): void
     {
-        $sis = Sis::factory()->create(['api_key' => 'test-regtoken']);
+        $sis = Organisation::factory()->create(['org_key' => 'test-regtoken']);
         $role = Role::create(['nom' => 'Cible', 'organisation_id' => $sis->id]);
         $manager = User::factory()->create();
         $token = TokenTools::createAccessToken($manager, ['test-regtoken' => ['utilisateur.modification']], [], []);

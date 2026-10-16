@@ -7,7 +7,7 @@ use App\Models\Domaine;
 use App\Models\Permission;
 use App\Models\PermissionRole;
 use App\Models\Role;
-use App\Models\Sis;
+use App\Models\Organisation;
 use Tests\TestCase;
 
 class PermissionRoleObserverTest extends TestCase
@@ -19,7 +19,7 @@ class PermissionRoleObserverTest extends TestCase
         // domaine_id n'est volontairement pas fillable (Task 3) : affectation directe.
         $ecaPermission->domaine_id = $ecaDomaineId;
         $ecaPermission->save();
-        $sisRole = Role::create(['nom' => 'Rôle SIS', 'organisation_id' => Sis::factory()->create()->id]);
+        $sisRole = Role::create(['nom' => 'Rôle SIS', 'organisation_id' => Organisation::factory()->create()->id]);
 
         $this->expectException(CrossDomainePermissionException::class);
         PermissionRole::create(['permission_id' => $ecaPermission->id, 'role_id' => $sisRole->id]);
@@ -27,7 +27,7 @@ class PermissionRoleObserverTest extends TestCase
 
     public function testAttachingADomainlessPermissionToAnyRoleSucceeds(): void
     {
-        $sisRole = Role::create(['nom' => 'Rôle SIS', 'organisation_id' => Sis::factory()->create()->id]);
+        $sisRole = Role::create(['nom' => 'Rôle SIS', 'organisation_id' => Organisation::factory()->create()->id]);
         $utilisateurConfig = Permission::where('api_key', 'utilisateur.config')->firstOrFail();
 
         PermissionRole::create(['permission_id' => $utilisateurConfig->id, 'role_id' => $sisRole->id]);
@@ -51,7 +51,7 @@ class PermissionRoleObserverTest extends TestCase
         $ecaPermission = Permission::create(['nom' => 'Cours validation 2', 'description' => '', 'api_key' => 'cours.validation2', 'tri' => 2]);
         $ecaPermission->domaine_id = $ecaDomaineId;
         $ecaPermission->save();
-        $sisRole = Role::create(['nom' => 'Rôle SIS 2', 'organisation_id' => Sis::factory()->create()->id]);
+        $sisRole = Role::create(['nom' => 'Rôle SIS 2', 'organisation_id' => Organisation::factory()->create()->id]);
 
         $this->expectException(CrossDomainePermissionException::class);
         $sisRole->permissions()->attach($ecaPermission->id);

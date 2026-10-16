@@ -4,7 +4,8 @@ namespace Tests\Feature;
 
 use App\Auth\TokenTools;
 use App\Models\Role;
-use App\Models\Sis;
+use App\Models\Organisation;
+use App\Models\Domaine;
 use App\Models\User;
 use App\Models\UserRole;
 use Tests\TestCase;
@@ -19,7 +20,10 @@ class AdminUserRoleControllerTest extends TestCase
 
     public function testDemotedAdminIsRefusedEvenWithAnAdminClaimInTheToken(): void
     {
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $user = User::factory()->create();
         $role = Role::create(['nom' => 'Role', 'organisation_id' => $sis->id]);
 
@@ -40,7 +44,10 @@ class AdminUserRoleControllerTest extends TestCase
 
     public function testAdminCanAddARoleToAUser(): void
     {
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $user = User::factory()->create();
         $role = Role::create(['nom' => 'Role', 'organisation_id' => $sis->id]);
 
@@ -57,7 +64,10 @@ class AdminUserRoleControllerTest extends TestCase
 
     public function testAddingADuplicateRoleReturnsACleanValidationErrorInsteadOfCrashing(): void
     {
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $user = User::factory()->create();
         $role = Role::create(['nom' => 'Role', 'organisation_id' => $sis->id]);
         UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);

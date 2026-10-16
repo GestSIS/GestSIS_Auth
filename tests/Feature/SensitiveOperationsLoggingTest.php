@@ -5,7 +5,8 @@ namespace Tests\Feature;
 use App\Auth\TokenTools;
 use App\Models\Role;
 use App\Models\Sapeur;
-use App\Models\Sis;
+use App\Models\Organisation;
+use App\Models\Domaine;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -18,7 +19,10 @@ class SensitiveOperationsLoggingTest extends TestCase
     {
         Mail::fake();
         Log::spy();
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $this->fakeSapeursActifs(['test' => [1]]);
 
         $user = User::factory()->create([
@@ -71,7 +75,7 @@ class SensitiveOperationsLoggingTest extends TestCase
     public function testCreatingARoleIsLogged(): void
     {
         Log::spy();
-        $sis = Sis::factory()->create(['api_key' => 'test-role-log']);
+        $sis = Organisation::factory()->create(['org_key' => 'test-role-log']);
         $user = User::factory()->create();
         $token = TokenTools::createAccessToken($user, ['test-role-log' => ['utilisateur.config']], [], []);
 
@@ -87,7 +91,7 @@ class SensitiveOperationsLoggingTest extends TestCase
     public function testAssigningARoleToAUserIsLogged(): void
     {
         Log::spy();
-        $sis = Sis::factory()->create(['api_key' => 'test-userrole-log']);
+        $sis = Organisation::factory()->create(['org_key' => 'test-userrole-log']);
         $role = Role::create(['nom' => 'Rôle', 'organisation_id' => $sis->id]);
         $targetUser = User::factory()->create();
         $manager = User::factory()->create();
@@ -111,7 +115,7 @@ class SensitiveOperationsLoggingTest extends TestCase
         ]);
     }
 
-    protected function linkSapeur(User $user, Sis $sis, int $sapeurId, array $attributes = []): void
+    protected function linkSapeur(User $user, Organisation $sis, int $sapeurId, array $attributes = []): void
     {
         Sapeur::insert(array_merge([
             'sapeur_id' => $sapeurId,

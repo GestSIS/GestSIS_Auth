@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Auth\TokenTools;
 use App\Models\Sapeur;
-use App\Models\Sis;
+use App\Models\Organisation;
 use App\Models\User;
 use Tests\TestCase;
 
@@ -18,8 +18,8 @@ class UserControllerOrgKeyCrossTenantTest extends TestCase
      */
     public function testIndexScopesUsersToTheOrgKeyAuthorisedSisWhenBothHeadersDiffer(): void
     {
-        $sisA = Sis::factory()->create(['api_key' => 'org-a']);
-        $sisB = Sis::factory()->create(['api_key' => 'org-b']);
+        $sisA = Organisation::factory()->create(['org_key' => 'org-a']);
+        $sisB = Organisation::factory()->create(['org_key' => 'org-b']);
 
         $userA = User::factory()->create(['email' => 'a@example.com']);
         Sapeur::insert(['sapeur_id' => 1, 'organisation_id' => $sisA->id, 'user_id' => $userA->id]);

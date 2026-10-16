@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Auth\TokenTools;
 use App\Models\Role;
-use App\Models\Sis;
+use App\Models\Organisation;
 use App\Models\User;
 use Tests\TestCase;
 
@@ -18,8 +18,8 @@ class AdminRoleControllerTest extends TestCase
 
     public function testUpdateMovesRoleToTheProvidedOrganisation(): void
     {
-        $originalSis = Sis::factory()->create();
-        $newSis = Sis::factory()->create();
+        $originalSis = Organisation::factory()->create();
+        $newSis = Organisation::factory()->create();
         $role = Role::create(['nom' => 'Role', 'description' => 'Un rôle', 'organisation_id' => $originalSis->id]);
 
         $response = $this->withHeaders(['Authorization' => 'Bearer ' . $this->adminToken()])

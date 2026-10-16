@@ -4,7 +4,8 @@ namespace Tests\Feature;
 
 use App\Auth\TokenTools;
 use App\Models\Sapeur;
-use App\Models\Sis;
+use App\Models\Organisation;
+use App\Models\Domaine;
 use App\Models\User;
 use Carbon\Carbon;
 use Tests\TestCase;
@@ -17,7 +18,7 @@ use Tests\TestCase;
  */
 class UserSapeursClaimTest extends TestCase
 {
-    private function linkSapeur(User $user, Sis $sis, int $sapeurId): void
+    private function linkSapeur(User $user, Organisation $sis, int $sapeurId): void
     {
         Sapeur::insert([
             'sapeur_id' => $sapeurId,
@@ -28,7 +29,10 @@ class UserSapeursClaimTest extends TestCase
 
     public function testGetSapeursIsEmptyForUnverifiedAccount(): void
     {
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $user = User::factory()->unverified()->create();
         $this->linkSapeur($user, $sis, 42);
 
@@ -37,7 +41,10 @@ class UserSapeursClaimTest extends TestCase
 
     public function testGetSapeursReturnsLinksOnceEmailIsVerified(): void
     {
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $user = User::factory()->unverified()->create();
         $this->linkSapeur($user, $sis, 42);
 
@@ -49,7 +56,10 @@ class UserSapeursClaimTest extends TestCase
 
     public function testRefreshTokenDoesNotGrantSapeurIdentityToUnverifiedAccount(): void
     {
-        $sis = Sis::firstOrCreate(['api_key' => 'test'], ['nom' => 'Test SIS', 'abreviation' => 'TST']);
+        $sis = Organisation::firstOrCreate(
+            ['org_key' => 'test'],
+            ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
+        );
         $user = User::factory()->unverified()->create();
         $this->linkSapeur($user, $sis, 42);
 
