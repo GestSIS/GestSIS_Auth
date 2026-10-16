@@ -10,6 +10,7 @@ class Domaine extends Model
         'code',
         'nom',
         'self_registration_enabled',
+        'active_identities_url',
     ];
 
     protected function casts(): array

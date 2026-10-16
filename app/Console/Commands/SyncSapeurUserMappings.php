@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Auth\TokenTools;
 use App\Console\Commands\Concerns\AnnouncesDryRunActions;
+use App\Models\Domaine;
 use App\Models\Sapeur;
 use App\Models\Sis;
 use App\Models\User;
@@ -240,7 +241,7 @@ class SyncSapeurUserMappings extends Command
         $response = Http::withHeaders([
             'Sis-Key' => '_',
             'Authorization' => 'Bearer ' . TokenTools::createAccessToken(new User(), ['_' => ['admin']], [], [], type: TokenTools::TOKEN_TYPE_SERVICE),
-        ])->acceptJson()->timeout(10)->get(config('gestsis.api_url', '') . '/api/v2/sapeurs-emails');
+        ])->acceptJson()->timeout(10)->get(Domaine::where('code', 'sis')->value('active_identities_url'));
 
         if (!$response->successful()) {
             report(new RuntimeException(
