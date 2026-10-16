@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Auth\PasswordPolicy;
 use App\Auth\TokenTools;
 use App\Mail\ConfirmationEmail;
+use App\Models\Domaine;
 use App\Models\RegisterToken;
 use App\Models\User;
 use Carbon\Carbon;
@@ -47,6 +48,14 @@ class ApiRegisterController extends Controller
                 ->where('register_token_id', '=', $registerToken->id)
                 ->pluck('role_id')->toArray();
         } else {
+            // Un domaine qui désactive l'auto-inscription refuse toute
+            // inscription sans token, avant même de contacter GestSIS_API :
+            // même réponse générique que le cas email invalide/déjà utilisé,
+            // pour ne pas révéler pourquoi (voir system.md).
+            if (! Domaine::where('code', 'sis')->value('self_registration_enabled')) {
+                return response()->json(['message' => 'Email invalide ou déjà utilisé', 'errors' => ['email' => ['Email invalide ou déjà utilisé']]], 422);
+            }
+
             // Controle que l'email est existant au sein d'un SIS
             $email = $request->input('email');
 
