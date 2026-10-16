@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -16,16 +17,38 @@ return new class extends Migration
         // "api_token_sis_sis_id_foreign"), donc dropForeign(['sis_id'])
         // devinerait un nom erroné ("api_token_org_sis_id_foreign") s'il
         // tournait après Schema::rename().
-        Schema::table('api_token_sis', function (Blueprint $table) {
-            $table->dropForeign(['sis_id']);
-            $table->renameColumn('sis_id', 'organisation_id');
-        });
+        //
+        // Idempotent (chaque étape testée avant d'être rejouée) : le DDL MySQL
+        // n'est pas transactionnel, donc une migration précédente ayant échoué
+        // en cours de route (cf. 2026_10_16_150700, touchée en déploiement réel
+        // par des `created_at` historiques invalides sur `sapeurs`) peut avoir
+        // laissé ce schéma à mi-chemin ; au prochain déploiement, la migration
+        // entière est rejouée depuis le début.
+        if (Schema::hasTable('api_token_sis') && Schema::hasColumn('api_token_sis', 'sis_id')) {
+            Schema::table('api_token_sis', function (Blueprint $table) {
+                $table->dropForeign(['sis_id']);
+                $table->renameColumn('sis_id', 'organisation_id');
+            });
+        }
 
-        Schema::rename('api_token_sis', 'api_token_org');
+        if (Schema::hasTable('api_token_sis')) {
+            Schema::rename('api_token_sis', 'api_token_org');
+        }
 
-        Schema::table('api_token_org', function (Blueprint $table) {
-            $table->foreign('organisation_id')->references('id')->on('organisations')->onDelete('cascade');
-        });
+        if (!$this->foreignKeyExists('api_token_org', 'api_token_org_organisation_id_foreign')) {
+            Schema::table('api_token_org', function (Blueprint $table) {
+                $table->foreign('organisation_id')->references('id')->on('organisations')->onDelete('cascade');
+            });
+        }
+    }
+
+    private function foreignKeyExists(string $table, string $constraintName): bool
+    {
+        return DB::table('information_schema.TABLE_CONSTRAINTS')
+            ->where('CONSTRAINT_SCHEMA', DB::getDatabaseName())
+            ->where('TABLE_NAME', $table)
+            ->where('CONSTRAINT_NAME', $constraintName)
+            ->exists();
     }
 
     /**
