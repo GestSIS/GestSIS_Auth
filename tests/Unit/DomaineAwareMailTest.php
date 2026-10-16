@@ -59,7 +59,7 @@ class DomaineAwareMailTest extends TestCase
         $sis = Sis::factory()->create();
         $user = User::factory()->create();
         Sapeur::insert(['sapeur_id' => 1, 'organisation_id' => $sis->id, 'user_id' => $user->id]);
-        $link = Sapeur::with('sis')->where('organisation_id', $sis->id)->where('sapeur_id', 1)->firstOrFail();
+        $link = Sapeur::with('organisation')->where('organisation_id', $sis->id)->where('sapeur_id', 1)->firstOrFail();
 
         $mail = new SapeurAccessPendingDeactivationMail($user, $link, domaineCode: 'eca')->build();
 

@@ -24,13 +24,9 @@ class Sapeur extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function sis(): BelongsTo
+    public function organisation(): BelongsTo
     {
-        // FK explicite : la colonne est renommée sis_id -> organisation_id
-        // (Task 2) avant que cette relation elle-même ne soit renommée
-        // sis() -> organisation() (Task 7) ; sans l'argument explicite,
-        // l'inférence par défaut chercherait encore sis_id.
-        return $this->belongsTo(Sis::class, 'organisation_id');
+        return $this->belongsTo(Organisation::class);
     }
 
     /**

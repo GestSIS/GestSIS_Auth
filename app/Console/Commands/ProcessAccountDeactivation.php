@@ -295,7 +295,7 @@ class ProcessAccountDeactivation extends Command
         $cut = 0;
         $reinstated = 0;
 
-        $links = Sapeur::with('user.sapeur', 'sis')->whereNull('deactivated_at')->get();
+        $links = Sapeur::with('user.sapeur', 'organisation')->whereNull('deactivated_at')->get();
 
         foreach ($links as $link) {
             $actif = in_array($link->sapeur_id, $actifsParSisId[$link->organisation_id] ?? [], true);
@@ -328,7 +328,7 @@ class ProcessAccountDeactivation extends Command
     private function flagLinkForDeactivation(Sapeur $link, bool $dryRun, bool $notify): void
     {
         $deactivateAt = $this->gracePeriodDeadline();
-        $this->announce('flag-sapeur', "{$link->user->email} / {$link->sis->nom} -> coupure prévue le {$deactivateAt->format('Y-m-d')}", $dryRun);
+        $this->announce('flag-sapeur', "{$link->user->email} / {$link->organisation->nom} -> coupure prévue le {$deactivateAt->format('Y-m-d')}", $dryRun);
 
         if ($dryRun) {
             return;
@@ -344,7 +344,7 @@ class ProcessAccountDeactivation extends Command
 
     private function cutLinkAccess(Sapeur $link, bool $dryRun): void
     {
-        $this->announce('cut-sapeur', "{$link->user->email} / {$link->sis->nom}", $dryRun);
+        $this->announce('cut-sapeur', "{$link->user->email} / {$link->organisation->nom}", $dryRun);
 
         if ($dryRun) {
             return;
@@ -356,7 +356,7 @@ class ProcessAccountDeactivation extends Command
 
     private function reinstateLink(Sapeur $link, bool $dryRun): void
     {
-        $this->announce('reinstate-sapeur', "{$link->user->email} / {$link->sis->nom}", $dryRun);
+        $this->announce('reinstate-sapeur', "{$link->user->email} / {$link->organisation->nom}", $dryRun);
 
         if ($dryRun) {
             return;
@@ -387,7 +387,7 @@ class ProcessAccountDeactivation extends Command
         // cette identité (ex. déjà recréée entre-temps par users:sync-sapeurs).
         [$aliveByUserSis, $aliveBySapeurSis] = Sapeur::indexAliveByIdentity($links->whereNull('deactivated_at'));
 
-        $cutLinks = Sapeur::with('user', 'sis')->whereNotNull('deactivated_at')->get();
+        $cutLinks = Sapeur::with('user', 'organisation')->whereNotNull('deactivated_at')->get();
 
         foreach ($cutLinks as $link) {
             if (!in_array($link->sapeur_id, $actifsParSisId[$link->organisation_id] ?? [], true)) {
@@ -398,7 +398,7 @@ class ProcessAccountDeactivation extends Command
                 continue;
             }
 
-            $this->announce('reactivate-sapeur', "{$link->user->email} / {$link->sis->nom}", $dryRun);
+            $this->announce('reactivate-sapeur', "{$link->user->email} / {$link->organisation->nom}", $dryRun);
 
             if ($dryRun) {
                 continue;

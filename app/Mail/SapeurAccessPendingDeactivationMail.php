@@ -32,7 +32,7 @@ class SapeurAccessPendingDeactivationMail extends Mailable
         $domaine = Domaine::where('code', $this->domaineCode)->firstOrFail();
 
         return $this->from($domaine->mail_from, $domaine->mail_name)
-            ->subject("Votre accès à {$this->sapeurLink->sis->nom} va être désactivé")
+            ->subject("Votre accès à {$this->sapeurLink->organisation->nom} va être désactivé")
             ->text('emails.sapeur_access_pending_deactivation');
     }
 }
