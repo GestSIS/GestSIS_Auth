@@ -17,7 +17,7 @@ class SapeurAccessPendingDeactivationMail extends Mailable
      *
      * @return void
      */
-    public function __construct(public User $user, public Sapeur $sapeurLink)
+    public function __construct(public User $user, public Sapeur $sapeurLink, public string $domaineCode = 'sis')
     {
     }
 
@@ -28,7 +28,7 @@ class SapeurAccessPendingDeactivationMail extends Mailable
      */
     public function build(): SapeurAccessPendingDeactivationMail
     {
-        return $this->from('test@gestsis.ch', 'GestSIS')
+        return $this->from(config("domaines.{$this->domaineCode}.mail_from"), config("domaines.{$this->domaineCode}.mail_name"))
             ->subject("Votre accès à {$this->sapeurLink->sis->nom} va être désactivé")
             ->text('emails.sapeur_access_pending_deactivation');
     }

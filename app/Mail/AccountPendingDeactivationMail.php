@@ -16,7 +16,7 @@ class AccountPendingDeactivationMail extends Mailable
      *
      * @return void
      */
-    public function __construct(public User $user)
+    public function __construct(public User $user, public string $domaineCode = 'sis')
     {
     }
 
@@ -27,7 +27,7 @@ class AccountPendingDeactivationMail extends Mailable
      */
     public function build(): AccountPendingDeactivationMail
     {
-        return $this->from('test@gestsis.ch', 'GestSIS')
+        return $this->from(config("domaines.{$this->domaineCode}.mail_from"), config("domaines.{$this->domaineCode}.mail_name"))
             ->subject("Votre compte GestSIS va être désactivé")
             ->text('emails.account_pending_deactivation');
     }

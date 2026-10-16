@@ -18,7 +18,7 @@ class ResetPassword extends Mailable
      *
      * @return void
      */
-    public function __construct(public string $token)
+    public function __construct(public string $token, public string $domaineCode = 'sis')
     {
     }
 
@@ -29,7 +29,7 @@ class ResetPassword extends Mailable
      */
     public function build(): ResetPassword
     {
-        return $this->from('test@gestsis.ch', 'GestSIS')
+        return $this->from(config("domaines.{$this->domaineCode}.mail_from"), config("domaines.{$this->domaineCode}.mail_name"))
             ->subject("Réinitialisation du mot de passe GestSIS")
             ->text('emails.reset_password');
     }
