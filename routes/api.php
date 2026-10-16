@@ -26,6 +26,7 @@ use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\RegisterTokenController;
+use App\Http\Controllers\OrganisationController;
 use App\Http\Controllers\SisController;
 use App\Http\Controllers\ApiMotDePasseController;
 use App\Http\Controllers\ApiResendConfirmationController;
@@ -110,6 +111,7 @@ Route::group(['prefix' => 'v1'], function () {
     Route::group(['middleware' => 'jwtTokenRoleOrApiToken'], function () {
         Route::get('me', [MeController::class, 'show']);
         Route::get('permissions/', [PermissionController::class, 'index']);
+        Route::get('organisations', [OrganisationController::class, 'index']);
     });
 
     // `impersonationReadOnly` : en usurpation d'identité, ces réglages se
