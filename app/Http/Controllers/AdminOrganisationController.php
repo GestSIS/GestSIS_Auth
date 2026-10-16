@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Domaine;
 use App\Models\Organisation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -34,7 +35,7 @@ class AdminOrganisationController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'api_key' => 'required|string|min:1',
+            'org_key' => 'required|string|min:1|unique:organisations,org_key',
             'nom' => 'required|string|min:1',
             'abreviation' => 'string|nullable',
             'mobile' => 'required|boolean',
@@ -42,7 +43,8 @@ class AdminOrganisationController extends Controller
 
         $organisation = new Organisation();
         $organisation->fill($data);
-        $organisation->api_key = $data['api_key'];
+        // Seul domaine géré par l'admin aujourd'hui (cf. OrganisationController)
+        $organisation->domaine_id = Domaine::where('code', 'sis')->firstOrFail()->id;
         $organisation->save();
 
         return response()->json(['data' => $organisation], 201);
