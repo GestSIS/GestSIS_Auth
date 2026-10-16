@@ -167,11 +167,14 @@ class ProcessAccountDeactivation extends Command
             ->get();
 
         foreach ($candidates as $user) {
-            if ($this->hasOnlyUnreliableSapeurLinks($user, $skipOrganisationIds)) {
+            if ($this->hasActiveSapeur($user, $actifsParSisId, $aliveBySapeurSis)) {
                 continue;
             }
 
-            if ($this->hasActiveSapeur($user, $actifsParSisId, $aliveBySapeurSis)) {
+            // Un lien fiable mais confirmé inactif ne suffit pas à désactiver si un AUTRE lien
+            // a un statut inconnu -- ce lien pourrait être actif, et on ne détruit jamais un
+            // accès sur la base d'une incertitude.
+            if ($this->hasAnyUnreliableSapeurLink($user, $skipOrganisationIds)) {
                 continue;
             }
 
@@ -192,10 +195,11 @@ class ProcessAccountDeactivation extends Command
             ->get();
 
         foreach ($pending as $user) {
-            if ($this->hasOnlyUnreliableSapeurLinks($user, $skipOrganisationIds)) {
-                continue;
-            }
-
+            // Pas de garde "liens non fiables" ici : un lien incertain ne peut jamais, par
+            // construction de hasActiveSapeur() (in_array contre `?? []`), faire basculer ce
+            // OR à tort vers vrai -- il ne contribue qu'un "faux" qui ne change rien au résultat.
+            // Un rôle local reste donc toujours une preuve suffisante, peu importe la fiabilité
+            // des liens sapeur.
             if ($user->userRoles->isNotEmpty() || $this->hasActiveSapeur($user, $actifsParSisId, $aliveBySapeurSis)) {
                 $this->reinstate($user, $dryRun);
                 $reinstated++;
@@ -274,10 +278,9 @@ class ProcessAccountDeactivation extends Command
         $disabledUsers = User::with('sapeur', 'userRoles')->whereNotNull('disabled_at')->get();
 
         foreach ($disabledUsers as $user) {
-            if ($this->hasOnlyUnreliableSapeurLinks($user, $skipOrganisationIds)) {
-                continue;
-            }
-
+            // Même raisonnement que dans la boucle "pending" : un lien non fiable ne peut
+            // jamais, à lui seul, faire basculer ce test à tort -- un rôle local reste une
+            // preuve suffisante indépendamment de la fiabilité des liens sapeur.
             if ($user->userRoles->isEmpty() && !$this->hasActiveSapeur($user, $actifsParSisId, $aliveBySapeurSis)) {
                 continue;
             }
@@ -456,10 +459,9 @@ class ProcessAccountDeactivation extends Command
     /**
      * @param array<int> $skipOrganisationIds
      */
-    private function hasOnlyUnreliableSapeurLinks(User $user, array $skipOrganisationIds): bool
+    private function hasAnyUnreliableSapeurLink(User $user, array $skipOrganisationIds): bool
     {
-        return $user->sapeur->isNotEmpty()
-            && $user->sapeur->every(fn($link) => in_array($link->organisation_id, $skipOrganisationIds, true));
+        return $user->sapeur->contains(fn($link) => in_array($link->organisation_id, $skipOrganisationIds, true));
     }
 
     /**

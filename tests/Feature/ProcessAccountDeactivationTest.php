@@ -614,6 +614,51 @@ class ProcessAccountDeactivationTest extends TestCase
         $this->assertNull($user->pending_deactivation_at, 'A user whose only link has no configured data source must not be flagged.');
     }
 
+    public function testDoesNotFlagAnAccountWithAMixOfAnInactiveReliableLinkAndAnUnreliableLink(): void
+    {
+        // sis is reliable and confirms sapeur_id=10 is NOT active; eca has no configured feed,
+        // so sapeur_id=20's true status is unknown. The OR-across-links logic in
+        // hasActiveSapeur() correctly handles "one link active" (ignoring unreliable noise),
+        // but a user whose only non-skip link is a *confirmed-inactive* one must still not be
+        // flagged purely on that, while an unrelated link's status is genuinely unknown.
+        $eca = Domaine::where('code', 'eca')->firstOrFail();
+        $ecaOrg = Organisation::factory()->create(['domaine_id' => $eca->id]);
+        $sis = Organisation::factory()->create();
+        $user = User::factory()->create(['admin' => false]);
+        $this->linkSapeur($user, $sis, 10);
+        $this->linkSapeur($user, $ecaOrg, 20);
+
+        $this->fakeSapeursActifs([$sis->org_key => []]);
+
+        $this->artisan('users:process-deactivation')->assertExitCode(0);
+
+        $user->refresh();
+        $this->assertNull(
+            $user->pending_deactivation_at,
+            'A user with an unreliable link must not be flagged purely on a reliable-but-inactive link elsewhere.'
+        );
+    }
+
+    public function testReinstatesAPendingUserWithARoleEvenIfTheirOnlySapeurLinkIsUnreliable(): void
+    {
+        $eca = Domaine::where('code', 'eca')->firstOrFail();
+        $ecaOrg = Organisation::factory()->create(['domaine_id' => $eca->id]);
+        $user = User::factory()->create(['admin' => false, 'pending_deactivation_at' => now()->addDays(10)]);
+        $this->linkSapeur($user, $ecaOrg, 1); // user's ONLY sapeur link, unreliable
+        $role = Role::create(['nom' => 'Role', 'organisation_id' => $ecaOrg->id]);
+        UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);
+
+        $this->fakeSapeursActifs([]);
+
+        $this->artisan('users:process-deactivation')->assertExitCode(0);
+
+        $user->refresh();
+        $this->assertNull(
+            $user->pending_deactivation_at,
+            'A pending user with an active role must be reinstated regardless of sapeur link reliability.'
+        );
+    }
+
     public function testReportsToSentryWhenApiReturnsAnErrorStatus(): void
     {
         Http::fake([
