@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\Role;
 use App\Models\Organisation;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class RoleController extends Controller
 {
@@ -55,6 +57,13 @@ class RoleController extends Controller
         $role->save();
         $role->permissions()->attach($data['permissions'] ?? []);
 
+        Log::info('Rôle créé', [
+            'actor_id' => Auth::id(),
+            'role_id' => $role->id,
+            'organisation_id' => $organisation->id,
+            'permissions' => $data['permissions'] ?? [],
+        ]);
+
         return response()->json(['data' => Role::where('id', '=', $role->id)->with('permissionRoles')->first()], 201);
     }
 
@@ -93,6 +102,13 @@ class RoleController extends Controller
         $role->update($data);
         $role->permissions()->sync($data['permissions'] ?? []);
 
+        Log::info('Rôle modifié', [
+            'actor_id' => Auth::id(),
+            'role_id' => $roleId,
+            'organisation_id' => $organisation->id,
+            'permissions' => $data['permissions'] ?? [],
+        ]);
+
         return response()->json(['data' => Role::where('id', '=', $roleId)->with('permissionRoles')->first()]);
     }
 
@@ -110,6 +126,12 @@ class RoleController extends Controller
 
         // Modification
         Role::where('id', '=', $roleId)->where('organisation_id', '=', $organisation->id)->limit(1)->delete();
+
+        Log::info('Rôle supprimé', [
+            'actor_id' => Auth::id(),
+            'role_id' => $roleId,
+            'organisation_id' => $organisation->id,
+        ]);
 
         return response()->json(null, 204);
     }

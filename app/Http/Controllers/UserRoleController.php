@@ -7,7 +7,9 @@ use App\Models\Organisation;
 use App\Models\UserRole;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class UserRoleController extends Controller
 {
@@ -78,6 +80,16 @@ class UserRoleController extends Controller
         $data = array_map(fn($roleId) => ['role_id' => $roleId, 'user_id' => $userId], $rolesToAdd);
         UserRole::insert($data);
 
+        if (!empty($rolesToAdd) || !empty($rolesToRemove)) {
+            Log::info('Rôles d\'un utilisateur mis à jour', [
+                'actor_id' => Auth::id(),
+                'user_id' => $userId,
+                'organisation_id' => $organisation->id,
+                'roles_ajoutes' => array_values($rolesToAdd),
+                'roles_retires' => array_values($rolesToRemove),
+            ]);
+        }
+
         // $roles
         $roleIds = Role::where('roles.organisation_id', '=', $organisation->id)->pluck('id')->toArray();
         $user = UserRole::where('user_id', $userId)->whereIn('user_roles.role_id', $roleIds)->get();
@@ -114,6 +126,13 @@ class UserRoleController extends Controller
         $userRole->role_id = $roleId;
         $userRole->save();
 
+        Log::info('Rôle attribué à un utilisateur', [
+            'actor_id' => Auth::id(),
+            'role_id' => $roleId,
+            'user_id' => (int) $data['user_id'],
+            'organisation_id' => $organisation->id,
+        ]);
+
         return response()->json(['data' => $userRole], 201);
     }
 
@@ -138,7 +157,15 @@ class UserRoleController extends Controller
         }
 
         // Modification
+        $userRole = UserRole::where('role_id', '=', $roleId)->where('id', '=', $userRoleId)->first();
         UserRole::where('role_id', '=', $roleId)->where('id', '=', $userRoleId)->limit(1)->delete();
+
+        Log::info('Rôle retiré à un utilisateur', [
+            'actor_id' => Auth::id(),
+            'role_id' => $roleId,
+            'user_id' => $userRole?->user_id,
+            'organisation_id' => $organisation->id,
+        ]);
 
         return response()->json(null, 204);
     }

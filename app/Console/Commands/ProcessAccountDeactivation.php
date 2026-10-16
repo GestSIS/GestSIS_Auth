@@ -217,6 +217,12 @@ class ProcessAccountDeactivation extends Command
 
         $user->revokeAllSessions();
         ApiToken::where('user_id', $user->id)->delete();
+
+        Log::info('Compte désactivé (job de réconciliation)', [
+            'user_id' => $user->id,
+            'ancien_statut' => 'actif',
+            'nouveau_statut' => 'désactivé',
+        ]);
     }
 
     private function reinstate(User $user, bool $dryRun): void
@@ -261,6 +267,12 @@ class ProcessAccountDeactivation extends Command
             $user->pending_deactivation_at = null;
             $user->save();
             $reactivated++;
+
+            Log::info('Compte réactivé (job de réconciliation)', [
+                'user_id' => $user->id,
+                'ancien_statut' => 'désactivé',
+                'nouveau_statut' => 'actif',
+            ]);
         }
 
         return $reactivated;
