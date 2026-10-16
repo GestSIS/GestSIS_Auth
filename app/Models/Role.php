@@ -42,7 +42,13 @@ class Role extends Model
 
     public function permissions(): BelongsToMany
     {
-        return $this->belongsToMany(Permission::class, 'permission_roles');
+        // ->using(PermissionRole::class) : sans ça, attach()/sync() (le seul
+        // chemin réel, via RoleController) insèrent la ligne pivot par une
+        // requête brute sans jamais instancier PermissionRole, donc sans
+        // jamais déclencher PermissionRoleObserver -- la contrainte
+        // cross-domaine ne serait alors vérifiée que par un appel direct
+        // à PermissionRole::create(), que personne ne fait.
+        return $this->belongsToMany(Permission::class, 'permission_roles')->using(PermissionRole::class);
     }
 
     public function organisation(): BelongsTo
