@@ -7,6 +7,7 @@ use App\Auth\TokenTools;
 use App\Auth\TwoFactorManager;
 use App\Mail\ResetPassword;
 use App\Models\ApiToken;
+use App\Models\Domaine;
 use App\Models\PasswordResetToken;
 use App\Models\User;
 use Carbon\Carbon;
@@ -174,8 +175,8 @@ class ApiMotDePasseController extends Controller
             'new_password' => ['required', 'string', PasswordPolicy::rule()],
         ], PasswordPolicy::messages('new_password'));
 
-        $endString = "@gestsis.ch";
-        if (substr(strtolower($data[$this->username()]), -strlen($endString)) === $endString) {
+        $blockedSuffix = Domaine::where('code', 'sis')->value('test_account_domain_suffix');
+        if ($blockedSuffix !== null && str_ends_with(strtolower($data[$this->username()]), $blockedSuffix)) {
             return response()->json(['message' => 'Modification de mot de passe refusée'], 401);
         }
 
