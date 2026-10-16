@@ -36,8 +36,9 @@ class ProcessAccountDeactivationIdReuseTest extends TestCase
             '*/api/v2/sapeurs-actifs*' => Http::response(['data' => [$sis->api_key => [5]]]),
         ]);
 
-        Artisan::call('users:process-deactivation');
+        $exitCode = Artisan::call('users:process-deactivation');
 
+        $this->assertSame(0, $exitCode, 'La commande doit réussir ; un échec silencieux laisserait ce test passer pour la mauvaise raison.');
         $user->refresh();
         $this->assertNotNull($user->disabled_at, "Le compte de la personne A ne doit pas être réactivé par la présence du sapeur_id=5 réattribué.");
     }
