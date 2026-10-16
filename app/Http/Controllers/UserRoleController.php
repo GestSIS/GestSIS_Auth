@@ -20,7 +20,7 @@ class UserRoleController extends Controller
     public function index(Request $request)
     {
         // Checks pour sisId
-        $sisKey = $request->header('Sis-Key', Null);
+        $sisKey = $request->header('Org-Key') ?? $request->header('Sis-Key', Null);
         $organisation = Organisation::where('org_key', $sisKey)->first();
         if (is_null($organisation)) {
             return response()->json(['message' => "Invalid sis key"], 403);
@@ -37,7 +37,7 @@ class UserRoleController extends Controller
     public function updateRoles(Request $request, int $userId): JsonResponse
     {
         // Checks pour sisId
-        $sisKey = $request->header('Sis-Key', Null);
+        $sisKey = $request->header('Org-Key') ?? $request->header('Sis-Key', Null);
         $organisation = Organisation::where('org_key', $sisKey)->first();
         if (is_null($organisation)) {
             return response()->json(['message' => "Invalid sis key"], 403);
@@ -90,7 +90,7 @@ class UserRoleController extends Controller
     public function store(Request $request, int $roleId): JsonResponse
     {
         // Checks pour sisId
-        $sisKey = $request->header('Sis-Key', Null);
+        $sisKey = $request->header('Org-Key') ?? $request->header('Sis-Key', Null);
         $organisation = Organisation::where('org_key', $sisKey)->first();
         if (is_null($organisation)) {
             return response()->json(['message' => "Invalid sis key"], 403);
@@ -123,7 +123,7 @@ class UserRoleController extends Controller
     public function destroy(Request $request, int $roleId, int $userRoleId): JsonResponse
     {
         // Checks pour sisId
-        $sisKey = $request->header('Sis-Key', Null);
+        $sisKey = $request->header('Org-Key') ?? $request->header('Sis-Key', Null);
         $organisation = Organisation::where('org_key', $sisKey)->first();
         if (is_null($organisation)) {
             return response()->json(['message' => "Invalid sis key"], 403);
