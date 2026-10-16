@@ -85,6 +85,16 @@ Route::group(['prefix' => 'v1'], function () {
         Route::post('token-auth', [ApiTokenAuthController::class, 'authenticate']);
     });
 
+    // `jwtTokenRole` refuse les jetons issus d'un jeton d'API : tout ce qui
+    // touche à l'authentification du compte (sessions, 2FA, jetons, jetons de
+    // permissions) est réservé à une vraie session. `jwtTokenRoleOrApiToken`
+    // ouvre explicitement les quelques routes utiles à une intégration.
+    Route::group(['middleware' => 'jwtTokenRoleOrApiToken'], function () {
+        Route::get('me', [MeController::class, 'show']);
+        Route::get('organisations', [OrganisationController::class, 'index']);
+        Route::get('permissions/', [PermissionController::class, 'index']);
+    });
+
     Route::get('sis', [SisController::class, 'index']);
     Route::get('mobile/latest-version', [MobileVersionController::class, 'latest']);
 
@@ -95,7 +105,7 @@ Route::group(['prefix' => 'v1'], function () {
         Route::apiResource('roles', AdminRoleController::class, ['as' => 'admin'])->only(['index', 'show', 'update', 'destroy']);
         Route::apiResource('user-roles', AdminUserRoleController::class, ['as' => 'admin'])->only(['store', 'destroy']);
         Route::apiResource('sapeurs', AdminSapeurController::class, ['as' => 'admin'])->only(['destroy']);
-        Route::apiResource('organisations', AdminOrganisationController::class, ['as' => 'admin'])->only(['index', 'show', 'store', 'update']);
+        Route::apiResource('organisations', AdminOrganisationController::class, ['as' => 'admin'])->only(['show', 'store', 'update']);
 
         Route::get('2fa/policy', [AdminTwoFactorPolicyController::class, 'show']);
         Route::put('2fa/policy', [AdminTwoFactorPolicyController::class, 'update']);
@@ -104,16 +114,6 @@ Route::group(['prefix' => 'v1'], function () {
         Route::delete('users/{user_id}/2fa-exemption', [AdminTwoFactorExemptionController::class, 'destroy']);
         Route::put('users/{user_id}/session-policy', [AdminUserSessionController::class, 'update']);
         Route::delete('users/{user_id}/sessions', [AdminUserSessionController::class, 'destroy']);
-    });
-
-    // `jwtTokenRole` refuse les jetons issus d'un jeton d'API : tout ce qui
-    // touche à l'authentification du compte (sessions, 2FA, jetons, jetons de
-    // permissions) est réservé à une vraie session. `jwtTokenRoleOrApiToken`
-    // ouvre explicitement les quelques routes utiles à une intégration.
-    Route::group(['middleware' => 'jwtTokenRoleOrApiToken'], function () {
-        Route::get('me', [MeController::class, 'show']);
-        Route::get('permissions/', [PermissionController::class, 'index']);
-        Route::get('organisations', [OrganisationController::class, 'index']);
     });
 
     // `impersonationReadOnly` : en usurpation d'identité, ces réglages se
