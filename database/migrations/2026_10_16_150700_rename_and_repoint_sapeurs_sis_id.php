@@ -36,14 +36,42 @@ return new class extends Migration
             );
         }
 
-        Schema::table('sapeurs', function (Blueprint $table) {
-            $table->dropForeign(['sis_id']);
-            $table->renameColumn('sis_id', 'organisation_id');
-        });
+        // Des lignes historiques de `sapeurs` portent un `created_at`/`updated_at`
+        // invalide ('0000-00-00 00:00:00'), toléré en lecture mais rejeté -- sous
+        // sql_mode strict -- dès que ce littéral doit être converti en DATETIME
+        // pour comparaison, y compris dans le WHERE de la requête qui l'assainit.
+        // sql_mode assoupli pour cette seule opération, restauré juste après.
+        $originalSqlMode = DB::selectOne('SELECT @@SESSION.sql_mode AS mode')->mode;
+        DB::statement("SET SESSION sql_mode = ''");
+        DB::statement("UPDATE sapeurs SET created_at = CASE WHEN updated_at != '0000-00-00 00:00:00' THEN updated_at ELSE NOW() END WHERE created_at = '0000-00-00 00:00:00'");
+        DB::statement("UPDATE sapeurs SET updated_at = CASE WHEN created_at != '0000-00-00 00:00:00' THEN created_at ELSE NOW() END WHERE updated_at = '0000-00-00 00:00:00'");
+        DB::statement('SET SESSION sql_mode = ' . DB::getPdo()->quote($originalSqlMode));
 
-        Schema::table('sapeurs', function (Blueprint $table) {
-            $table->foreign('organisation_id')->references('id')->on('organisations')->onDelete('cascade');
-        });
+        // Idempotent : une exécution précédente peut avoir renommé la colonne puis
+        // échoué avant d'ajouter la FK (DDL MySQL non transactionnel -- la colonne
+        // reste renommée même si la migration entière est relancée depuis le début
+        // au prochain déploiement).
+        if (Schema::hasColumn('sapeurs', 'sis_id') && !Schema::hasColumn('sapeurs', 'organisation_id')) {
+            Schema::table('sapeurs', function (Blueprint $table) {
+                $table->dropForeign(['sis_id']);
+                $table->renameColumn('sis_id', 'organisation_id');
+            });
+        }
+
+        if (!$this->foreignKeyExists('sapeurs', 'sapeurs_organisation_id_foreign')) {
+            Schema::table('sapeurs', function (Blueprint $table) {
+                $table->foreign('organisation_id')->references('id')->on('organisations')->onDelete('cascade');
+            });
+        }
+    }
+
+    private function foreignKeyExists(string $table, string $constraintName): bool
+    {
+        return DB::table('information_schema.TABLE_CONSTRAINTS')
+            ->where('CONSTRAINT_SCHEMA', DB::getDatabaseName())
+            ->where('TABLE_NAME', $table)
+            ->where('CONSTRAINT_NAME', $constraintName)
+            ->exists();
     }
 
     /**
