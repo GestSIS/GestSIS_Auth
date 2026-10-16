@@ -9,7 +9,7 @@ use App\Mail\SapeurAccessPendingDeactivationMail;
 use App\Models\ApiToken;
 use App\Models\Role;
 use App\Models\Sapeur;
-use App\Models\Sis;
+use App\Models\Organisation;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Console\Attributes\Description;
@@ -443,7 +443,7 @@ class ProcessAccountDeactivation extends Command
             return null;
         }
 
-        $sisByApiKey = Sis::all()->keyBy('api_key');
+        $sisByApiKey = Organisation::all()->keyBy('org_key');
         $actifsParSisId = [];
         foreach ($response->json('data', []) as $sisKey => $sapeurIds) {
             if (!isset($sisByApiKey[$sisKey])) {

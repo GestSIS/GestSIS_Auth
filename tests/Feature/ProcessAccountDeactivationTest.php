@@ -545,4 +545,11 @@ class ProcessAccountDeactivationTest extends TestCase
         $this->assertArrayHasKey('sis_a', $sapeurs);
         $this->assertArrayNotHasKey('sis_b', $sapeurs);
     }
+
+    public function testUnknownSisKeyFromApiIsLoggedAndSkipped(): void
+    {
+        $this->fakeSapeursActifs(['does-not-exist-locally' => [1]]);
+
+        $this->artisan('users:process-deactivation')->assertExitCode(0);
+    }
 }

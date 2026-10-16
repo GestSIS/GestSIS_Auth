@@ -281,4 +281,11 @@ class SyncSapeurUserMappingsTest extends TestCase
 
         $this->assertSame(1, $exitCode);
     }
+
+    public function testUnknownSisKeyFromApiIsLoggedAndSkipped(): void
+    {
+        $this->fakeSapeursEmails(['does-not-exist-locally' => [1 => 'nobody@example.com']]);
+
+        $this->artisan('users:sync-sapeurs')->assertExitCode(0);
+    }
 }

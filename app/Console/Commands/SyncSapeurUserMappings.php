@@ -6,7 +6,7 @@ use App\Auth\TokenTools;
 use App\Console\Commands\Concerns\AnnouncesDryRunActions;
 use App\Models\Domaine;
 use App\Models\Sapeur;
-use App\Models\Sis;
+use App\Models\Organisation;
 use App\Models\User;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -52,7 +52,7 @@ class SyncSapeurUserMappings extends Command
             return self::FAILURE;
         }
 
-        $sisByApiKey = Sis::all()->keyBy('api_key');
+        $sisByApiKey = Organisation::all()->keyBy('org_key');
         // Seuls les comptes dont l'email est vérifié peuvent être liés à un sapeur :
         // l'inscription accepte n'importe quel email connu de l'API, donc un compte
         // non vérifié n'est qu'une revendication d'identité, pas une preuve.
@@ -118,7 +118,7 @@ class SyncSapeurUserMappings extends Command
      */
     private function syncMapping(
         User $user,
-        Sis $sis,
+        Organisation $sis,
         int $sapeurId,
         bool $dryRun,
         Collection $exactByTriple,
@@ -160,7 +160,7 @@ class SyncSapeurUserMappings extends Command
         return 'created';
     }
 
-    private function reactivateLink(Sapeur $exact, User $user, Sis $sis, int $sapeurId, bool $dryRun): void
+    private function reactivateLink(Sapeur $exact, User $user, Organisation $sis, int $sapeurId, bool $dryRun): void
     {
         $this->announce('reactivate', "{$user->email} -> sis={$sis->nom} sapeur_id={$sapeurId}", $dryRun);
 
@@ -180,7 +180,7 @@ class SyncSapeurUserMappings extends Command
         ]);
     }
 
-    private function createLink(User $user, Sis $sis, int $sapeurId, bool $dryRun): void
+    private function createLink(User $user, Organisation $sis, int $sapeurId, bool $dryRun): void
     {
         $this->announce('link', "{$user->email} -> sis={$sis->nom} sapeur_id={$sapeurId}", $dryRun);
 
@@ -195,7 +195,7 @@ class SyncSapeurUserMappings extends Command
         ]);
     }
 
-    private function reportConflict(User $user, Sis $sis, int $sapeurId, ?int $blockingSapeurId, ?int $blockingUserId): void
+    private function reportConflict(User $user, Organisation $sis, int $sapeurId, ?int $blockingSapeurId, ?int $blockingUserId): void
     {
         $details = [];
         if ($blockingSapeurId !== null) {
