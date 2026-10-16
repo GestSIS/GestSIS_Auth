@@ -11,6 +11,9 @@ class Domaine extends Model
         'nom',
         'self_registration_enabled',
         'active_identities_url',
+        'mail_from',
+        'mail_name',
+        'test_account_domain_suffix',
     ];
 
     protected function casts(): array

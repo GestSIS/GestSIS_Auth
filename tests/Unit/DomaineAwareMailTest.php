@@ -6,6 +6,7 @@ use App\Mail\AccountPendingDeactivationMail;
 use App\Mail\ResetPassword;
 use App\Mail\SapeurAccessPendingDeactivationMail;
 use App\Mail\TwoFactorReminderMail;
+use App\Models\Domaine;
 use App\Models\Sapeur;
 use App\Models\Sis;
 use App\Models\User;
@@ -17,16 +18,18 @@ class DomaineAwareMailTest extends TestCase
     {
         $mail = new ResetPassword('token', domaineCode: 'sis')->build();
 
-        $this->assertSame(config('domaines.sis.mail_from'), $mail->from[0]['address']);
-        $this->assertSame(config('domaines.sis.mail_name'), $mail->from[0]['name']);
+        $sis = Domaine::where('code', 'sis')->firstOrFail();
+        $this->assertSame($sis->mail_from, $mail->from[0]['address']);
+        $this->assertSame($sis->mail_name, $mail->from[0]['name']);
     }
 
     public function testResetPasswordMailDefaultsToSisBrandingWhenDomaineCodeIsOmitted(): void
     {
         $mail = new ResetPassword('token')->build();
 
-        $this->assertSame(config('domaines.sis.mail_from'), $mail->from[0]['address']);
-        $this->assertSame(config('domaines.sis.mail_name'), $mail->from[0]['name']);
+        $sis = Domaine::where('code', 'sis')->firstOrFail();
+        $this->assertSame($sis->mail_from, $mail->from[0]['address']);
+        $this->assertSame($sis->mail_name, $mail->from[0]['name']);
     }
 
     public function testAccountPendingDeactivationMailUsesEcaBranding(): void
@@ -35,8 +38,9 @@ class DomaineAwareMailTest extends TestCase
 
         $mail = new AccountPendingDeactivationMail($user, domaineCode: 'eca')->build();
 
-        $this->assertSame(config('domaines.eca.mail_from'), $mail->from[0]['address']);
-        $this->assertSame(config('domaines.eca.mail_name'), $mail->from[0]['name']);
+        $eca = Domaine::where('code', 'eca')->firstOrFail();
+        $this->assertSame($eca->mail_from, $mail->from[0]['address']);
+        $this->assertSame($eca->mail_name, $mail->from[0]['name']);
     }
 
     public function testTwoFactorReminderMailUsesEcaBranding(): void
@@ -45,8 +49,9 @@ class DomaineAwareMailTest extends TestCase
 
         $mail = new TwoFactorReminderMail($user, now()->addDays(7), domaineCode: 'eca')->build();
 
-        $this->assertSame(config('domaines.eca.mail_from'), $mail->from[0]['address']);
-        $this->assertSame(config('domaines.eca.mail_name'), $mail->from[0]['name']);
+        $eca = Domaine::where('code', 'eca')->firstOrFail();
+        $this->assertSame($eca->mail_from, $mail->from[0]['address']);
+        $this->assertSame($eca->mail_name, $mail->from[0]['name']);
     }
 
     public function testSapeurAccessPendingDeactivationMailUsesEcaBranding(): void
@@ -58,7 +63,8 @@ class DomaineAwareMailTest extends TestCase
 
         $mail = new SapeurAccessPendingDeactivationMail($user, $link, domaineCode: 'eca')->build();
 
-        $this->assertSame(config('domaines.eca.mail_from'), $mail->from[0]['address']);
-        $this->assertSame(config('domaines.eca.mail_name'), $mail->from[0]['name']);
+        $eca = Domaine::where('code', 'eca')->firstOrFail();
+        $this->assertSame($eca->mail_from, $mail->from[0]['address']);
+        $this->assertSame($eca->mail_name, $mail->from[0]['name']);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Models\Domaine;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -29,7 +30,9 @@ class ResetPassword extends Mailable
      */
     public function build(): ResetPassword
     {
-        return $this->from(config("domaines.{$this->domaineCode}.mail_from"), config("domaines.{$this->domaineCode}.mail_name"))
+        $domaine = Domaine::where('code', $this->domaineCode)->firstOrFail();
+
+        return $this->from($domaine->mail_from, $domaine->mail_name)
             ->subject("Réinitialisation du mot de passe GestSIS")
             ->text('emails.reset_password');
     }

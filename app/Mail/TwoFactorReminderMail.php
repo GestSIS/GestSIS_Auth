@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Models\Domaine;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -17,7 +18,9 @@ class TwoFactorReminderMail extends Mailable
 
     public function build(): TwoFactorReminderMail
     {
-        return $this->from(config("domaines.{$this->domaineCode}.mail_from"), config("domaines.{$this->domaineCode}.mail_name"))
+        $domaine = Domaine::where('code', $this->domaineCode)->firstOrFail();
+
+        return $this->from($domaine->mail_from, $domaine->mail_name)
             ->subject("Activez le 2FA sur votre compte GestSIS avant le {$this->enforcedAt->format('d.m.Y')}")
             ->text('emails.two_factor_reminder');
     }
