@@ -59,4 +59,19 @@ class RegisterTokenTest extends TestCase
         $response->assertStatus(200);
         $response->assertJsonStructure(['data']);
     }
+
+    public function testRegisterTokenPermissionCheckUsesOrganisationOrgKey(): void
+    {
+        $sis = Sis::factory()->create(['api_key' => 'test-regtoken']);
+        $role = Role::create(['nom' => 'Cible', 'organisation_id' => $sis->id]);
+        $manager = User::factory()->create();
+        $token = TokenTools::createAccessToken($manager, ['test-regtoken' => ['utilisateur.modification']], [], []);
+
+        $response = $this->withHeaders([
+            'Org-Key' => 'test-regtoken',
+            'Authorization' => "Bearer $token",
+        ])->postJson('/api/v1/register-token', ['roles' => [$role->id]]);
+
+        $response->assertStatus(200);
+    }
 }
