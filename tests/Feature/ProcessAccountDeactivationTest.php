@@ -23,7 +23,7 @@ class ProcessAccountDeactivationTest extends TestCase
     protected function fakeSapeursActifs(array $data): void
     {
         Http::fake([
-            '*/api/v2/sapeurs-actifs*' => Http::response(['data' => $data]),
+            '*/api/v2/identites-actives*' => Http::response(['data' => $data]),
         ]);
     }
 
@@ -60,7 +60,7 @@ class ProcessAccountDeactivationTest extends TestCase
             ['org_key' => 'test'],
             ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
         );
-        $this->fakeSapeursActifs(['test' => [123]]);
+        $this->fakeSapeursActifs(['test' => [123 => '']]);
 
         $user = User::factory()->create(['admin' => false]);
         $this->linkSapeur($user, $sis, 123);
@@ -171,7 +171,7 @@ class ProcessAccountDeactivationTest extends TestCase
             ['org_key' => 'test'],
             ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
         );
-        $this->fakeSapeursActifs(['test' => [1]]);
+        $this->fakeSapeursActifs(['test' => [1 => '']]);
 
         $user = User::factory()->create([
             'admin' => false,
@@ -252,7 +252,7 @@ class ProcessAccountDeactivationTest extends TestCase
             ['org_key' => 'sis_b'],
             ['nom' => 'SIS B', 'abreviation' => 'SB', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
         );
-        $this->fakeSapeursActifs(['sis_a' => [1], 'sis_b' => []]);
+        $this->fakeSapeursActifs(['sis_a' => [1 => ''], 'sis_b' => []]);
 
         $user = User::factory()->create(['admin' => false]);
         $this->linkSapeur($user, $sisA, 1);
@@ -319,7 +319,7 @@ class ProcessAccountDeactivationTest extends TestCase
             ['org_key' => 'test'],
             ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
         );
-        $this->fakeSapeursActifs(['test' => [1]]);
+        $this->fakeSapeursActifs(['test' => [1 => '']]);
 
         $user = User::factory()->create(['admin' => false]);
         $link = $this->linkSapeur($user, $sis, 1, ['pending_deactivation_at' => now()->addDays(10)]);
@@ -340,7 +340,7 @@ class ProcessAccountDeactivationTest extends TestCase
             ['org_key' => 'test'],
             ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
         );
-        $this->fakeSapeursActifs(['test' => [1]]);
+        $this->fakeSapeursActifs(['test' => [1 => '']]);
 
         $user = User::factory()->create(['admin' => false]);
         $link = $this->linkSapeur($user, $sis, 1, [
@@ -364,7 +364,7 @@ class ProcessAccountDeactivationTest extends TestCase
             ['org_key' => 'test'],
             ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
         );
-        $this->fakeSapeursActifs(['test' => [1]]);
+        $this->fakeSapeursActifs(['test' => [1 => '']]);
 
         $oldUser = User::factory()->create(['admin' => false]);
         $cutLink = $this->linkSapeur($oldUser, $sis, 1, [
@@ -412,7 +412,7 @@ class ProcessAccountDeactivationTest extends TestCase
             ['org_key' => 'test'],
             ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
         );
-        $this->fakeSapeursActifs(['test' => [1]]);
+        $this->fakeSapeursActifs(['test' => [1 => '']]);
 
         $user = User::factory()->create(['admin' => false]);
         $link = $this->linkSapeur($user, $sis, 1, [
@@ -437,7 +437,7 @@ class ProcessAccountDeactivationTest extends TestCase
             ['org_key' => 'sis_b'],
             ['nom' => 'SIS B', 'abreviation' => 'SB', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
         );
-        $this->fakeSapeursActifs(['sis_a' => [1], 'sis_b' => []]);
+        $this->fakeSapeursActifs(['sis_a' => [1 => ''], 'sis_b' => []]);
 
         // Départ complet : compte sans rôle et sans sapeur actif.
         $orphan = User::factory()->create(['admin' => false]);
@@ -467,7 +467,7 @@ class ProcessAccountDeactivationTest extends TestCase
             ['org_key' => 'sis_b'],
             ['nom' => 'SIS B', 'abreviation' => 'SB', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
         );
-        $this->fakeSapeursActifs(['sis_a' => [], 'sis_b' => [2]]);
+        $this->fakeSapeursActifs(['sis_a' => [], 'sis_b' => [2 => '']]);
 
         $user = User::factory()->create(['admin' => false]);
         $this->linkSapeur($user, $sisA, 1);
@@ -494,7 +494,7 @@ class ProcessAccountDeactivationTest extends TestCase
             ['org_key' => 'test'],
             ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
         );
-        $this->fakeSapeursActifs(['test' => [1]]);
+        $this->fakeSapeursActifs(['test' => [1 => '']]);
 
         $user = User::factory()->create(['admin' => false]);
         $this->linkSapeur($user, $sis, 1);
@@ -568,14 +568,43 @@ class ProcessAccountDeactivationTest extends TestCase
         $this->assertDatabaseHas('user_roles', ['id' => $userRole->id]);
     }
 
+    public function testDoesNotRevokeARoleWhenTheOrganisationsDomaineFetchFailed(): void
+    {
+        // A single-domaine total failure already aborts the whole command under the old
+        // code (before ever reaching role revocation), which would make this test pass for
+        // the wrong reason. 'eca' succeeding (trivially) alongside 'sis' failing is what
+        // actually exercises the per-organisation skip, since the command does NOT abort
+        // early when at least one domaine succeeded.
+        $eca = Domaine::where('code', 'eca')->firstOrFail();
+        $eca->update(['active_identities_url' => 'https://eca.test/identites-actives']);
+        $sis = Organisation::factory()->create();
+        $user = User::factory()->create(['admin' => false]);
+        $this->linkSapeur($user, $sis, 1); // sapeur_id=1 not present anywhere ('sis' fetch fails)
+        $role = Role::create(['nom' => 'Role', 'organisation_id' => $sis->id]);
+        $userRole = UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);
+
+        Http::fake([
+            'https://eca.test/identites-actives' => Http::response(['data' => []]),
+            '*/api/v2/identites-actives*' => Http::response(['error' => 'boom'], 500),
+        ]);
+        $this->mock(ExceptionHandler::class, fn($mock) => $mock->shouldReceive('report'));
+
+        $this->artisan('users:process-deactivation')->assertExitCode(1);
+
+        $this->assertDatabaseHas('user_roles', ['id' => $userRole->id]);
+    }
+
     public function testReportsToSentryWhenApiReturnsAnErrorStatus(): void
     {
         Http::fake([
-            '*/api/v2/sapeurs-actifs*' => Http::response(['error' => 'boom'], 500),
+            '*/api/v2/identites-actives*' => Http::response(['error' => 'boom'], 500),
         ]);
 
+        // Deux appels : le fetcher reporte l'échec de récupération du domaine `sis` lui-même,
+        // puis la commande reporte séparément le résumé "domaine(s) ignoré(s) ce run" -- utile
+        // pour distinguer, dans Bugsink, quelle commande a été affectée par cet échec.
         $this->mock(ExceptionHandler::class, function ($mock) {
-            $mock->shouldReceive('report')->once();
+            $mock->shouldReceive('report')->twice();
         });
 
         $exitCode = $this->artisan('users:process-deactivation')->run();
@@ -590,7 +619,7 @@ class ProcessAccountDeactivationTest extends TestCase
         });
 
         $this->mock(ExceptionHandler::class, function ($mock) {
-            $mock->shouldReceive('report')->once();
+            $mock->shouldReceive('report')->twice();
         });
 
         $exitCode = $this->artisan('users:process-deactivation')->run();
@@ -621,7 +650,7 @@ class ProcessAccountDeactivationTest extends TestCase
 
     public function testUnknownSisKeyFromApiIsLoggedAndSkipped(): void
     {
-        $this->fakeSapeursActifs(['does-not-exist-locally' => [1]]);
+        $this->fakeSapeursActifs(['does-not-exist-locally' => [1 => '']]);
 
         $this->artisan('users:process-deactivation')->assertExitCode(0);
     }

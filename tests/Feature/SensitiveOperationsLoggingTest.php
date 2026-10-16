@@ -23,7 +23,7 @@ class SensitiveOperationsLoggingTest extends TestCase
             ['org_key' => 'test'],
             ['nom' => 'Test SIS', 'abreviation' => 'TST', 'domaine_id' => Domaine::where('code', 'sis')->value('id')]
         );
-        $this->fakeSapeursActifs(['test' => [1]]);
+        $this->fakeSapeursActifs(['test' => [1 => '']]);
 
         $user = User::factory()->create([
             'admin' => false,
@@ -111,7 +111,7 @@ class SensitiveOperationsLoggingTest extends TestCase
     protected function fakeSapeursActifs(array $data): void
     {
         Http::fake([
-            '*/api/v2/sapeurs-actifs*' => Http::response(['data' => $data]),
+            '*/api/v2/identites-actives*' => Http::response(['data' => $data]),
         ]);
     }
 

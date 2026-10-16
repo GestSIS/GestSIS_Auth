@@ -2,21 +2,21 @@
 
 namespace App\Console\Commands;
 
-use App\Auth\TokenTools;
 use App\Console\Commands\Concerns\AnnouncesDryRunActions;
 use App\Mail\AccountPendingDeactivationMail;
 use App\Mail\SapeurAccessPendingDeactivationMail;
 use App\Models\ApiToken;
+use App\Models\Domaine;
 use App\Models\Role;
 use App\Models\Sapeur;
 use App\Models\Organisation;
 use App\Models\User;
+use App\Services\ActiveIdentitiesFetcher;
 use Carbon\Carbon;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use RuntimeException;
@@ -52,10 +52,15 @@ class ProcessAccountDeactivation extends Command
         $dryRun = (bool) $this->option('dry-run');
         $notify = !$this->option('no-notify');
 
-        $actifsParSisId = $this->fetchSapeursActifsParSisId();
-        if ($actifsParSisId === null) {
-            $this->error("Impossible de récupérer la liste des sapeurs actifs depuis l'API, abandon.");
-            return self::FAILURE;
+        ['roster' => $roster, 'failedDomaines' => $failedDomaines] = (new ActiveIdentitiesFetcher())->fetch();
+
+        $queriedDomaineIds = Domaine::whereNotNull('active_identities_url')->pluck('id')->diff($failedDomaines->pluck('id'));
+        $skipOrganisationIds = Organisation::whereNotIn('domaine_id', $queriedDomaineIds)->pluck('id')->all();
+
+        $actifsParSisId = $roster->map(fn($emailsBySapeurId) => $emailsBySapeurId->keys()->all())->all();
+
+        if ($failedDomaines->isNotEmpty()) {
+            report(new RuntimeException($this->getName() . ' - domaine(s) ignoré(s) ce run : ' . $failedDomaines->pluck('code')->implode(', ')));
         }
 
         // Qui occupe réellement chaque identité (sapeur_id, organisation_id) à l'instant
@@ -64,7 +69,7 @@ class ProcessAccountDeactivation extends Command
         // "le SIS l'a réattribué à quelqu'un d'autre" dans hasActiveSapeur().
         [, $aliveBySapeurSis] = Sapeur::indexAliveByIdentity(Sapeur::whereNull('deactivated_at')->get());
 
-        $revokedRoles = $this->revokeStaleRoles($actifsParSisId, $dryRun);
+        $revokedRoles = $this->revokeStaleRoles($actifsParSisId, $skipOrganisationIds, $dryRun);
         $this->info("Rôles retirés (sapeur inactif dans ce SIS) : {$revokedRoles}");
 
         $accountStats = $this->processAccounts($actifsParSisId, $aliveBySapeurSis, $dryRun, $notify);
@@ -73,13 +78,13 @@ class ProcessAccountDeactivation extends Command
         $this->info("Comptes réhabilités : {$accountStats['reinstated']}");
         $this->info("Comptes réactivés (après désactivation) : {$accountStats['reactivated']}");
 
-        $linkStats = $this->processSapeurLinks($actifsParSisId, $aliveBySapeurSis, $dryRun, $notify);
+        $linkStats = $this->processSapeurLinks($actifsParSisId, $skipOrganisationIds, $aliveBySapeurSis, $dryRun, $notify);
         $this->info("Liens sapeur marqués à couper : {$linkStats['flagged']}");
         $this->info("Liens sapeur coupés : {$linkStats['cut']}");
         $this->info("Liens sapeur réhabilités : {$linkStats['reinstated']}");
         $this->info("Liens sapeur réactivés (après coupure) : {$linkStats['reactivated']}");
 
-        return self::SUCCESS;
+        return $failedDomaines->isEmpty() ? self::SUCCESS : self::FAILURE;
     }
 
     // Rôles
@@ -92,8 +97,9 @@ class ProcessAccountDeactivation extends Command
      * survivre à un oubli de retrait côté SIS. Seule une trace est loguée.
      *
      * @param array<int, array<int, int>> $actifsParSisId
+     * @param array<int> $skipOrganisationIds
      */
-    private function revokeStaleRoles(array $actifsParSisId, bool $dryRun): int
+    private function revokeStaleRoles(array $actifsParSisId, array $skipOrganisationIds, bool $dryRun): int
     {
         $revoked = 0;
         $sisIdByRoleId = Role::pluck('organisation_id', 'id');
@@ -105,6 +111,11 @@ class ProcessAccountDeactivation extends Command
 
             foreach ($user->userRoles as $userRole) {
                 $sisId = $sisIdByRoleId[$userRole->role_id] ?? null;
+
+                if ($sisId !== null && in_array($sisId, $skipOrganisationIds, true)) {
+                    continue;
+                }
+
                 $link = $sisId !== null ? $sapeurBySisId->get($sisId) : null;
 
                 // Pas de lien sapeur connu pour ce SIS : aucun signal fiable, on ne touche pas.
@@ -286,10 +297,11 @@ class ProcessAccountDeactivation extends Command
      * rester pleinement actif via un autre SIS.
      *
      * @param array<int, array<int, int>> $actifsParSisId
+     * @param array<int> $skipOrganisationIds
      * @param Collection<string, int> $aliveBySapeurSis
      * @return array{flagged: int, cut: int, reinstated: int, reactivated: int}
      */
-    private function processSapeurLinks(array $actifsParSisId, Collection $aliveBySapeurSis, bool $dryRun, bool $notify): array
+    private function processSapeurLinks(array $actifsParSisId, array $skipOrganisationIds, Collection $aliveBySapeurSis, bool $dryRun, bool $notify): array
     {
         $flagged = 0;
         $cut = 0;
@@ -298,6 +310,10 @@ class ProcessAccountDeactivation extends Command
         $links = Sapeur::with('user.sapeur', 'organisation')->whereNull('deactivated_at')->get();
 
         foreach ($links as $link) {
+            if (in_array($link->organisation_id, $skipOrganisationIds, true)) {
+                continue;
+            }
+
             $actif = in_array($link->sapeur_id, $actifsParSisId[$link->organisation_id] ?? [], true);
 
             if ($actif) {
@@ -320,7 +336,7 @@ class ProcessAccountDeactivation extends Command
             }
         }
 
-        $reactivated = $this->reactivateCutLinks($links, $actifsParSisId, $dryRun);
+        $reactivated = $this->reactivateCutLinks($links, $actifsParSisId, $skipOrganisationIds, $dryRun);
 
         return compact('flagged', 'cut', 'reinstated', 'reactivated');
     }
@@ -375,8 +391,9 @@ class ProcessAccountDeactivation extends Command
      * @param Collection<int, Sapeur> $links Liens vivants déjà chargés par processSapeurLinks(),
      *        pour ne pas relancer la même requête ici.
      * @param array<int, array<int, int>> $actifsParSisId
+     * @param array<int> $skipOrganisationIds
      */
-    private function reactivateCutLinks(Collection $links, array $actifsParSisId, bool $dryRun): int
+    private function reactivateCutLinks(Collection $links, array $actifsParSisId, array $skipOrganisationIds, bool $dryRun): int
     {
         $reactivated = 0;
 
@@ -390,6 +407,10 @@ class ProcessAccountDeactivation extends Command
         $cutLinks = Sapeur::with('user', 'organisation')->whereNotNull('deactivated_at')->get();
 
         foreach ($cutLinks as $link) {
+            if (in_array($link->organisation_id, $skipOrganisationIds, true)) {
+                continue;
+            }
+
             if (!in_array($link->sapeur_id, $actifsParSisId[$link->organisation_id] ?? [], true)) {
                 continue;
             }
@@ -417,44 +438,6 @@ class ProcessAccountDeactivation extends Command
     }
 
     // Partagé
-
-    /**
-     * Récupère, pour chaque SIS (identifié par son id local), la liste des
-     * sapeur_id actifs remontés par l'API. Retourne null en cas d'échec.
-     *
-     * @return ?array<int, array<int, int>>
-     */
-    private function fetchSapeursActifsParSisId(): ?array
-    {
-        $response = Http::withHeaders([
-            'Sis-Key' => '_',
-            'Authorization' => 'Bearer ' . TokenTools::createAccessToken(new User(), ['_' => ['admin']], [], [], type: TokenTools::TOKEN_TYPE_SERVICE),
-        ])->acceptJson()->timeout(10)->get(config('gestsis.api_url', '') . '/api/v2/sapeurs-actifs');
-
-        if (!$response->successful()) {
-            // Un échec de sync ici signifie que l'API est injoignable ou en erreur :
-            // remonté à Sentry/Bugsink, pas seulement loggé.
-            report(new RuntimeException(
-                $this->getName() . " - échec de récupération des sapeurs actifs (status {$response->status()})"
-            ));
-            Log::error($this->getName() . ' - échec de récupération des sapeurs actifs', [
-                'status' => $response->status(),
-            ]);
-            return null;
-        }
-
-        $sisByApiKey = Organisation::all()->keyBy('org_key');
-        $actifsParSisId = [];
-        foreach ($response->json('data', []) as $sisKey => $sapeurIds) {
-            if (!isset($sisByApiKey[$sisKey])) {
-                Log::warning($this->getName() . ' - SIS inconnu localement', ['sis_key' => $sisKey]);
-                continue;
-            }
-            $actifsParSisId[$sisByApiKey[$sisKey]->id] = $sapeurIds;
-        }
-
-        return $actifsParSisId;
-    }
 
     /**
      * @param array<int, array<int, int>> $actifsParSisId

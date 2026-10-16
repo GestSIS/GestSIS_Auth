@@ -33,7 +33,7 @@ class ProcessAccountDeactivationIdReuseTest extends TestCase
         ]);
 
         Http::fake([
-            '*/api/v2/sapeurs-actifs*' => Http::response(['data' => [$sis->org_key => [5]]]),
+            '*/api/v2/identites-actives*' => Http::response(['data' => [$sis->org_key => [5 => '']]]),
         ]);
 
         $exitCode = Artisan::call('users:process-deactivation');
