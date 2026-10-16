@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             SisSeeder::class,
             RoleSeeder::class,
+            TwoFactorPolicySeeder::class,
         ]);
 
         // Comptes de démo à mot de passe connu jamais en production.

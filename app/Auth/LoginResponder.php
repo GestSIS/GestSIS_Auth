@@ -90,7 +90,7 @@ class LoginResponder
             return false;
         }
 
-        return config('gestsis.two_factor_enforcement_enabled') && TwoFactorPolicy::current()->isEnforced();
+        return config('gestsis.two_factor_enforcement_enabled') && TwoFactorPolicy::isEnforced();
     }
 
     /**
