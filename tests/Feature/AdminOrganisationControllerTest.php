@@ -70,36 +70,36 @@ class AdminOrganisationControllerTest extends TestCase
             ]);
 
         $organisationId = $response->json('data.id');
-        $sis = Sis::find($organisationId);
+        $organisation = Organisation::find($organisationId);
 
-        $this->assertNotNull($sis, 'Creating an organisation must create the matching Sis row');
-        $this->assertSame('nouvelle-org-2', $sis->api_key);
-        $this->assertSame('NO2', $sis->abreviation);
-        $this->assertTrue((bool) $sis->mobile);
+        $this->assertNotNull($organisation, 'Creating an organisation must create the Organisation row');
+        $this->assertSame('nouvelle-org-2', $organisation->org_key);
+        $this->assertSame('NO2', $organisation->abreviation);
+        $this->assertTrue((bool) $organisation->mobile);
 
-        // La FK sapeurs.sis_id -> sis.id ne peut être satisfaite que si la ligne
-        // sis existe réellement (pas seulement organisations).
-        \App\Models\Sapeur::insert(['sapeur_id' => 1, 'sis_id' => $organisationId, 'user_id' => $admin->id]);
-        $this->assertDatabaseHas('sapeurs', ['sis_id' => $organisationId, 'sapeur_id' => 1]);
+        // La FK sapeurs.organisation_id -> organisations.id doit être satisfaite
+        // directement (plus besoin d'une ligne sis derrière, depuis Task 2).
+        \App\Models\Sapeur::insert(['sapeur_id' => 1, 'organisation_id' => $organisationId, 'user_id' => $admin->id]);
+        $this->assertDatabaseHas('sapeurs', ['organisation_id' => $organisationId, 'sapeur_id' => 1]);
     }
 
     public function testUpdatingAnOrganisationAlsoUpdatesTheMatchingSisRow(): void
     {
-        $sis = Sis::factory()->create(['mobile' => false, 'abreviation' => 'OLD']);
+        $organisation = Organisation::factory()->create(['mobile' => false, 'abreviation' => 'OLD']);
         $admin = User::factory()->create(['admin' => true]);
         $token = TokenTools::createAccessToken($admin, [], [], []);
 
         $this->withHeaders(['Authorization' => "Bearer $token"])
-            ->putJson("/api/v1/admin/organisations/{$sis->id}", [
-                'nom' => $sis->nom,
+            ->putJson("/api/v1/admin/organisations/{$organisation->id}", [
+                'nom' => $organisation->nom,
                 'abreviation' => 'NEW',
                 'mobile' => true,
             ])
             ->assertStatus(200);
 
-        $sis->refresh();
-        $this->assertSame('NEW', $sis->abreviation);
-        $this->assertTrue((bool) $sis->mobile);
+        $organisation->refresh();
+        $this->assertSame('NEW', $organisation->abreviation);
+        $this->assertTrue((bool) $organisation->mobile);
     }
 
     public function testAdminCannotCreateOrganisationWithExistingOrgKey(): void
