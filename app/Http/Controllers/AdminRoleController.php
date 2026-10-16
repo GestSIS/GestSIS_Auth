@@ -28,7 +28,7 @@ class AdminRoleController extends Controller
         $data = $request->validate([
             'nom' => 'required|string|min:1',
             'description' => 'string|required',
-            'sis_id' => 'required|integer|exists:sis,id',
+            'organisation_id' => 'required|integer|exists:organisations,id',
             'permissions.*' => 'integer',
         ]);
 
