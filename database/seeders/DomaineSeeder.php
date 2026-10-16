@@ -23,7 +23,7 @@ class DomaineSeeder extends Seeder
         Domaine::updateOrCreate(['code' => 'sis'], [
             'nom' => 'GestSIS',
             'self_registration_enabled' => true,
-            'active_identities_url' => config('gestsis.api_url', '') . '/api/v2/sapeurs-emails',
+            'active_identities_url' => config('gestsis.api_url', '') . '/api/v2/identites-actives',
             'mail_from' => env('MAIL_FROM_SIS', 'support@gestsis.ch'),
             'mail_name' => 'GestSIS',
             'test_account_domain_suffix' => '@gestsis.ch',
