@@ -5,9 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
 use App\Models\PermissionRole;
-use App\Models\Sis;
 use App\Observers\PermissionRoleObserver;
-use App\Observers\SisObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,7 +25,6 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
 
-        Sis::observe(SisObserver::class);
         PermissionRole::observe(PermissionRoleObserver::class);
 
         // Force HTTPS in production
