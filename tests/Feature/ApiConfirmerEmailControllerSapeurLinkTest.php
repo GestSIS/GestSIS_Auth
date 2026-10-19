@@ -27,6 +27,7 @@ class ApiConfirmerEmailControllerSapeurLinkTest extends TestCase
             'password' => 'a-very-long-password',
             'password_confirmation' => 'a-very-long-password',
             'token' => 'un-jeton-invitation',
+            'domaine_code' => 'sis',
         ]);
     }
 

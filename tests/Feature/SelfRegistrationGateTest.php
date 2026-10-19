@@ -17,6 +17,7 @@ class SelfRegistrationGateTest extends TestCase
             'email' => 'new@example.com',
             'password' => 'Str0ngP@ssw0rd!',
             'password_confirmation' => 'Str0ngP@ssw0rd!',
+            'domaine_code' => 'sis',
         ]);
 
         $response->assertStatus(200);
@@ -32,6 +33,7 @@ class SelfRegistrationGateTest extends TestCase
             'email' => 'new2@example.com',
             'password' => 'Str0ngP@ssw0rd!',
             'password_confirmation' => 'Str0ngP@ssw0rd!',
+            'domaine_code' => 'sis',
         ]);
 
         $response->assertStatus(422);

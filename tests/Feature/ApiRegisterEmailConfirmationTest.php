@@ -35,6 +35,7 @@ class ApiRegisterEmailConfirmationTest extends TestCase
             'password' => 'a-very-long-password',
             'password_confirmation' => 'a-very-long-password',
             'token' => 'un-jeton-invitation',
+            'domaine_code' => 'sis',
         ]);
     }
 
@@ -53,6 +54,7 @@ class ApiRegisterEmailConfirmationTest extends TestCase
             'password' => 'a-very-long-password',
             'password_confirmation' => 'a-very-long-password',
             'token' => 'un-jeton-invitation-inexistant',
+            'domaine_code' => 'sis',
         ]);
         // Jeton d'invitation invalide : juste pour vérifier qu'aucune session
         // n'apparaît même dans une réponse d'erreur.

@@ -8,6 +8,7 @@ use App\Mail\ConfirmationEmail;
 use App\Models\Domaine;
 use App\Models\RegisterToken;
 use App\Models\User;
+use App\Services\EmailIdentityMatcher;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -17,7 +18,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 
 class ApiRegisterController extends Controller
@@ -32,6 +32,8 @@ class ApiRegisterController extends Controller
         Log::debug("Call register");
 
         $this->validator($request->all())->validate();
+
+        $domaine = Domaine::where('code', $request->input('domaine_code'))->first();
 
         // Check présence de token
         $registerToken = $request->input('token');
@@ -52,19 +54,16 @@ class ApiRegisterController extends Controller
             // inscription sans token, avant même de contacter GestSIS_API :
             // même réponse générique que le cas email invalide/déjà utilisé,
             // pour ne pas révéler pourquoi (voir system.md).
-            if (! Domaine::where('code', 'sis')->value('self_registration_enabled')) {
+            if (! $domaine->self_registration_enabled) {
                 return response()->json(['message' => 'Email invalide ou déjà utilisé', 'errors' => ['email' => ['Email invalide ou déjà utilisé']]], 422);
             }
 
             // Controle que l'email est existant au sein d'un SIS
             $email = $request->input('email');
 
-            $response = Http::withHeaders([
-                'Sis-Key' => '_',
-                'Authorization' => 'Bearer ' . TokenTools::createAccessToken(new User(), ['_' => ['admin']], [], [], type: TokenTools::TOKEN_TYPE_SERVICE)
-            ])->acceptJson()->timeout(3)->get(config('gestsis.api_url', '') . '/api/v2/email-validate', ['email' => $email]); //->throw()->json();
+            $result = (new EmailIdentityMatcher())->matchInDomaine($domaine, $email);
 
-            if (!$response->successful() || !$response['data']) {
+            if ($result['failed'] || !$result['matched']) {
                 // Same response as the duplicate-email case below: a caller must not
                 // be able to tell apart "unknown email" from "already registered"
                 return response()->json(['message' => 'Email invalide ou déjà utilisé', 'errors' => ['email' => ['Email invalide ou déjà utilisé']]], 422);
@@ -85,7 +84,7 @@ class ApiRegisterController extends Controller
 
         // Envoie du code de confirmation par email
         try {
-            Mail::to($user)->send(new ConfirmationEmail($user, $plainEmailCode));
+            Mail::to($user)->send(new ConfirmationEmail($user, $plainEmailCode, domaineCode: $domaine->code));
         } catch (Exception $e) {
             $user->delete();
             return response()->json(['message' => "Une erreur à eu lieu lors de l'envoie de l'email de confirmation"], 500);
@@ -122,6 +121,7 @@ class ApiRegisterController extends Controller
             'email' => ['required', 'string', 'email', 'max:255'],
             'password' => ['required', 'string', PasswordPolicy::rule(), 'confirmed'],
             'token' => ['string', 'min:8', 'nullable'],
+            'domaine_code' => ['required', 'string', 'exists:domaines,code'],
         ], PasswordPolicy::messages('password'));
     }
 

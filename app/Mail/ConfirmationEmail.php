@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Models\Domaine;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -16,7 +17,7 @@ class ConfirmationEmail extends Mailable
      *
      * @return void
      */
-    public function __construct(public User $user, public string $code)
+    public function __construct(public User $user, public string $code, public string $domaineCode = 'sis')
     {
     }
 
@@ -27,7 +28,9 @@ class ConfirmationEmail extends Mailable
      */
     public function build(): ConfirmationEmail
     {
-        return $this->from('support@gestsis.ch', 'GestSIS')
+        $domaine = Domaine::where('code', $this->domaineCode)->firstOrFail();
+
+        return $this->from($domaine->mail_from, $domaine->mail_name)
             ->subject("Inscription à GestSIS")
             ->text('emails.confirmation_email');
     }
