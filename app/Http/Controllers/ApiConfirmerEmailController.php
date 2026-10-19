@@ -3,17 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Auth\LoginResponder;
-use App\Auth\TokenTools;
 use App\Models\Sapeur;
-use App\Models\Organisation;
 use App\Models\User;
+use App\Services\EmailIdentityMatcher;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 class ApiConfirmerEmailController extends Controller
@@ -69,31 +67,16 @@ class ApiConfirmerEmailController extends Controller
         ]);
 
         // Ajout des liaisons avec sapeur
-        $response = Http::withHeaders([
-            'Sis-Key' => '_',
-            'Authorization' => 'Bearer ' . TokenTools::createAccessToken(new User(), ['_' => ['admin']], [], [], type: TokenTools::TOKEN_TYPE_SERVICE)
-        ])->acceptJson()->timeout(3)->get(config('gestsis.api_url', '') . '/api/v2/email-validate', ['email' => $user->email]); //->throw()->json();
+        $result = (new EmailIdentityMatcher())->matchAcrossAllDomaines($user->email);
 
-        if ($response->successful() && $response['data']) {
-            // Chargement de la liste des SIS
-            $sis = Organisation::all()->keyBy('org_key');
-
-            // Ajout des liaisons avec Sapeur
-            $sapeurs = [];
-            foreach ($response['data'] as $sisKey => $sapeurId) {
-                // Ignore les SIS retournés par l'API mais inconnus localement
-                if (!isset($sis[$sisKey])) {
-                    Log::warning('SIS inconnu localement lors de la liaison sapeur', [
-                        'sis_key' => $sisKey,
-                        'user_id' => $user->id,
-                    ]);
-                    continue;
-                }
-                array_push($sapeurs, ['sapeur_id' => $sapeurId, 'organisation_id' => $sis[$sisKey]->id, 'user_id' => $user->id]);
-            }
-            if (!empty($sapeurs)) {
-                Sapeur::insert($sapeurs);
-            }
+        if ($result['matches']->isNotEmpty()) {
+            Sapeur::insert(
+                $result['matches']->map(fn($sapeurId, $organisationId) => [
+                    'sapeur_id' => $sapeurId,
+                    'organisation_id' => $organisationId,
+                    'user_id' => $user->id,
+                ])->values()->all()
+            );
         }
 
         return LoginResponder::respondAfterAuthentication($user, $request);

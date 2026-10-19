@@ -3,9 +3,11 @@
 namespace Tests\Feature;
 
 use App\Auth\TokenTools;
+use App\Models\Domaine;
 use App\Models\Organisation;
 use App\Models\RegisterToken;
 use App\Models\User;
+use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
@@ -58,5 +60,48 @@ class ApiConfirmerEmailControllerSapeurLinkTest extends TestCase
             ->assertOk();
 
         $this->assertDatabaseHas('sapeurs', ['organisation_id' => $organisation->id, 'sapeur_id' => 42, 'user_id' => $user->id]);
+    }
+
+    public function testConfirmingEmailLinksSapeursAcrossMultipleDomaines(): void
+    {
+        $eca = Domaine::where('code', 'eca')->firstOrFail();
+        $eca->update(['email_validate_url' => 'https://eca.test/email-validate']);
+        $sisOrg = Organisation::factory()->create(['org_key' => 'confirm-link']);
+        $ecaOrg = Organisation::factory()->create(['org_key' => 'other-org', 'domaine_id' => $eca->id]);
+
+        Http::fake([
+            '*/api/v2/email-validate*' => Http::response(['data' => ['confirm-link' => 42]]),
+            'https://eca.test/email-validate*' => Http::response(['data' => ['other-org' => 7]]),
+        ]);
+        $this->registerViaInviteToken('confirme-multi@example.com');
+        $user = User::where('email', 'confirme-multi@example.com')->first();
+        $plainCode = $this->extractSentCode();
+
+        $this->postJson('/api/v1/confirmer-email', ['email' => 'confirme-multi@example.com', 'code' => $plainCode])
+            ->assertOk();
+
+        $this->assertDatabaseHas('sapeurs', ['organisation_id' => $sisOrg->id, 'sapeur_id' => 42, 'user_id' => $user->id]);
+        $this->assertDatabaseHas('sapeurs', ['organisation_id' => $ecaOrg->id, 'sapeur_id' => 7, 'user_id' => $user->id]);
+    }
+
+    public function testConfirmingEmailStillLinksASucceedingDomaineWhenAnotherFails(): void
+    {
+        $eca = Domaine::where('code', 'eca')->firstOrFail();
+        $eca->update(['email_validate_url' => 'https://eca.test/email-validate']);
+        $sisOrg = Organisation::factory()->create(['org_key' => 'confirm-link']);
+
+        Http::fake([
+            '*/api/v2/email-validate*' => Http::response(['data' => ['confirm-link' => 42]]),
+            'https://eca.test/email-validate*' => Http::response(['error' => 'boom'], 500),
+        ]);
+        $this->mock(ExceptionHandler::class, fn($mock) => $mock->shouldReceive('report')->once());
+        $this->registerViaInviteToken('confirme-partiel@example.com');
+        $user = User::where('email', 'confirme-partiel@example.com')->first();
+        $plainCode = $this->extractSentCode();
+
+        $this->postJson('/api/v1/confirmer-email', ['email' => 'confirme-partiel@example.com', 'code' => $plainCode])
+            ->assertOk();
+
+        $this->assertDatabaseHas('sapeurs', ['organisation_id' => $sisOrg->id, 'sapeur_id' => 42, 'user_id' => $user->id]);
     }
 }
