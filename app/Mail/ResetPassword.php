@@ -34,6 +34,6 @@ class ResetPassword extends Mailable
 
         return $this->from($domaine->mail_from, $domaine->mail_name)
             ->subject("Réinitialisation du mot de passe GestSIS")
-            ->text('emails.reset_password');
+            ->text('emails.reset_password', ['appUrl' => $domaine->app_url]);
     }
 }

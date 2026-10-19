@@ -12,6 +12,7 @@ class Domaine extends Model
         'self_registration_enabled',
         'active_identities_url',
         'email_validate_url',
+        'app_url',
         'mail_from',
         'mail_name',
         'test_account_domain_suffix',

@@ -68,6 +68,16 @@ class DomaineAwareMailTest extends TestCase
         $this->assertSame($eca->mail_name, $mail->from[0]['name']);
     }
 
+    public function testResetPasswordMailBodyUsesTheDomaineSpecificAppUrl(): void
+    {
+        $eca = Domaine::where('code', 'eca')->firstOrFail();
+        $eca->update(['app_url' => 'https://eca.example.com']);
+
+        $rendered = (new ResetPassword('le-jeton', domaineCode: 'eca'))->render();
+
+        $this->assertStringContainsString('https://eca.example.com/#/reset-mdp?token=le-jeton', $rendered);
+    }
+
     public function testSapeurAccessPendingDeactivationMailBodyRendersTheOrganisationName(): void
     {
         $sis = Organisation::factory()->create(['nom' => 'SIS Rendu Test']);
