@@ -15,10 +15,6 @@ return new class extends Migration
         Schema::table('domaines', function (Blueprint $table) {
             $table->string('email_validate_url')->nullable();
         });
-
-        DB::table('domaines')->where('code', 'sis')->update([
-            'email_validate_url' => config('gestsis.api_url', '') . '/api/v2/email-validate',
-        ]);
     }
 
     /**

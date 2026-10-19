@@ -15,10 +15,6 @@ return new class extends Migration
         Schema::table('domaines', function (Blueprint $table) {
             $table->string('active_identities_url')->nullable();
         });
-
-        DB::table('domaines')->where('code', 'sis')->update([
-            'active_identities_url' => config('gestsis.api_url', '') . '/api/v2/sapeurs-emails',
-        ]);
     }
 
     /**

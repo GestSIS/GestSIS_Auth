@@ -15,10 +15,6 @@ return new class extends Migration
         Schema::table('domaines', function (Blueprint $table) {
             $table->string('app_url')->nullable();
         });
-
-        DB::table('domaines')->where('code', 'sis')->update([
-            'app_url' => config('gestsis.app_url', ''),
-        ]);
     }
 
     /**

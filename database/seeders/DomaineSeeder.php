@@ -23,9 +23,9 @@ class DomaineSeeder extends Seeder
         Domaine::updateOrCreate(['code' => 'sis'], [
             'nom' => 'GestSIS',
             'self_registration_enabled' => true,
-            'active_identities_url' => config('gestsis.api_url', '') . '/api/v2/identites-actives',
-            'email_validate_url' => config('gestsis.api_url', '') . '/api/v2/email-validate',
-            'app_url' => config('gestsis.app_url', ''),
+            'active_identities_url' => env('APP_GESTSIS_API_URL', '') . '/api/v2/identites-actives',
+            'email_validate_url' => env('APP_GESTSIS_API_URL', '') . '/api/v2/email-validate',
+            'app_url' => env('APP_GESTSIS_APP_URL', ''),
             'mail_from' => env('MAIL_FROM_SIS', 'support@gestsis.ch'),
             'mail_name' => 'GestSIS',
             'test_account_domain_suffix' => '@gestsis.ch',
