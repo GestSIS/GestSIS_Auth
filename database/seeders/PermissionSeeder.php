@@ -59,6 +59,7 @@ class PermissionSeeder extends Seeder
 
             ['id' => 24, 'tri' => 600, 'nom' => 'Matériel lecture', 'description' => 'Affichage du matériel', 'api_key' => 'materiel.lecture'],
             ['id' => 25, 'tri' => 610, 'nom' => 'Matériel modification', 'description' => 'Modification du matériel', 'api_key' => 'materiel.modification'],
+            ['id' => 47, 'tri' => 615, 'nom' => 'Matériel contrôle', 'description' => 'Exécution des contrôles du matériel', 'api_key' => 'materiel.controle'],
             ['id' => 26, 'tri' => 620, 'nom' => 'Matériel config', 'description' => 'Configuration du matériel', 'api_key' => 'materiel.config'],
 
             ['id' => 9, 'tri' => 700, 'nom' => 'Organisation modification', 'description' => 'Modification des groupes', 'api_key' => 'organisation.modification'],

@@ -6,6 +6,7 @@ use App\Models\Permission;
 use App\Models\PermissionRole;
 use App\Models\Role;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 class DBCustomSeed extends Command
 {
@@ -71,6 +72,7 @@ class DBCustomSeed extends Command
 
             ['id' => 24, 'tri' => 600, 'nom' => 'Matériel lecture', 'description' => 'Affichage du matériel', 'api_key' => 'materiel.lecture'],
             ['id' => 25, 'tri' => 610, 'nom' => 'Matériel modification', 'description' => 'Modification du matériel', 'api_key' => 'materiel.modification'],
+            ['id' => 47, 'tri' => 615, 'nom' => 'Matériel contrôle', 'description' => 'Exécution des contrôles du matériel', 'api_key' => 'materiel.controle'],
             ['id' => 26, 'tri' => 620, 'nom' => 'Matériel config', 'description' => 'Configuration du matériel', 'api_key' => 'materiel.config'],
 
             ['id' => 9, 'tri' => 700, 'nom' => 'Organisation modification', 'description' => 'Modification des groupes', 'api_key' => 'organisation.modification'],
@@ -103,9 +105,14 @@ class DBCustomSeed extends Command
             ['id' => 20, 'tri' => 2000, 'nom' => 'Admin', 'description' => 'Paramètres admin du système', 'api_key' => 'admin.tout'],
         ];
 
-        foreach ($permissions as $p) {
-            Permission::updateOrCreate(['id' => $p['id']], $p);
-        }
+        // unguarded : `id` n'est pas fillable, sans cela une permission absente de la
+        // base serait créée avec un id auto-incrémenté au lieu de l'id fixé ci-dessus
+        // (dont dépendent les attributions aux rôles plus bas).
+        Permission::unguarded(function () use ($permissions): void {
+            foreach ($permissions as $p) {
+                Permission::updateOrCreate(['id' => $p['id']], $p);
+            }
+        });
 
         // utilisateur.tout (id 11) a été renommé en utilisateur.modification (même id,
         // mis à jour par le updateOrCreate ci-dessus) ; tout rôle qui avait `tout` a donc
@@ -130,7 +137,46 @@ class DBCustomSeed extends Command
             PermissionRole::firstOrCreate(['permission_id' => 46, 'role_id' => $roleId]);
         }
 
+        // Nouvelle permission materiel.controle (id 47) : l'exécution des contrôles
+        // matériel n'est plus couverte par materiel.modification. Pour que personne ne
+        // perde ce droit, on l'attribue à tous les rôles et jetons API qui ont
+        // materiel.modification (id 25).
+        printf("Seed Permission materiel.controle pour les rôles et jetons API materiel.modification\n");
+        $this->assignSisDomaineToNewPermissions();
+        $materielModificationRoleIds = PermissionRole::where(['permission_id' => 25])->get()->pluck('role_id');
+
+        foreach (array_unique($materielModificationRoleIds->toArray()) as $roleId) {
+            PermissionRole::firstOrCreate(['permission_id' => 47, 'role_id' => $roleId]);
+        }
+
+        $materielModificationApiTokenIds = DB::table('api_token_permissions')->where('permission_id', 25)->pluck('api_token_id');
+
+        foreach (array_unique($materielModificationApiTokenIds->toArray()) as $apiTokenId) {
+            DB::table('api_token_permissions')->insertOrIgnore([
+                'api_token_id' => $apiTokenId,
+                'permission_id' => 47,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
         printf("Migrating done\n");
         return 0;
+    }
+
+    /**
+     * Rattache au domaine sis les permissions métier créées sans domaine (domaine_id
+     * n'est pas renseigné par le updateOrCreate), comme le backfill de la migration
+     * add_domaine_id_to_permissions_table. Sans cela, l'observer PermissionRole
+     * laisserait attribuer la permission à un rôle de n'importe quel domaine.
+     */
+    private function assignSisDomaineToNewPermissions(): void
+    {
+        $sisDomaineId = DB::table('domaines')->where('code', 'sis')->value('id');
+
+        DB::table('permissions')
+            ->whereNull('domaine_id')
+            ->whereNotIn('api_key', ['utilisateur.config', 'utilisateur.lecture', 'utilisateur.modification'])
+            ->update(['domaine_id' => $sisDomaineId]);
     }
 }
