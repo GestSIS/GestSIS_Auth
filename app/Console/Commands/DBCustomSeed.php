@@ -73,6 +73,7 @@ class DBCustomSeed extends Command
             ['id' => 24, 'tri' => 600, 'nom' => 'Matériel lecture', 'description' => 'Affichage du matériel', 'api_key' => 'materiel.lecture'],
             ['id' => 25, 'tri' => 610, 'nom' => 'Matériel modification', 'description' => 'Modification du matériel', 'api_key' => 'materiel.modification'],
             ['id' => 47, 'tri' => 615, 'nom' => 'Matériel contrôle', 'description' => 'Exécution des contrôles du matériel', 'api_key' => 'materiel.controle'],
+            ['id' => 48, 'tri' => 616, 'nom' => 'Matériel inventaire', 'description' => 'Démarrage, saisie et validation des inventaires du matériel', 'api_key' => 'materiel.inventaire'],
             ['id' => 26, 'tri' => 620, 'nom' => 'Matériel config', 'description' => 'Configuration du matériel', 'api_key' => 'materiel.config'],
 
             ['id' => 9, 'tri' => 700, 'nom' => 'Organisation modification', 'description' => 'Modification des groupes', 'api_key' => 'organisation.modification'],
@@ -143,25 +144,41 @@ class DBCustomSeed extends Command
         // materiel.modification (id 25).
         printf("Seed Permission materiel.controle pour les rôles et jetons API materiel.modification\n");
         $this->assignSisDomaineToNewPermissions();
-        $materielModificationRoleIds = PermissionRole::where(['permission_id' => 25])->get()->pluck('role_id');
+        $this->grantToHoldersOf(25, 47);
 
-        foreach (array_unique($materielModificationRoleIds->toArray()) as $roleId) {
-            PermissionRole::firstOrCreate(['permission_id' => 47, 'role_id' => $roleId]);
+        // Nouvelle permission materiel.inventaire (id 48) : démarrer, saisir et valider un
+        // inventaire. On l'attribue aux rôles et jetons API qui ont materiel.modification
+        // (id 25), qui en avaient la responsabilité jusqu'ici.
+        printf("Seed Permission materiel.inventaire pour les rôles et jetons API materiel.modification\n");
+        $this->grantToHoldersOf(25, 48);
+
+        printf("Migrating done\n");
+        return 0;
+    }
+
+    /**
+     * Attribue la permission $targetPermissionId à tous les rôles et jetons API qui ont
+     * déjà la permission $sourcePermissionId. Idempotent : relancer la commande ne crée
+     * pas de doublon.
+     */
+    private function grantToHoldersOf(int $sourcePermissionId, int $targetPermissionId): void
+    {
+        $roleIds = PermissionRole::where(['permission_id' => $sourcePermissionId])->get()->pluck('role_id');
+
+        foreach (array_unique($roleIds->toArray()) as $roleId) {
+            PermissionRole::firstOrCreate(['permission_id' => $targetPermissionId, 'role_id' => $roleId]);
         }
 
-        $materielModificationApiTokenIds = DB::table('api_token_permissions')->where('permission_id', 25)->pluck('api_token_id');
+        $apiTokenIds = DB::table('api_token_permissions')->where('permission_id', $sourcePermissionId)->pluck('api_token_id');
 
-        foreach (array_unique($materielModificationApiTokenIds->toArray()) as $apiTokenId) {
+        foreach (array_unique($apiTokenIds->toArray()) as $apiTokenId) {
             DB::table('api_token_permissions')->insertOrIgnore([
                 'api_token_id' => $apiTokenId,
-                'permission_id' => 47,
+                'permission_id' => $targetPermissionId,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
         }
-
-        printf("Migrating done\n");
-        return 0;
     }
 
     /**
