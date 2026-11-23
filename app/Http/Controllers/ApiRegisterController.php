@@ -6,10 +6,8 @@ use App\Auth\PasswordPolicy;
 use App\Auth\TokenTools;
 use App\Mail\ConfirmationEmail;
 use App\Models\Domaine;
-use App\Models\RegisterToken;
 use App\Models\User;
 use App\Services\EmailIdentityMatcher;
-use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
@@ -17,7 +15,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
 class ApiRegisterController extends Controller
@@ -35,39 +32,21 @@ class ApiRegisterController extends Controller
 
         $domaine = Domaine::where('code', $request->input('domaine_code'))->first();
 
-        // Check présence de token
-        $registerToken = $request->input('token');
-        $rolesId = [];
-        if ($registerToken != null && $registerToken != '') {
-            $registerToken = RegisterToken::where('token', '=', TokenTools::hashToken($registerToken))
-                ->where('validite', '>=', Carbon::now())->first();
+        // Un domaine qui désactive l'auto-inscription refuse toute inscription,
+        // avant même de contacter GestSIS_API : même réponse générique que le
+        // cas email invalide/déjà utilisé, pour ne pas révéler pourquoi (voir
+        // system.md).
+        if (! $domaine->self_registration_enabled) {
+            return response()->json(['message' => 'Email invalide ou déjà utilisé', 'errors' => ['email' => ['Email invalide ou déjà utilisé']]], 422);
+        }
 
-            // Validate register token validité
-            if (is_null($registerToken)) {
-                return response()->json(['message' => "Token invalide"], 401);
-            }
-            $rolesId = DB::table('register_token_roles')
-                ->where('register_token_id', '=', $registerToken->id)
-                ->pluck('role_id')->toArray();
-        } else {
-            // Un domaine qui désactive l'auto-inscription refuse toute
-            // inscription sans token, avant même de contacter GestSIS_API :
-            // même réponse générique que le cas email invalide/déjà utilisé,
-            // pour ne pas révéler pourquoi (voir system.md).
-            if (! $domaine->self_registration_enabled) {
-                return response()->json(['message' => 'Email invalide ou déjà utilisé', 'errors' => ['email' => ['Email invalide ou déjà utilisé']]], 422);
-            }
+        // Controle que l'email est existant au sein d'un SIS
+        $result = (new EmailIdentityMatcher())->matchInDomaine($domaine, $request->input('email'));
 
-            // Controle que l'email est existant au sein d'un SIS
-            $email = $request->input('email');
-
-            $result = (new EmailIdentityMatcher())->matchInDomaine($domaine, $email);
-
-            if ($result['failed'] || !$result['matched']) {
-                // Same response as the duplicate-email case below: a caller must not
-                // be able to tell apart "unknown email" from "already registered"
-                return response()->json(['message' => 'Email invalide ou déjà utilisé', 'errors' => ['email' => ['Email invalide ou déjà utilisé']]], 422);
-            }
+        if ($result['failed'] || !$result['matched']) {
+            // Same response as the duplicate-email case below: a caller must not
+            // be able to tell apart "unknown email" from "already registered"
+            return response()->json(['message' => 'Email invalide ou déjà utilisé', 'errors' => ['email' => ['Email invalide ou déjà utilisé']]], 422);
         }
 
         // Duplicate emails are caught here via the database unique index rather than
@@ -88,15 +67,6 @@ class ApiRegisterController extends Controller
         } catch (Exception $e) {
             $user->delete();
             return response()->json(['message' => "Une erreur à eu lieu lors de l'envoie de l'email de confirmation"], 500);
-        }
-
-        // Ajoute des rôles
-        $user->roles()->attach($rolesId);
-        $user->save();
-
-        // Suppression du token
-        if (!is_null($registerToken)) {
-            $registerToken->delete();
         }
 
         // Aucune session n'est émise ici : le compte n'a pas encore prouvé la
@@ -120,7 +90,6 @@ class ApiRegisterController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255'],
             'password' => ['required', 'string', PasswordPolicy::rule(), 'confirmed'],
-            'token' => ['string', 'min:8', 'nullable'],
             'domaine_code' => ['required', 'string', 'exists:domaines,code'],
         ], PasswordPolicy::messages('password'));
     }

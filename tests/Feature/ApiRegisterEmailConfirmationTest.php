@@ -2,11 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Auth\TokenTools;
-use App\Models\RegisterToken;
 use App\Models\TwoFactorPolicy;
 use App\Models\User;
 use Illuminate\Routing\Middleware\ThrottleRequests;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
@@ -20,50 +19,33 @@ use Tests\TestCase;
  */
 class ApiRegisterEmailConfirmationTest extends TestCase
 {
-    private function registerViaInviteToken(string $email = 'nouveau@example.com'): void
+    private function registerWithAKnownSapeurEmail(string $email = 'nouveau@example.com'): void
     {
         Mail::fake();
-        RegisterToken::create([
-            'token' => TokenTools::hashToken('un-jeton-invitation'),
-            'description' => 'Test',
-            'validite' => now()->addDay(),
-        ]);
+        Http::fake(['*/api/v2/email-validate*' => Http::response(['data' => ['hs' => 99]])]);
 
         $this->postJson('/api/v1/register', [
             'name' => 'Nouveau Sapeur',
             'email' => $email,
             'password' => 'a-very-long-password',
             'password_confirmation' => 'a-very-long-password',
-            'token' => 'un-jeton-invitation',
             'domaine_code' => 'sis',
         ]);
     }
 
     public function testRegisteringDoesNotIssueASessionAndAsksForEmailConfirmation(): void
     {
-        $this->registerViaInviteToken('nouveau@example.com');
+        $this->registerWithAKnownSapeurEmail('nouveau@example.com');
 
         $user = User::where('email', 'nouveau@example.com')->first();
         $this->assertNotNull($user);
         $this->assertNull($user->email_verified_at);
         $this->assertNotNull($user->validate_email_token);
-
-        $response = $this->postJson('/api/v1/register', [
-            'name' => 'Doublon',
-            'email' => 'autre@example.com',
-            'password' => 'a-very-long-password',
-            'password_confirmation' => 'a-very-long-password',
-            'token' => 'un-jeton-invitation-inexistant',
-            'domaine_code' => 'sis',
-        ]);
-        // Jeton d'invitation invalide : juste pour vérifier qu'aucune session
-        // n'apparaît même dans une réponse d'erreur.
-        $this->assertArrayNotHasKey('accessToken', $response->json() ?? []);
     }
 
     public function testConfirmingWithTheCorrectCodeVerifiesTheEmailAndIssuesASession(): void
     {
-        $this->registerViaInviteToken('confirme-moi@example.com');
+        $this->registerWithAKnownSapeurEmail('confirme-moi@example.com');
         $user = User::where('email', 'confirme-moi@example.com')->first();
         $plainCode = $this->extractSentCode();
 
@@ -81,7 +63,7 @@ class ApiRegisterEmailConfirmationTest extends TestCase
 
     public function testConfirmingWithAnIncorrectCodeFails(): void
     {
-        $this->registerViaInviteToken('mauvais-code@example.com');
+        $this->registerWithAKnownSapeurEmail('mauvais-code@example.com');
 
         $response = $this->postJson('/api/v1/confirmer-email', [
             'email' => 'mauvais-code@example.com',
@@ -94,7 +76,7 @@ class ApiRegisterEmailConfirmationTest extends TestCase
 
     public function testConfirmingWithTheCodeOfADifferentEmailFails(): void
     {
-        $this->registerViaInviteToken('victime@example.com');
+        $this->registerWithAKnownSapeurEmail('victime@example.com');
         $plainCode = $this->extractSentCode();
 
         $response = $this->postJson('/api/v1/confirmer-email', [
@@ -112,7 +94,7 @@ class ApiRegisterEmailConfirmationTest extends TestCase
         $policy->enforced_at = now()->subDay();
         $policy->save();
 
-        $this->registerViaInviteToken('doit-configurer-2fa@example.com');
+        $this->registerWithAKnownSapeurEmail('doit-configurer-2fa@example.com');
         $plainCode = $this->extractSentCode();
 
         $response = $this->postJson('/api/v1/confirmer-email', [
@@ -129,7 +111,7 @@ class ApiRegisterEmailConfirmationTest extends TestCase
 
     public function testResendConfirmationWorksWithoutAnyToken(): void
     {
-        $this->registerViaInviteToken('renvoi@example.com');
+        $this->registerWithAKnownSapeurEmail('renvoi@example.com');
         $user = User::where('email', 'renvoi@example.com')->first();
         $originalHash = $user->validate_email_token;
 
@@ -141,7 +123,7 @@ class ApiRegisterEmailConfirmationTest extends TestCase
 
     public function testResendConfirmationDoesNotResendForAnAlreadyVerifiedEmail(): void
     {
-        $this->registerViaInviteToken('deja-verifie@example.com');
+        $this->registerWithAKnownSapeurEmail('deja-verifie@example.com');
         $user = User::where('email', 'deja-verifie@example.com')->first();
         $user->email_verified_at = now();
         $user->save();
@@ -171,7 +153,7 @@ class ApiRegisterEmailConfirmationTest extends TestCase
      */
     public function testACodeCanNoLongerBeTriedAfterFiveFailedAttempts(): void
     {
-        $this->registerViaInviteToken('brute-force@example.com');
+        $this->registerWithAKnownSapeurEmail('brute-force@example.com');
         $plainCode = $this->extractSentCode();
         $wrongCode = $plainCode === '000000' ? '111111' : '000000';
 
@@ -188,7 +170,7 @@ class ApiRegisterEmailConfirmationTest extends TestCase
 
     public function testResendingACodeResetsTheFailedAttemptsCounter(): void
     {
-        $this->registerViaInviteToken('renvoi@example.com');
+        $this->registerWithAKnownSapeurEmail('renvoi@example.com');
         for ($attempt = 1; $attempt < 5; $attempt++) {
             $this->postJson('/api/v1/confirmer-email', ['email' => 'renvoi@example.com', 'code' => 'faux-code']);
         }
@@ -211,7 +193,7 @@ class ApiRegisterEmailConfirmationTest extends TestCase
     public function testATiersCannotLockTheOwnerOutByBurningAttempts(): void
     {
         $this->withoutMiddleware(ThrottleRequests::class);
-        $this->registerViaInviteToken('boucle@example.com');
+        $this->registerWithAKnownSapeurEmail('boucle@example.com');
 
         for ($round = 1; $round <= 3; $round++) {
             for ($attempt = 1; $attempt <= 5; $attempt++) {
@@ -228,14 +210,14 @@ class ApiRegisterEmailConfirmationTest extends TestCase
 
     public function testTheCodeHasEightUnambiguousCharacters(): void
     {
-        $this->registerViaInviteToken('format@example.com');
+        $this->registerWithAKnownSapeurEmail('format@example.com');
 
         $this->assertMatchesRegularExpression('/^[ABCDEFGHJKMNPQRSTUVWXYZ2-9]{8}$/', $this->extractSentCode());
     }
 
     public function testTheCodeIsAcceptedRegardlessOfCaseAndSeparators(): void
     {
-        $this->registerViaInviteToken('saisie@example.com');
+        $this->registerWithAKnownSapeurEmail('saisie@example.com');
         $code = $this->extractSentCode();
 
         $this->postJson('/api/v1/confirmer-email', [
@@ -262,7 +244,7 @@ class ApiRegisterEmailConfirmationTest extends TestCase
 
     public function testLoginIsRefusedUntilTheEmailIsConfirmed(): void
     {
-        $this->registerViaInviteToken('pas-confirme@example.com');
+        $this->registerWithAKnownSapeurEmail('pas-confirme@example.com');
 
         $response = $this->postJson('/api/v1/login', [
             'email' => 'pas-confirme@example.com',
@@ -276,7 +258,7 @@ class ApiRegisterEmailConfirmationTest extends TestCase
 
     public function testLoginOfAnUnconfirmedAccountWithAWrongPasswordStaysAGenericFailure(): void
     {
-        $this->registerViaInviteToken('pas-confirme-2@example.com');
+        $this->registerWithAKnownSapeurEmail('pas-confirme-2@example.com');
 
         $response = $this->postJson('/api/v1/login', [
             'email' => 'pas-confirme-2@example.com',

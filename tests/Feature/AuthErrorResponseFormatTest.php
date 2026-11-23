@@ -2,14 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Auth\TokenTools;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 /**
  * Les endpoints "message générique" de l'API Auth (login, confirmer-email,
- * refresh-token, token-auth, use-token, change-password) doivent renvoyer
+ * refresh-token, token-auth, change-password) doivent renvoyer
  * leurs erreurs sous une forme homogène selon le type d'échec :
  * - 422 (requête mal formée) : {"message": "...", "errors": {champ: [messages]}},
  *   le rendu natif de Laravel pour ValidationException (aucun handler custom).
@@ -92,30 +91,6 @@ class AuthErrorResponseFormatTest extends TestCase
 
         $response->assertStatus(401);
         $response->assertJsonPath('message', 'Jeton API invalide ou expiré');
-    }
-
-    public function testUseTokenWithMissingTokenReturns422WithFieldErrors(): void
-    {
-        $user = User::factory()->create();
-        $bearerToken = TokenTools::createAccessToken($user, [], [], []);
-
-        $response = $this->withHeaders(['Authorization' => 'Bearer ' . $bearerToken])
-            ->postJson('/api/v1/use-token', []);
-
-        $response->assertStatus(422);
-        $response->assertJsonPath('errors.token.0', 'The token field is required.');
-    }
-
-    public function testUseTokenWithInvalidTokenReturns401WithMessage(): void
-    {
-        $user = User::factory()->create();
-        $bearerToken = TokenTools::createAccessToken($user, [], [], []);
-
-        $response = $this->withHeaders(['Authorization' => 'Bearer ' . $bearerToken])
-            ->postJson('/api/v1/use-token', ['token' => 'un-jeton-invalide']);
-
-        $response->assertStatus(401);
-        $response->assertJsonPath('message', 'Token invalide');
     }
 
     public function testChangePasswordWithMissingFieldsReturns422WithFieldErrors(): void

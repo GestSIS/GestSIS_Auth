@@ -2,10 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Auth\TokenTools;
 use App\Models\Domaine;
 use App\Models\Organisation;
-use App\Models\RegisterToken;
 use App\Models\User;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Support\Facades\Http;
@@ -14,21 +12,15 @@ use Tests\TestCase;
 
 class ApiConfirmerEmailControllerSapeurLinkTest extends TestCase
 {
-    private function registerViaInviteToken(string $email = 'nouveau@example.com'): void
+    private function registerWithAKnownSapeurEmail(string $email = 'nouveau@example.com'): void
     {
         Mail::fake();
-        RegisterToken::create([
-            'token' => TokenTools::hashToken('un-jeton-invitation'),
-            'description' => 'Test',
-            'validite' => now()->addDay(),
-        ]);
 
         $this->postJson('/api/v1/register', [
             'name' => 'Nouveau Sapeur',
             'email' => $email,
             'password' => 'a-very-long-password',
             'password_confirmation' => 'a-very-long-password',
-            'token' => 'un-jeton-invitation',
             'domaine_code' => 'sis',
         ]);
     }
@@ -52,7 +44,7 @@ class ApiConfirmerEmailControllerSapeurLinkTest extends TestCase
         // confirmerEmail() iterates $response['data'] as $sisKey => $sapeurId -- an
         // associative map of every SIS this email is a known sapeur in, not a scalar.
         Http::fake(['*/api/v2/email-validate*' => Http::response(['data' => ['confirm-link' => 42]])]);
-        $this->registerViaInviteToken('confirme-lien@example.com');
+        $this->registerWithAKnownSapeurEmail('confirme-lien@example.com');
         $user = User::where('email', 'confirme-lien@example.com')->first();
         $plainCode = $this->extractSentCode();
 
@@ -73,7 +65,7 @@ class ApiConfirmerEmailControllerSapeurLinkTest extends TestCase
             '*/api/v2/email-validate*' => Http::response(['data' => ['confirm-link' => 42]]),
             'https://eca.test/email-validate*' => Http::response(['data' => ['other-org' => 7]]),
         ]);
-        $this->registerViaInviteToken('confirme-multi@example.com');
+        $this->registerWithAKnownSapeurEmail('confirme-multi@example.com');
         $user = User::where('email', 'confirme-multi@example.com')->first();
         $plainCode = $this->extractSentCode();
 
@@ -95,7 +87,7 @@ class ApiConfirmerEmailControllerSapeurLinkTest extends TestCase
             'https://eca.test/email-validate*' => Http::response(['error' => 'boom'], 500),
         ]);
         $this->mock(ExceptionHandler::class, fn($mock) => $mock->shouldReceive('report')->once());
-        $this->registerViaInviteToken('confirme-partiel@example.com');
+        $this->registerWithAKnownSapeurEmail('confirme-partiel@example.com');
         $user = User::where('email', 'confirme-partiel@example.com')->first();
         $plainCode = $this->extractSentCode();
 

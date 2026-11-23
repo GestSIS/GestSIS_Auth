@@ -25,7 +25,6 @@ use App\Http\Controllers\MobileVersionController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserRoleController;
-use App\Http\Controllers\RegisterTokenController;
 use App\Http\Controllers\AdminOrganisationController;
 use App\Http\Controllers\OrganisationController;
 use App\Http\Controllers\ApiMotDePasseController;
@@ -116,8 +115,6 @@ Route::group(['prefix' => 'v1'], function () {
     // `impersonationReadOnly` : en usurpation d'identité, ces réglages se
     // consultent (support) mais ne se modifient pas.
     Route::group(['middleware' => ['jwtTokenRole', 'impersonationReadOnly']], function () {
-        Route::post('use-token/', [RegisterTokenController::class, 'consume']);
-
         Route::get('2fa/status', [TwoFactorStatusController::class, 'show']);
         Route::get('2fa/webauthn/credentials', [WebauthnController::class, 'index']);
 
@@ -154,12 +151,5 @@ Route::group(['prefix' => 'v1'], function () {
     Route::group(['middleware' => 'jwtTokenRoleOrApiToken:utilisateur.modification'], function () {
         Route::apiResource('roles.users', UserRoleController::class)->only(['store', 'destroy']);
         Route::post('users/{user_id}/roles', [UserRoleController::class, 'updateRoles']); // Allow to update all the role of a user for a given SIS
-    });
-
-    // Générer un jeton de permissions reste réservé à une vraie session :
-    // combiné à use-token, il permettait à un jeton d'API d'obtenir un access
-    // token avec tous les droits du compte.
-    Route::group(['middleware' => ['jwtTokenRole:utilisateur.modification', 'impersonationReadOnly']], function () {
-        Route::post('register-token', [RegisterTokenController::class, 'newToken']);
     });
 });

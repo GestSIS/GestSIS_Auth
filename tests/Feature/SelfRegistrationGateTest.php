@@ -8,7 +8,7 @@ use Tests\TestCase;
 
 class SelfRegistrationGateTest extends TestCase
 {
-    public function testRegistrationWithoutTokenSucceedsForSisDomaineWhereFlagIsBackfilledTrue(): void
+    public function testRegistrationSucceedsForSisDomaineWhereFlagIsBackfilledTrue(): void
     {
         Http::fake(['*/email-validate*' => Http::response(['data' => true], 200)]);
 
@@ -23,7 +23,7 @@ class SelfRegistrationGateTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function testRegistrationWithoutTokenIsRejectedWhenSelfRegistrationDisabled(): void
+    public function testRegistrationIsRejectedWhenSelfRegistrationDisabled(): void
     {
         Domaine::where('code', 'sis')->update(['self_registration_enabled' => false]);
         Http::fake(['*/email-validate*' => Http::response(['data' => true], 200)]);

@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Auth\TokenTools;
 use App\Models\ApiToken;
-use App\Models\RegisterToken;
 use App\Models\User;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
@@ -14,9 +13,7 @@ use Tests\TestCase;
 
 /**
  * Un jeton issu d'un jeton d'API sert aux intégrations, jamais à gérer
- * l'authentification du compte : sessions, 2FA, jetons d'API, jetons de
- * permissions. Sans ce refus, use-token/register-token permettaient à un jeton
- * d'API bridé d'obtenir un access token avec tous les droits du compte.
+ * l'authentification du compte : sessions, 2FA, jetons d'API.
  */
 class ApiTokenAccountRestrictionsTest extends TestCase
 {
@@ -68,15 +65,8 @@ class ApiTokenAccountRestrictionsTest extends TestCase
     {
         $user = User::factory()->create(['admin' => true]);
         $headers = ['Authorization' => 'Bearer ' . $this->apiTokenJwtFor($user)];
-        RegisterToken::create([
-            'token' => TokenTools::hashToken('un-jeton-de-permissions'),
-            'description' => 'Test',
-            'validite' => now()->addDay(),
-        ]);
 
         $forbidden = [
-            ['post', '/api/v1/use-token', ['token' => 'un-jeton-de-permissions']],
-            ['post', '/api/v1/register-token', ['roles' => [1]]],
             ['get', '/api/v1/sessions', []],
             ['get', '/api/v1/api-tokens', []],
             ['post', '/api/v1/api-tokens', ['name' => 'Nouveau', 'expires_in_days' => 30, 'permission_ids' => [1], 'password' => 'password']],
@@ -94,7 +84,6 @@ class ApiTokenAccountRestrictionsTest extends TestCase
                 ->assertJsonPath('message', "Action impossible avec un jeton d'API");
         }
 
-        $this->assertDatabaseHas('register_tokens', ['token' => TokenTools::hashToken('un-jeton-de-permissions')]);
         $this->assertNull($this->totpSecretOf($user));
     }
 
@@ -145,7 +134,6 @@ class ApiTokenAccountRestrictionsTest extends TestCase
             ['delete', "/api/v1/sessions/{$session->id}", []],
             ['delete', "/api/v1/api-tokens/{$apiToken->id}", []],
             ['post', '/api/v1/api-tokens', ['name' => 'Nouveau', 'expires_in_days' => 30, 'permission_ids' => [1], 'password' => 'password']],
-            ['post', '/api/v1/use-token', ['token' => 'un-jeton-de-permissions']],
             ['post', '/api/v1/2fa/totp/enable', ['password' => 'password']],
             ['post', '/api/v1/2fa/webauthn/register/challenge', ['password' => 'password']],
             ['post', '/api/v1/2fa/totp/disable', ['password' => 'password', 'code' => '000000']],

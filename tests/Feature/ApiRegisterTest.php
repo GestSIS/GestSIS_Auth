@@ -16,7 +16,7 @@ class ApiRegisterTest extends TestCase
      * surfacing the database unique-constraint violation as a 500. The frontend
      * (PageRegister.vue) relies on `errors.email` being set to show its message.
      *
-     * Registration without a token checks the email against GestSIS_API before
+     * Registration checks the email against GestSIS_API before
      * reaching the duplicate-email check, so this test fakes that call to let the
      * flow reach the duplicate-email path specifically.
      */
@@ -102,5 +102,25 @@ class ApiRegisterTest extends TestCase
         ]);
 
         $response->assertStatus(422);
+    }
+
+    /**
+     * Un compte ne se crée qu'avec l'email d'un sapeur/civil actif.
+     */
+    public function testRegisterRejectsAnEmailMatchingNoSapeur(): void
+    {
+        Http::fake(['*/api/v2/email-validate*' => Http::response(['data' => []])]);
+
+        $response = $this->postJson('/api/v1/register', [
+            'name' => 'Someone',
+            'email' => 'inconnu@example.com',
+            'password' => 'a-very-long-password',
+            'password_confirmation' => 'a-very-long-password',
+            'domaine_code' => 'sis',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['email']);
+        $this->assertDatabaseMissing('users', ['email' => 'inconnu@example.com']);
     }
 }
